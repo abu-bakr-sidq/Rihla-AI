@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowRight, ArrowLeft, Plane, Map, Wallet, Heart, Calendar } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, Plane, Map, Wallet, Heart, Calendar, Sparkles } from "lucide-react";
 import { addDays, format } from "date-fns";
 
 const INTERESTS = [
