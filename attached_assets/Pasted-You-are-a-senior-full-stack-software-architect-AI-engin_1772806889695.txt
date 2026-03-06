@@ -1,0 +1,322 @@
+You are a senior full-stack software architect, AI engineer, and UI/UX product designer.
+
+Your task is to design and generate a **professional, production-grade AI Travel Planning Web Platform**.
+
+The platform must be inspired by modern SaaS travel planning interfaces (similar to the provided demo images), but **must not copy any design, branding, or layout from the demo website**. Instead, create a **unique, highly polished system** with modern UI, intelligent features, and scalable architecture.
+
+The system should feel like a **real startup product**, not a simple academic demo.
+
+---
+
+PROJECT OBJECTIVE
+
+Create an **AI-powered travel planning platform** that helps users automatically generate personalized travel itineraries based on their preferences, budget, time constraints, and interests.
+
+The system must solve real-world travel planning challenges:
+
+• reducing hours of travel research
+• optimizing travel routes
+• estimating budgets
+• suggesting attractions and activities
+• organizing day-by-day travel plans
+
+---
+
+TECHNOLOGY STACK
+
+Frontend:
+React + Vite
+React Router
+Axios
+TailwindCSS or modern CSS framework
+Framer Motion for animations
+Leaflet or Google Maps API for geospatial visualization
+
+Backend:
+Node.js
+Express.js
+JWT authentication
+RESTful API architecture
+Role-based access control
+
+Database:
+MongoDB with Mongoose
+
+AI Layer:
+AI-generated itinerary planning
+Recommendation engine for attractions and activities
+Smart travel optimization logic
+
+---
+
+APPLICATION ARCHITECTURE
+
+Follow a **clean modular architecture**.
+
+Backend Structure:
+
+server/
+controllers/
+routes/
+models/
+middlewares/
+services/
+utils/
+config/
+
+Frontend Structure:
+
+src/
+components/
+pages/
+hooks/
+context/
+services/
+layouts/
+assets/
+styles/
+
+---
+
+KEY USER JOURNEY
+
+1. User visits landing page
+2. User creates an account
+3. User enters travel preferences
+4. AI generates a detailed itinerary
+5. User explores map and travel plan
+6. User saves or edits trip
+7. User views past travel plans
+
+---
+
+CORE SYSTEM FEATURES
+
+1. USER AUTHENTICATION SYSTEM
+
+User registration
+Secure login
+JWT authentication
+Password hashing
+Protected routes
+User profile management
+
+---
+
+2. AI TRAVEL PLANNER
+
+User inputs:
+
+destination
+travel dates
+number of days
+budget
+travel style
+interests (nature, culture, adventure, food)
+
+The AI system generates:
+
+daily itinerary
+recommended attractions
+travel schedule
+activity suggestions
+hotel recommendations
+estimated budget breakdown
+
+---
+
+3. SMART ROUTE OPTIMIZATION
+
+Use geospatial logic and maps to:
+
+display attractions on map
+calculate travel distance
+suggest optimal travel order
+visualize route path
+
+---
+
+4. TRAVEL COST ESTIMATION
+
+System estimates approximate costs for:
+
+accommodation
+food
+transport
+activities
+
+Provide a clear budget summary.
+
+---
+
+5. SAVE AND MANAGE TRIPS
+
+Users can:
+
+save generated itineraries
+edit plans
+delete trips
+view trip history
+
+---
+
+6. INTERACTIVE MAP EXPLORER
+
+Display:
+
+attractions
+restaurants
+hotels
+transport hubs
+
+Allow users to interact with map markers.
+
+---
+
+7. ADMIN DASHBOARD
+
+Admin panel includes:
+
+user analytics
+trip analytics
+destination management
+place database management
+
+Admin capabilities:
+
+add destinations
+add attractions
+manage users
+view system statistics
+
+---
+
+LANDING PAGE DESIGN
+
+Create a modern landing page containing:
+
+Hero section with strong headline
+Feature highlights
+How the system works
+Popular destinations
+Statistics section
+User testimonials
+Call-to-action section
+
+---
+
+UI DESIGN REQUIREMENTS
+
+Clean modern SaaS design
+Professional typography
+Smooth animations
+Fully responsive layout
+Dark mode compatibility
+Loading indicators
+Error handling states
+
+---
+
+AI ITINERARY OUTPUT FORMAT
+
+The generated itinerary must include:
+
+Day-by-day schedule
+
+Day 1
+Morning activity
+Afternoon attraction
+Evening recommendation
+
+Day 2
+Suggested places
+Estimated travel times
+Recommended restaurants
+
+Include:
+
+travel tips
+budget summary
+map visualization
+
+---
+
+DATABASE DESIGN
+
+Users Collection
+
+name
+email
+password
+role
+savedTrips
+createdAt
+
+Trips Collection
+
+userId
+destination
+days
+budget
+itinerary
+costBreakdown
+createdAt
+
+Places Collection
+
+name
+location
+category
+rating
+description
+
+Hotels Collection
+
+name
+location
+priceRange
+rating
+
+---
+
+PERFORMANCE REQUIREMENTS
+
+Use efficient API design
+Optimize database queries
+Implement loading states
+Ensure responsive UI performance
+
+---
+
+SECURITY REQUIREMENTS
+
+Password hashing with bcrypt
+JWT authentication
+Protected backend routes
+Input validation
+Role-based authorization
+
+---
+
+DELIVERABLES
+
+Provide the following:
+
+Complete project folder structure
+Frontend React application
+Backend Node.js server
+MongoDB schema models
+API endpoints
+Authentication system
+AI itinerary generation logic
+Map integration
+
+Also provide instructions to run the project locally.
+
+---
+
+FINAL GOAL
+
+The final system should resemble a **professional travel AI SaaS platform** capable of solving real travel planning problems with intelligent automation.
+
+Ensure the code is **well-structured, scalable, and production-ready**.
