@@ -28,3 +28,10 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[agent]
+integrations = ["javascript_openai_ai_integrations:2.0.0"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80

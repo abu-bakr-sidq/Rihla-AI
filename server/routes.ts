@@ -1,16 +1,335 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { api } from "@shared/routes";
+import { z } from "zod";
+import session from "express-session";
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+import { openai } from "./replit_integrations/audio/client";
+import { eq } from "drizzle-orm";
+
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
+
+async function comparePasswords(supplied: string, stored: string) {
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
+}
+
+// Generate itinerary using OpenAI
+async function generateItinerary(destination: string, days: number, budget: string, travelStyle: string, interests: string[]) {
+  const prompt = `
+    Create a highly detailed, professional, day-by-day travel itinerary for a ${days}-day trip to ${destination}.
+    Budget: ${budget}
+    Travel Style: ${travelStyle}
+    Interests: ${interests.join(", ")}
+    
+    Respond STRICTLY in JSON format matching this schema:
+    {
+      "itinerary": [
+        {
+          "day": 1,
+          "title": "Arrival and Exploration",
+          "activities": [
+            { "time": "Morning", "title": "Check-in", "description": "Arrive and settle into accommodation.", "location": "City Center" },
+            { "time": "Afternoon", "title": "Sightseeing", "description": "Explore main attractions.", "location": "Main Square" },
+            { "time": "Evening", "title": "Dinner", "description": "Welcome dinner at a local restaurant.", "location": "Restaurant Area" }
+          ]
+        }
+      ],
+      "costBreakdown": {
+        "accommodation": 500,
+        "food": 300,
+        "transport": 100,
+        "activities": 200,
+        "total": 1100,
+        "currency": "USD"
+      }
+    }
+    
+    Ensure the JSON is perfectly valid, no markdown blocks, just raw JSON.
+  `;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5.1",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+    });
+    
+    const content = response.choices[0]?.message?.content;
+    if (!content) throw new Error("Failed to generate itinerary");
+    
+    return JSON.parse(content);
+  } catch (error) {
+    console.error("AI Generation Error:", error);
+    throw new Error("Failed to generate itinerary");
+  }
+}
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  
+  // Set up authentication (express-session & passport)
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "travel-ai-secret",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+      },
+    })
+  );
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  passport.use(
+    new LocalStrategy(async (username, password, done) => {
+      try {
+        const user = await storage.getUserByUsername(username);
+        if (!user || !(await comparePasswords(password, user.password))) {
+          return done(null, false, { message: "Invalid username or password" });
+        }
+        return done(null, user);
+      } catch (err) {
+        return done(err);
+      }
+    })
+  );
+
+  passport.serializeUser((user: any, done) => {
+    done(null, user.id);
+  });
+
+  passport.deserializeUser(async (id: number, done) => {
+    try {
+      const user = await storage.getUser(id);
+      done(null, user);
+    } catch (err) {
+      done(err);
+    }
+  });
+
+  // Auth Routes
+  app.post(api.auth.register.path, async (req, res, next) => {
+    try {
+      const parsed = api.auth.register.input.parse(req.body);
+      const existingUser = await storage.getUserByUsername(parsed.username);
+      
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      const hashedPassword = await hashPassword(parsed.password);
+      
+      // First user becomes admin
+      const allUsers = await storage.getAllUsers();
+      const role = allUsers.length === 0 ? "admin" : "user";
+
+      const user = await storage.createUser({
+        username: parsed.username,
+        password: hashedPassword,
+        role
+      });
+
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.status(201).json(user);
+      });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      next(err);
+    }
+  });
+
+  app.post(api.auth.login.path, (req, res, next) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) return next(err);
+      if (!user) return res.status(401).json(info);
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.json(user);
+      });
+    })(req, res, next);
+  });
+
+  app.post(api.auth.logout.path, (req, res, next) => {
+    req.logout((err) => {
+      if (err) return next(err);
+      res.json({ success: true });
+    });
+  });
+
+  app.get(api.auth.me.path, (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    res.json(req.user);
+  });
+
+  // Middleware to check authentication
+  const requireAuth = (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    next();
+  };
+
+  const requireAdmin = (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(401).json({ message: "Unauthorized - Admin only" });
+    }
+    next();
+  };
+
+  // Trips Routes
+  app.get(api.trips.list.path, requireAuth, async (req, res) => {
+    const trips = await storage.getUserTrips((req.user as any).id);
+    res.json(trips);
+  });
+
+  app.get(api.trips.get.path, requireAuth, async (req, res) => {
+    const trip = await storage.getTrip(Number(req.params.id));
+    if (!trip) {
+      return res.status(404).json({ message: 'Trip not found' });
+    }
+    // Optional: check if user owns the trip or is admin
+    if (trip.userId !== (req.user as any).id && (req.user as any).role !== 'admin') {
+       return res.status(401).json({ message: "Unauthorized" });
+    }
+    res.json(trip);
+  });
+
+  app.post(api.trips.create.path, requireAuth, async (req, res) => {
+    try {
+      const input = api.trips.create.input.parse(req.body);
+      const trip = await storage.createTrip({
+        ...input,
+        userId: (req.user as any).id
+      });
+      res.status(201).json(trip);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post(api.trips.generate.path, requireAuth, async (req, res) => {
+    try {
+      const input = api.trips.generate.input.parse(req.body);
+      const generated = await generateItinerary(
+        input.destination, 
+        input.days, 
+        input.budget, 
+        input.travelStyle, 
+        input.interests
+      );
+      res.json(generated);
+    } catch (err) {
+       res.status(500).json({ message: "Failed to generate itinerary" });
+    }
+  });
+
+  app.put(api.trips.update.path, requireAuth, async (req, res) => {
+    try {
+      const input = api.trips.update.input.parse(req.body);
+      const tripId = Number(req.params.id);
+      const existingTrip = await storage.getTrip(tripId);
+      
+      if (!existingTrip) {
+        return res.status(404).json({ message: 'Trip not found' });
+      }
+      if (existingTrip.userId !== (req.user as any).id && (req.user as any).role !== 'admin') {
+         return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const updated = await storage.updateTrip(tripId, input);
+      res.json(updated);
+    } catch (err) {
+      res.status(400).json({ message: "Invalid update data" });
+    }
+  });
+
+  app.delete(api.trips.delete.path, requireAuth, async (req, res) => {
+    const tripId = Number(req.params.id);
+    const existingTrip = await storage.getTrip(tripId);
+    
+    if (!existingTrip) {
+      return res.status(404).json({ message: 'Trip not found' });
+    }
+    if (existingTrip.userId !== (req.user as any).id && (req.user as any).role !== 'admin') {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    await storage.deleteTrip(tripId);
+    res.status(204).send();
+  });
+
+  // Places routes
+  app.get(api.places.list.path, async (req, res) => {
+    const places = await storage.getPlaces();
+    res.json(places);
+  });
+
+  app.post(api.places.create.path, requireAdmin, async (req, res) => {
+    try {
+      const input = api.places.create.input.parse(req.body);
+      const place = await storage.createPlace(input);
+      res.status(201).json(place);
+    } catch (err) {
+      res.status(400).json({ message: "Invalid place data" });
+    }
+  });
+
+  app.delete(api.places.delete.path, requireAdmin, async (req, res) => {
+    await storage.deletePlace(Number(req.params.id));
+    res.status(204).send();
+  });
+
+  // Admin Routes
+  app.get(api.admin.users.path, requireAdmin, async (req, res) => {
+    const users = await storage.getAllUsers();
+    res.json(users);
+  });
+
+  app.get(api.admin.stats.path, requireAdmin, async (req, res) => {
+    const users = await storage.getAllUsers();
+    const trips = await storage.getAllTrips();
+    const places = await storage.getPlaces();
+    
+    res.json({
+      totalUsers: users.length,
+      totalTrips: trips.length,
+      totalPlaces: places.length,
+      recentUsers: users.slice(0, 5),
+      recentTrips: trips.slice(0, 5)
+    });
+  });
 
   return httpServer;
 }
