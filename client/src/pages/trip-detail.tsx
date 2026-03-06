@@ -39,19 +39,26 @@ export default function TripDetail() {
   }
   
   // Safe extraction of days. We expect an array of day objects.
-  const days = Array.isArray(itineraryData?.days) ? itineraryData.days : (Array.isArray(itineraryData) ? itineraryData : []);
+  const days = Array.isArray(itineraryData?.itinerary) ? itineraryData.itinerary : (Array.isArray(itineraryData) ? itineraryData : []);
   
   // Extract map points from itinerary if possible
-  const mapPoints = [];
+  const mapPoints: any[] = [];
   days.forEach((day: any) => {
     if (Array.isArray(day.activities)) {
       day.activities.forEach((act: any) => {
-        if (act.lat && act.lng) {
+        const lat = Number(act.lat);
+        const lng = Number(act.lng);
+        if (!isNaN(lat) && !isNaN(lng) && lat !== 0) {
           mapPoints.push({
-            lat: Number(act.lat),
-            lng: Number(act.lng),
-            title: act.name || act.title || 'Activity',
+            lat,
+            lng,
+            title: act.title || 'Activity',
             description: act.description || ''
+          });
+        }
+      });
+    }
+  });
           });
         }
       });

@@ -34,6 +34,8 @@ async function generateItinerary(destination: string, days: number, budget: stri
     Travel Style: ${travelStyle}
     Interests: ${interests.join(", ")}
     
+    IMPORTANT: For each activity, you MUST provide "lat" and "lng" fields with valid numerical coordinates for that specific location in ${destination}.
+    
     Respond STRICTLY in JSON format matching this schema:
     {
       "itinerary": [
@@ -41,9 +43,14 @@ async function generateItinerary(destination: string, days: number, budget: stri
           "day": 1,
           "title": "Arrival and Exploration",
           "activities": [
-            { "time": "Morning", "title": "Check-in", "description": "Arrive and settle into accommodation.", "location": "City Center" },
-            { "time": "Afternoon", "title": "Sightseeing", "description": "Explore main attractions.", "location": "Main Square" },
-            { "time": "Evening", "title": "Dinner", "description": "Welcome dinner at a local restaurant.", "location": "Restaurant Area" }
+            { 
+              "time": "Morning", 
+              "title": "Check-in at Hotel", 
+              "description": "Arrive and settle into your chosen accommodation.", 
+              "location": "City Center, ${destination}",
+              "lat": 0.0,
+              "lng": 0.0
+            }
           ]
         }
       ],
