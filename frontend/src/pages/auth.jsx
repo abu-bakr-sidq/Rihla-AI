@@ -145,6 +145,7 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState("");
   const [resetOTP, setResetOTP] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
+  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
   const [, setLocation] = useLocation();
   const { data: user } = useUser();
   const queryClient = useQueryClient();
@@ -192,11 +193,12 @@ export default function Auth() {
     const token = params.get("token");
     if (token) {
       localStorage.setItem("auth_token", token);
+      setIsGoogleSigningIn(true);
       // Clean up the URL
       window.history.replaceState({}, document.title, window.location.pathname);
+      queryClient.removeQueries({ queryKey: [api.auth.me.path] });
       queryClient.invalidateQueries({ queryKey: [api.auth.me.path] });
       toast({ title: "Welcome!", description: "Successfully authenticated with Google." });
-      window.location.replace("/dashboard");
     }
   }, [toast, queryClient]);
 
@@ -223,6 +225,14 @@ export default function Auth() {
     <div className="min-h-screen w-full flex relative overflow-hidden bg-black">
       {/* Full-page travel photo background */}
       <TravelAuthBackground />
+      {isGoogleSigningIn && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="flex items-center gap-3 rounded-2xl border border-[#D4AF37]/20 bg-black/70 px-5 py-4 text-[#D4AF37] shadow-2xl">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="text-sm font-bold tracking-wide">Signing you in...</span>
+          </div>
+        </div>
+      )}
 
       {/* ── Left Panel: Cinematic Quote Carousel over travel background ── */}
       <div

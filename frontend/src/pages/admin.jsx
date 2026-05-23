@@ -27,6 +27,7 @@ import DashboardSlideshow from "@/components/ui/DashboardSlideshow";
 import { format } from "date-fns";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { CalendarGrid, isDisabled } from "./planner";
+import { sanitizeVisibleText } from "@/lib/display-text";
 
 /* ── Mini Planner Calendar Wrapper ── */
 function MiniPlannerCalendar({ selectedDate, onSelect, dateLabel = "Departure" }) {
@@ -153,6 +154,12 @@ function PlatformIcon({ user }) {
   return <div title="Rihla AI (Email)"><BrandMark size={14} className="opacity-70 grayscale" /></div>
 }
 
+function formatDateSafe(value) {
+  const parsed = value ? new Date(value) : null;
+  if (!parsed || Number.isNaN(parsed.getTime())) return "—";
+  return parsed.toLocaleDateString();
+}
+
 
 /* ── Mocks & Data ── */
 const AI_SUGGESTIONS = [
@@ -217,9 +224,15 @@ const getCurrencySymbol = (dest) => {
     australia: "$", uk: "£", singapore: "S$", thailand: "฿",
     indonesia: "Rp", turkey: "₺", maldives: "$"
   };
+  const safeSymbols = {
+    india: "\u20B9", uae: "\u062F.\u0625", japan: "\u00A5", france: "\u20AC", spain: "\u20AC",
+    italy: "\u20AC", greece: "\u20AC", netherlands: "\u20AC", usa: "$", canada: "$",
+    australia: "$", uk: "\u00A3", singapore: "S$", thailand: "\u0E3F",
+    indonesia: "Rp", turkey: "\u20BA", maldives: "$"
+  };
   const dLower = dest.toLowerCase();
   const country = Object.keys(map).find(k => dLower.includes(k));
-  return symbols[map[country]] || "$";
+  return safeSymbols[map[country]] || symbols[map[country]] || "$";
 };
 
 /* ── Add Package Modal Component (Internal Scroll Engine + Custom Scrollbars) ── */
@@ -962,20 +975,23 @@ export default function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {tourPackages.length > 0 ? tourPackages.map(p => (
+                  {tourPackages.length > 0 ? tourPackages.map(p => {
+                    const safeDestination = sanitizeVisibleText(p.destination, "Untitled package");
+                    const safeTravelStyle = sanitizeVisibleText(p.travelStyle, "curated");
+                    return (
                     <tr key={p._id} className="admin-row" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                       <td className="px-5 py-3.5 text-xs text-[var(--admin-text-main)] font-black">Admin</td>
-                      <td className="px-5 py-3.5 font-bold">{p.destination} - {p.travelStyle}</td>
-                      <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs">{new Date(p.startDate).toLocaleDateString()}</td>
-                      <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs">{new Date(p.endDate).toLocaleDateString()}</td>
-                      <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs font-bold">{p.destination}</td>
+                      <td className="px-5 py-3.5 font-bold">{safeDestination} - {safeTravelStyle}</td>
+                      <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs">{formatDateSafe(p.startDate)}</td>
+                      <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs">{formatDateSafe(p.endDate)}</td>
+                      <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs font-bold">{safeDestination}</td>
                       <td className="px-5 py-3.5 flex items-center gap-2">
                         <button onClick={() => deleteTourPackage.mutate(p._id)} className="p-1.5 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-400/10 transition-colors">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </td>
                     </tr>
-                  )) : (
+                  )}) : (
                     <tr><td colSpan={6} className="px-5 py-12 text-center text-[var(--admin-text-muted)]">No active tour packages.</td></tr>
                   )}
                 </tbody>

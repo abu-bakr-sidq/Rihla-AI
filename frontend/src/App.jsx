@@ -32,19 +32,21 @@ import Navbar from "@/components/navbar";
 
 /* ── Protected / Admin route guards ── */
 const ProtectedRoute = ({ children }) => {
-  const { data: user, isLoading } = useUser();
+  const { data: user, isLoading, isFetching } = useUser();
   const [location, navigate] = useLocation();
+  const hasStoredToken = typeof window !== "undefined" && Boolean(localStorage.getItem("auth_token"));
+  const authPending = isLoading || (hasStoredToken && isFetching && !user);
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!authPending && !user) {
       // Save where the user wanted to go before redirecting to auth
       sessionStorage.setItem('rihla_redirect', location);
       // Replace the current history entry so browser Back works correctly
       navigate('/auth', { replace: true });
     }
-  }, [user, isLoading, location, navigate]);
+  }, [user, authPending, location, navigate]);
 
-  if (isLoading) {
+  if (authPending) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-6 h-6 rounded-full border-2 border-foreground/20 border-t-foreground animate-spin" />
@@ -62,15 +64,17 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const AdminRoute = ({ children }) => {
-  const { data: user, isLoading } = useUser();
+  const { data: user, isLoading, isFetching } = useUser();
   const [, navigate] = useLocation();
+  const hasStoredToken = typeof window !== "undefined" && Boolean(localStorage.getItem("auth_token"));
+  const authPending = isLoading || (hasStoredToken && isFetching && !user);
 
   useEffect(() => {
-    if (!isLoading && !user) navigate('/auth', { replace: true });
-    if (!isLoading && user && user.role !== 'admin') navigate('/dashboard', { replace: true });
-  }, [user, isLoading, navigate]);
+    if (!authPending && !user) navigate('/auth', { replace: true });
+    if (!authPending && user && user.role !== 'admin') navigate('/dashboard', { replace: true });
+  }, [user, authPending, navigate]);
 
-  if (isLoading || !user || user.role !== 'admin') {
+  if (authPending || !user || user.role !== 'admin') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-6 h-6 rounded-full border-2 border-[#D4AF37]/20 border-t-[#D4AF37] animate-spin" />
