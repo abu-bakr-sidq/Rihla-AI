@@ -148,6 +148,8 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState("");
   const [resetOTP, setResetOTP] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [forgotPasswordPending, setForgotPasswordPending] = useState(false);
   const [isCompletingGoogleAuth, setIsCompletingGoogleAuth] = useState(Boolean(initialGoogleToken));
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -390,6 +392,7 @@ export default function Auth() {
                 onSubmit={async (e) => {
                   e.preventDefault();
                   const email = e.target.email.value;
+                  setForgotPasswordPending(true);
                   try {
                     const res = await fetch(resolveApiUrl("/api/auth/forgot-password"), {
                       method: "POST",
@@ -400,9 +403,16 @@ export default function Auth() {
                     if (!res.ok) throw new Error(data.message);
                     setResetEmail(email);
                     setPreviewUrl(data.previewUrl || "");
+                    setRecoveryCode(data.recoveryCode || "");
+                    toast({
+                      title: "Recovery code ready",
+                      description: data.message || "Continue with the verification step.",
+                    });
                     setStep("verify-otp");
                   } catch (err) {
                     toast({ title: "Error", description: err.message, variant: "destructive" });
+                  } finally {
+                    setForgotPasswordPending(false);
                   }
                 }} 
                 className="space-y-4"
@@ -411,8 +421,12 @@ export default function Auth() {
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
                   <input name="email" type="email" autoComplete="email" required placeholder="Email Address" className="w-full h-14 pl-12 pr-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 focus:border-black/20 dark:focus:border-white/20 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none transition-colors" />
                 </div>
-                <button type="submit" className="w-full h-14 rounded-xl bg-white text-black font-bold text-sm hover:opacity-90 active:scale-[0.98] transition-all">
-                  Send Recovery Code
+                <button
+                  type="submit"
+                  disabled={forgotPasswordPending}
+                  className="w-full h-14 rounded-xl bg-white text-black font-bold text-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {forgotPasswordPending ? "Sending..." : "Send Recovery Code"}
                 </button>
                 <button type="button" onClick={() => setStep("login")} className="w-full text-sm text-white/50 hover:text-white transition-colors py-2">
                   Back to Login
@@ -423,7 +437,9 @@ export default function Auth() {
             <VerifyOTPStep 
               email={resetEmail} 
               previewUrl={previewUrl}
+              recoveryCode={recoveryCode}
               setPreviewUrl={setPreviewUrl}
+              setRecoveryCode={setRecoveryCode}
               onVerify={(code) => {
                 setResetOTP(code);
                 setStep("reset-password");
@@ -431,6 +447,7 @@ export default function Auth() {
               onBack={() => {
                 setStep("forgot-password");
                 setPreviewUrl("");
+                setRecoveryCode("");
               }}
               toast={toast}
             />
@@ -695,7 +712,7 @@ export default function Auth() {
 }
 
 
-function VerifyOTPStep({ email, previewUrl, setPreviewUrl, onVerify, onBack, toast }) {
+function VerifyOTPStep({ email, previewUrl, recoveryCode, setPreviewUrl, setRecoveryCode, onVerify, onBack, toast }) {
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [status, setStatus] = useState("Code dispatched to your inbox.");
@@ -723,8 +740,9 @@ function VerifyOTPStep({ email, previewUrl, setPreviewUrl, onVerify, onBack, toa
       
       setCountdown(60);
       setCanResend(false);
-      setStatus("New code has been sent.");
+      setStatus(data.message || "New code has been sent.");
       setPreviewUrl(data.previewUrl || "");
+      setRecoveryCode(data.recoveryCode || "");
       toast({ title: "OTP Resent", description: "Please check your email for the fresh code." });
     } catch (err) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -754,6 +772,13 @@ function VerifyOTPStep({ email, previewUrl, setPreviewUrl, onVerify, onBack, toa
       <p className="text-white/60 text-sm mb-6">Enter the 6-digit verification code sent to <span className="text-white font-medium">{email}</span></p>
       
       <SandRevealAlert message={status} />
+      {recoveryCode ? (
+        <div className="mb-6 rounded-2xl border border-[#D4AF37]/25 bg-[#D4AF37]/8 px-4 py-3 text-left">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D4AF37] mb-1">Recovery Code</p>
+          <p className="text-2xl font-black tracking-[0.35em] text-white">{recoveryCode}</p>
+          <p className="mt-2 text-xs text-white/65">Email delivery is unavailable, so you can continue using this code.</p>
+        </div>
+      ) : null}
       {previewUrl ? (
         <div className="mb-6 rounded-2xl border border-[#D4AF37]/25 bg-[#D4AF37]/8 px-4 py-3 text-left">
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D4AF37] mb-1">Email Preview</p>

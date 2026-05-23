@@ -11,6 +11,9 @@ function createPrimaryTransporter() {
     host: process.env.SMTP_HOST || "smtp.gmail.com",
     port: parseInt(process.env.SMTP_PORT || "587", 10),
     secure: process.env.SMTP_SECURE === "true",
+    connectionTimeout: 3500,
+    greetingTimeout: 3500,
+    socketTimeout: 6000,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
@@ -29,6 +32,9 @@ async function getFallbackTransporter() {
           host: "smtp.ethereal.email",
           port: 587,
           secure: false,
+          connectionTimeout: 3500,
+          greetingTimeout: 3500,
+          socketTimeout: 6000,
           auth: {
             user: testAccount.user,
             pass: testAccount.pass,
