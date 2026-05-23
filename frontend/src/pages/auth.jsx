@@ -409,7 +409,7 @@ export default function Auth() {
               >
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
-                  <input name="email" type="email" required placeholder="Email Address" className="w-full h-14 pl-12 pr-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 focus:border-black/20 dark:focus:border-white/20 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none transition-colors" />
+                  <input name="email" type="email" autoComplete="email" required placeholder="Email Address" className="w-full h-14 pl-12 pr-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 focus:border-black/20 dark:focus:border-white/20 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none transition-colors" />
                 </div>
                 <button type="submit" className="w-full h-14 rounded-xl bg-white text-black font-bold text-sm hover:opacity-90 active:scale-[0.98] transition-all">
                   Send Recovery Code
@@ -475,6 +475,7 @@ export default function Auth() {
                   <input 
                     name="password" 
                     type={showResetPassword ? "text" : "password"} 
+                    autoComplete="new-password"
                     required 
                     placeholder="New Password" 
                     className="w-full h-14 pl-12 pr-12 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 focus:border-black/20 dark:focus:border-white/20 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none transition-colors" 
@@ -492,6 +493,7 @@ export default function Auth() {
                   <input 
                     name="confirmPassword" 
                     type={showConfirmPassword ? "text" : "password"} 
+                    autoComplete="new-password"
                     required 
                     placeholder="Confirm New Password" 
                     className="w-full h-14 pl-12 pr-12 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 focus:border-black/20 dark:focus:border-white/20 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none transition-colors" 
@@ -569,6 +571,7 @@ export default function Auth() {
                     </div>
                     <input
                       {...form.register("username")}
+                      autoComplete="username"
                       placeholder="Username"
                       className="w-full h-14 pl-12 pr-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 focus:border-black/20 dark:focus:border-white/20 focus:outline-none text-foreground placeholder:text-muted-foreground text-sm font-medium transition-all"
                     />
@@ -586,6 +589,7 @@ export default function Auth() {
                   <input
                     {...form.register("email")}
                     type="email"
+                    autoComplete="email"
                     placeholder="Email Address"
                     className="w-full h-14 pl-12 pr-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 focus:border-black/20 dark:focus:border-white/20 focus:outline-none text-foreground placeholder:text-muted-foreground text-sm font-medium transition-all"
                   />
@@ -602,6 +606,7 @@ export default function Auth() {
                   <input
                     {...form.register("password")}
                     type={showPassword ? "text" : "password"}
+                    autoComplete={isLogin ? "current-password" : "new-password"}
                     placeholder="Password"
                     className="w-full h-14 pl-12 pr-12 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 focus:border-black/20 dark:focus:border-white/20 focus:outline-none text-foreground placeholder:text-muted-foreground text-sm font-medium transition-all"
                   />
@@ -770,6 +775,7 @@ function VerifyOTPStep({ email, previewUrl, setPreviewUrl, onVerify, onBack, toa
               key={i} 
               id={`otp-${i}`}
               type="text" 
+              autoComplete={i === 0 ? "one-time-code" : "off"}
               maxLength={1} 
               className="w-11 h-14 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-center text-xl font-bold text-foreground focus:border-[#D4AF37]/50 focus:bg-black/10 dark:focus:bg-white/10 focus:outline-none transition-all"
               onInput={(e) => {
