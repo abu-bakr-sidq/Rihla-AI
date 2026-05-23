@@ -54,14 +54,15 @@ export function setupPassport(app) {
                 try {
                     const email = profile.emails?.[0]?.value?.toLowerCase();
                     const profilePicture = profile.photos?.[0]?.value;
+                    const desiredUsername = isAdminIdentity(email)
+                        ? ADMIN_ACCOUNT.username
+                        : (profile.displayName || email?.split("@")[0] || "Traveler");
                     if (!email) return done(new Error("No email found in Google profile"));
 
                     let user = await User.findOne({ email });
                     if (!user) {
                         user = await User.create({
-                            username: isAdminIdentity(email)
-                                ? ADMIN_ACCOUNT.username
-                                : (profile.displayName || email.split("@")[0]),
+                            username: desiredUsername,
                             email,
                             googleId: profile.id,
                             profilePicture,
@@ -84,7 +85,11 @@ export function setupPassport(app) {
                             needsUpdate = true;
                         }
                         if (isAdminIdentity(email) && user.username !== ADMIN_ACCOUNT.username) {
-                            user.username = ADMIN_ACCOUNT.username;
+                            user.username = desiredUsername;
+                            needsUpdate = true;
+                        }
+                        if (!isAdminIdentity(email) && desiredUsername && user.username !== desiredUsername) {
+                            user.username = desiredUsername;
                             needsUpdate = true;
                         }
                         if (needsUpdate) {
