@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+const RAW_API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+const API_BASE_URL = RAW_API_BASE_URL.replace(/\/api$/i, "");
 
 const errorSchemas = {
   validation: z.object({
