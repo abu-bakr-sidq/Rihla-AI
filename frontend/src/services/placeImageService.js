@@ -10,6 +10,8 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+import { resolveApiUrl } from "@/lib/api-contract";
+
 const GOOGLE_KEY   = import.meta.env.VITE_GOOGLE_PLACES_KEY  || "";
 const UNSPLASH_KEY = import.meta.env.VITE_UNSPLASH_KEY       || "";
 
@@ -45,16 +47,16 @@ async function unsplashUrl(query) {
 
 // ── Layer 1: Google Places ───────────────────────────────────────────────────
 async function googlePlacesUrl(query) {
-  if (!GOOGLE_KEY) return null;
   try {
-    // Step 1: find place
-    const searchUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(query)}&inputtype=textquery&fields=photos&key=${GOOGLE_KEY}`;
-    const searchRes  = await fetch(searchUrl);
+    const params = new URLSearchParams({
+      query,
+      photoIndex: "0",
+      onlyGoogle: "1",
+    });
+    const searchRes = await fetch(resolveApiUrl(`/api/place-image?${params.toString()}`));
+    if (!searchRes.ok) return null;
     const searchData = await searchRes.json();
-    const photoRef   = searchData?.candidates?.[0]?.photos?.[0]?.photo_reference;
-    if (!photoRef) return null;
-    // Step 2: photo URL
-    return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${GOOGLE_KEY}`;
+    return searchData?.url || null;
   } catch { return null; }
 }
 

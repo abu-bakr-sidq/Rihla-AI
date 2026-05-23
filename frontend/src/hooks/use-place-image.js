@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, createElement } from "react";
+import { resolveApiUrl } from "@/lib/api-contract";
 
 // Module-level cache: query → resolved URL (persists across component remounts)
 const _cache = new Map();
@@ -47,7 +48,7 @@ async function resolvePlaceImage(query, options = {}) {
       });
       if (onlyGoogle) params.set("onlyGoogle", "1");
 
-      const res = await fetch(`/api/place-image?${params.toString()}`, {
+      const res = await fetch(resolveApiUrl(`/api/place-image?${params.toString()}`), {
         signal: AbortSignal.timeout(8000),
       });
       if (!res.ok) continue;

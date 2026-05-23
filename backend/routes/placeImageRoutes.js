@@ -94,9 +94,12 @@ async function getGooglePhotoRef(query, photoIndex = 0) {
   return null;
 }
 
-/** Proxy URL for photo binary â€” keeps API key server-side */
-function buildProxiedPhotoUrl(photoRef, maxwidth = 800) {
-  return `/api/place-image/photo?ref=${encodeURIComponent(photoRef)}&w=${maxwidth}`;
+/** Proxy URL for photo binary — keeps API key server-side */
+function buildProxiedPhotoUrl(req, photoRef, maxwidth = 800) {
+  const explicitBase = (process.env.BACKEND_URL || "").trim().replace(/\/$/, "");
+  const inferredBase = `${req.protocol}://${req.get("host")}`;
+  const base = explicitBase || inferredBase;
+  return `${base}/api/place-image/photo?ref=${encodeURIComponent(photoRef)}&w=${maxwidth}`;
 }
 
 // â”€â”€ Fallback: Wikipedia thumbnail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -175,7 +178,7 @@ router.get("/", async (req, res) => {
   if (GOOGLE_KEY) {
     const result = await getGooglePhotoRef(clean, photoIndex);
     if (result?.photoRef) {
-      const proxyUrl = buildProxiedPhotoUrl(result.photoRef, 800);
+      const proxyUrl = buildProxiedPhotoUrl(req, result.photoRef, 800);
       setCache(cacheKey, proxyUrl);
       return res.json({ url: proxyUrl, source: "google_places", place: result.name });
     }

@@ -1,5 +1,6 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import { resolveApiUrl } from '@/lib/api-contract';
 
 function fmtBudget(n, currency = 'USD') {
   try {
@@ -146,7 +147,7 @@ async function fetchPlaceImageUrl(place, destination, photoIndex = 0) {
   try {
     const query = [place, destination].filter(Boolean).join(' ').trim();
     const res = await fetch(
-      '/api/place-image?query=' + encodeURIComponent(query) + '&photoIndex=' + photoIndex + '&onlyGoogle=1',
+      resolveApiUrl('/api/place-image?query=' + encodeURIComponent(query) + '&photoIndex=' + photoIndex + '&onlyGoogle=1'),
       { credentials: 'include' }
     );
     if (!res.ok) return null;
