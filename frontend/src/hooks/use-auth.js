@@ -18,7 +18,9 @@ function getAuthHeaders() {
 }
 
 export function useUser(options = {}) {
-  const { enabled = true } = options;
+  const { enabled = true, allowAnonymousCheck = false } = options;
+  const hasToken =
+    typeof window !== "undefined" && Boolean(localStorage.getItem("auth_token"));
   return useQuery({
     queryKey: [api.auth.me.path],
     queryFn: async () => {
@@ -35,7 +37,7 @@ export function useUser(options = {}) {
       return parseWithLogging(api.auth.me.responses[200], raw, "auth.me");
     },
     retry: false,
-    enabled,
+    enabled: enabled && (allowAnonymousCheck || hasToken),
   });
 }
 
