@@ -129,7 +129,7 @@ function getNormalizedPackageBudgetUsd(pkg, days) {
   if (!Number.isFinite(parsed) || parsed <= 0) return estimated;
   const expected = estimateDailyUsd(pkg?.destination, pkg?.travelStyle);
   const parsedPerDay = parsed / safeDays;
-  if (parsedPerDay < expected * 0.5 || parsedPerDay > expected * 2.2) return estimated;
+  if (parsedPerDay < expected * 0.6 || parsedPerDay > expected * 1.55) return estimated;
   return Math.round(parsed);
 }
 function fmtBudget(usd, cur, days) {
@@ -171,13 +171,51 @@ const DESTINATION_PRESETS_V2 = [
   { keys: ["bora bora", "polynesia"], sym: "XPF ", code: "XPF", rate: 110, dailyUsd: 240 },
 ];
 
+const DESTINATION_DAILY_USD_OVERRIDES = {
+  INR: 34,
+  JPY: 92,
+  KRW: 85,
+  IDR: 60,
+  THB: 62,
+  MYR: 66,
+  SGD: 105,
+  AED: 125,
+  QAR: 120,
+  SAR: 75,
+  OMR: 95,
+  KWD: 115,
+  BHD: 110,
+  TRY: 60,
+  EGP: 52,
+  MAD: 58,
+  JOD: 72,
+  EUR: 115,
+  CHF: 150,
+  GBP: 130,
+  USD: 145,
+  CAD: 105,
+  AUD: 120,
+  NZD: 118,
+  HKD: 115,
+  CNY: 72,
+  PEN: 65,
+  BRL: 68,
+  ZAR: 70,
+  XPF: 190,
+};
+
+const DESTINATION_PRESETS_V3 = DESTINATION_PRESETS_V2.map((entry) => ({
+  ...entry,
+  dailyUsd: DESTINATION_DAILY_USD_OVERRIDES[entry.code] ?? entry.dailyUsd,
+}));
+
 getCurrency = function getCurrencyV2(dest = "") {
   const d = String(dest || "").toLowerCase();
-  return DESTINATION_PRESETS_V2.find((entry) => entry.keys.some((key) => d.includes(key))) || { sym: "$", code: "USD", rate: 1, dailyUsd: 125 };
+  return DESTINATION_PRESETS_V3.find((entry) => entry.keys.some((key) => d.includes(key))) || { sym: "$", code: "USD", rate: 1, dailyUsd: 88 };
 };
 
 estimateDailyUsd = function estimateDailyUsdV2(dest, style = "") {
-  let base = getCurrency(dest).dailyUsd || 125;
+  let base = getCurrency(dest).dailyUsd || 88;
   const s = String(style || "").toLowerCase();
   if (s === "luxury") base *= 1.8;
   else if (s === "adventure") base *= 1.25;

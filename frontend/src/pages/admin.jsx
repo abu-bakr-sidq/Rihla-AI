@@ -261,6 +261,71 @@ const getCurrencySymbol = (dest) => {
   return symbols[map[country]] || "$";
 };
 
+const DESTINATION_CURRENCY_PRESETS = [
+  { keys: ["kerala", "kochi", "munnar", "alleppey", "kovalam", "thiruvananthapuram", "india", "chennai", "pondicherry", "kanyakumari", "mumbai", "delhi", "jaipur", "goa", "hyderabad", "bangalore", "bengaluru", "kolkata"], glyph: "₹", code: "INR", rate: 83, dailyUsd: 34 },
+  { keys: ["tokyo", "kyoto", "osaka", "nara", "hakone", "sapporo", "japan"], glyph: "¥", code: "JPY", rate: 149, dailyUsd: 92 },
+  { keys: ["seoul", "busan", "jeju", "korea"], glyph: "₩", code: "KRW", rate: 1320, dailyUsd: 85 },
+  { keys: ["bali", "jakarta", "ubud", "indonesia"], glyph: "Rp ", code: "IDR", rate: 15800, dailyUsd: 60 },
+  { keys: ["bangkok", "phuket", "chiang mai", "thailand"], glyph: "฿", code: "THB", rate: 35, dailyUsd: 62 },
+  { keys: ["kuala lumpur", "langkawi", "malaysia"], glyph: "RM ", code: "MYR", rate: 4.7, dailyUsd: 66 },
+  { keys: ["singapore"], glyph: "S$", code: "SGD", rate: 1.35, dailyUsd: 105 },
+  { keys: ["dubai", "abu dhabi", "uae"], glyph: "AED ", code: "AED", rate: 3.67, dailyUsd: 125 },
+  { keys: ["doha", "qatar"], glyph: "QAR ", code: "QAR", rate: 3.64, dailyUsd: 120 },
+  { keys: ["riyadh", "jeddah", "saudi", "madinah", "medina", "makkah", "mecca"], glyph: "SAR ", code: "SAR", rate: 3.75, dailyUsd: 75 },
+  { keys: ["muscat", "oman"], glyph: "OMR ", code: "OMR", rate: 0.38, dailyUsd: 95 },
+  { keys: ["kuwait"], glyph: "KWD ", code: "KWD", rate: 0.31, dailyUsd: 115 },
+  { keys: ["bahrain"], glyph: "BHD ", code: "BHD", rate: 0.38, dailyUsd: 110 },
+  { keys: ["istanbul", "cappadocia", "antalya", "turkey"], glyph: "₺", code: "TRY", rate: 32, dailyUsd: 60 },
+  { keys: ["cairo", "luxor", "sharm", "egypt"], glyph: "EGP ", code: "EGP", rate: 49, dailyUsd: 52 },
+  { keys: ["marrakech", "casablanca", "morocco"], glyph: "MAD ", code: "MAD", rate: 10, dailyUsd: 58 },
+  { keys: ["petra", "amman", "jordan"], glyph: "JOD ", code: "JOD", rate: 0.71, dailyUsd: 72 },
+  { keys: ["paris", "nice", "lyon", "france", "rome", "venice", "milan", "amalfi", "florence", "italy", "barcelona", "madrid", "seville", "spain", "amsterdam", "netherlands", "athens", "santorini", "greece", "berlin", "munich", "germany", "lisbon", "porto", "portugal", "vienna", "austria"], glyph: "€", code: "EUR", rate: 0.93, dailyUsd: 115 },
+  { keys: ["zurich", "lucerne", "interlaken", "switzerland"], glyph: "CHF ", code: "CHF", rate: 0.88, dailyUsd: 150 },
+  { keys: ["london", "manchester", "edinburgh", "uk", "united kingdom"], glyph: "£", code: "GBP", rate: 0.79, dailyUsd: 130 },
+  { keys: ["new york", "san francisco", "los angeles", "chicago", "miami", "usa", "united states"], glyph: "$", code: "USD", rate: 1, dailyUsd: 145 },
+  { keys: ["toronto", "vancouver", "canada"], glyph: "C$", code: "CAD", rate: 1.37, dailyUsd: 105 },
+  { keys: ["sydney", "melbourne", "australia"], glyph: "A$", code: "AUD", rate: 1.52, dailyUsd: 120 },
+  { keys: ["auckland", "queenstown", "new zealand"], glyph: "NZ$", code: "NZD", rate: 1.66, dailyUsd: 118 },
+  { keys: ["hong kong"], glyph: "HK$", code: "HKD", rate: 7.81, dailyUsd: 115 },
+  { keys: ["beijing", "shanghai", "china"], glyph: "¥", code: "CNY", rate: 7.24, dailyUsd: 72 },
+  { keys: ["machu", "cusco", "peru"], glyph: "PEN ", code: "PEN", rate: 3.7, dailyUsd: 65 },
+  { keys: ["rio", "sao paulo", "brazil"], glyph: "R$", code: "BRL", rate: 4.98, dailyUsd: 68 },
+  { keys: ["cape town", "johannesburg", "south africa"], glyph: "R", code: "ZAR", rate: 18.8, dailyUsd: 70 },
+  { keys: ["bora bora", "polynesia"], glyph: "XPF ", code: "XPF", rate: 110, dailyUsd: 190 },
+];
+
+function getDestinationCurrencyMeta(dest = "") {
+  const text = String(dest || "").toLowerCase();
+  return DESTINATION_CURRENCY_PRESETS.find((entry) => entry.keys.some((key) => text.includes(key))) || {
+    glyph: "$",
+    code: "USD",
+    rate: 1,
+    dailyUsd: 88,
+  };
+}
+
+function estimatePackageDailyUsd(dest, style = "") {
+  let base = getDestinationCurrencyMeta(dest).dailyUsd || 88;
+  const s = String(style || "").toLowerCase();
+  if (s === "luxury") base *= 1.55;
+  else if (s === "adventure") base *= 1.18;
+  else if (s === "relaxation") base *= 1.08;
+  else if (s === "budget") base *= 0.72;
+  return Math.round(base);
+}
+
+function getRecommendedPackageBudgetUsd(dest, days = 7, style = "") {
+  const safeDays = Math.max(1, Number(days) || 1);
+  return Math.max(150, Math.round(estimatePackageDailyUsd(dest, style) * safeDays));
+}
+
+function formatDestinationMoneyFromUsd(usdAmount, dest = "") {
+  const meta = getDestinationCurrencyMeta(dest);
+  const localAmount = Math.max(0, Math.round((Number(usdAmount) || 0) * meta.rate));
+  const locale = meta.code === "INR" ? "en-IN" : "en";
+  return `${meta.glyph}${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(localAmount)}`.replace(/\s+/g, " ").trim();
+}
+
 /* ── Add Package Modal Component (Internal Scroll Engine + Custom Scrollbars) ── */
 function AddPackageModal({ isOpen, onClose }) {
   const [query, setQuery] = useState("");
@@ -269,6 +334,7 @@ function AddPackageModal({ isOpen, onClose }) {
   const [results, setResults] = useState(() =>
     AI_SUGGESTIONS.slice(0, 6).map((d) => ({ title: d.title, location: d.country || "", src: d.src }))
   );
+  const [budgetTouched, setBudgetTouched] = useState(false);
 
   const [form, setForm] = useState({
     destination: "", src: "", days: 7, budget: 3000, travelStyle: "cultural"
@@ -276,6 +342,14 @@ function AddPackageModal({ isOpen, onClose }) {
   const [preferences, setPreferences] = useState([]);
 
   const createTourPackage = useCreateTourPackage();
+  const currencyMeta = getDestinationCurrencyMeta(form.destination);
+  const displayBudget = formatDestinationMoneyFromUsd(form.budget, form.destination);
+  const recommendedBudgetUsd = getRecommendedPackageBudgetUsd(form.destination, form.days, form.travelStyle);
+
+  useEffect(() => {
+    if (!form.destination || budgetTouched) return;
+    setForm((prev) => ({ ...prev, budget: getRecommendedPackageBudgetUsd(prev.destination, prev.days, prev.travelStyle) }));
+  }, [form.destination, form.days, form.travelStyle, budgetTouched]);
 
   useEffect(() => {
     if (!query || query.trim().length < 2) {
@@ -405,7 +479,13 @@ function AddPackageModal({ isOpen, onClose }) {
 
   const handleSelectDest = (r) => {
     setQuery(r.title);
-    setForm(f => ({ ...f, destination: r.title, src: r.src }));
+    setBudgetTouched(false);
+    setForm(f => ({
+      ...f,
+      destination: r.title,
+      src: r.src,
+      budget: getRecommendedPackageBudgetUsd(r.title, f.days, f.travelStyle),
+    }));
     setShowDropdown(false);
   };
 
@@ -432,7 +512,7 @@ function AddPackageModal({ isOpen, onClose }) {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={onClose} />
 
           <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-            className="relative w-full max-w-2xl bg-white/[0.03] backdrop-blur-[40px] rounded-[2rem] border border-[#D4AF37]/20 shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_40px_rgba(212,175,55,0.15)] flex flex-col max-h-full overflow-hidden"
+            className="relative w-full max-w-2xl bg-white/[0.03] backdrop-blur-[40px] rounded-[1.5rem] md:rounded-[2rem] border border-[#D4AF37]/20 shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_40px_rgba(212,175,55,0.15)] flex flex-col max-h-full overflow-hidden"
           >
             {/* Header (Locked) */}
             <div className="shrink-0 px-6 pt-5 pb-3 border-b border-[#D4AF37]/10 relative z-20 bg-gradient-to-b from-white/[0.05] to-transparent">
@@ -442,7 +522,7 @@ function AddPackageModal({ isOpen, onClose }) {
             </div>
 
             {/* Internal Scroll Body (Visible Custom Scrollbar!) */}
-            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-6 py-3 relative z-10 w-full text-left">
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-4 md:px-6 py-3 relative z-10 w-full text-left">
               <form id="create-package-form" onSubmit={handleCreate} className="space-y-3 w-full">
 
                 {/* Destination */}
@@ -460,7 +540,11 @@ function AddPackageModal({ isOpen, onClose }) {
                   </div>
                   <AnimatePresence>
                     {showDropdown && (
-                      <motion.div className="absolute top-full left-0 right-0 mt-2 bg-[#0f0f0f]/95 backdrop-blur-2xl border border-[#D4AF37]/30 rounded-2xl overflow-hidden shadow-2xl max-h-80 overflow-y-auto z-[100] custom-scrollbar">
+                      <motion.div
+                        onWheel={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                        className="absolute top-full left-0 right-0 mt-2 bg-[#0f0f0f]/95 backdrop-blur-2xl border border-[#D4AF37]/30 rounded-2xl overflow-y-auto overscroll-contain touch-pan-y shadow-2xl max-h-[14.5rem] md:max-h-80 z-[100] custom-scrollbar"
+                      >
                         {isSearching && results.length === 0 ? (
                           <div className="p-4 flex items-center justify-center gap-2 text-center text-[#D4AF37]/50 text-xs uppercase tracking-widest">
                             <Loader2 className="w-4 h-4 animate-spin" /> Scanning World Database...
@@ -468,7 +552,7 @@ function AddPackageModal({ isOpen, onClose }) {
                         ) : (
                           <>
                             {results.map((r, i) => (
-                              <div key={i} onClick={() => handleSelectDest(r)} className="group relative h-24 hover:h-28 cursor-pointer flex border-b border-[#D4AF37]/10 last:border-0 transition-all duration-300 overflow-hidden">
+                              <div key={i} onClick={() => handleSelectDest(r)} className="group relative h-20 md:h-24 md:hover:h-28 cursor-pointer flex border-b border-[#D4AF37]/10 last:border-0 transition-all duration-300 overflow-hidden">
                                 {r.src ? <img src={r.src} alt={r.title} className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-90 group-hover:scale-105 transition-all duration-700" /> : <div className="absolute inset-0 bg-gradient-to-br from-[#2a2412] via-[#161616] to-[#0b0b0b]" />}
                                 <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent" />
                                 <div className="relative z-10 p-4 flex flex-col justify-end h-full">
@@ -481,13 +565,14 @@ function AddPackageModal({ isOpen, onClose }) {
                               <div
                                 onClick={() => {
                                   const fq = query.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                                  setBudgetTouched(false);
                                   handleSelectDest({
                                     title: fq,
                                     src: `https://loremflickr.com/800/450/${encodeURIComponent(query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')) || 'city'},landscape/all`,
                                     dynamic: true
                                   });
                                 }}
-                                className="group relative h-24 hover:h-28 cursor-pointer flex border-t border-[#D4AF37]/20 transition-all duration-300 overflow-hidden bg-[#050505]"
+                                className="group relative h-20 md:h-24 md:hover:h-28 cursor-pointer flex border-t border-[#D4AF37]/20 transition-all duration-300 overflow-hidden bg-[#050505]"
                               >
                                 <img
                                   src={`https://loremflickr.com/800/450/${encodeURIComponent(query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')) || 'city'},landscape/all`}
@@ -527,14 +612,14 @@ function AddPackageModal({ isOpen, onClose }) {
                 <div className="flex flex-col">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[#D4AF37] mb-1 block">Number of Days</label>
                   <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => setForm(f => ({ ...f, days: Math.max(1, f.days - 1) }))}
+                    <button type="button" onClick={() => { setBudgetTouched(false); setForm(f => { const days = Math.max(1, f.days - 1); return { ...f, days, budget: getRecommendedPackageBudgetUsd(f.destination, days, f.travelStyle) }; }); }}
                       className="w-10 h-10 rounded-xl bg-white/[0.04] border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] hover:bg-white/[0.08] hover:border-[#D4AF37]/50 transition-all">
                       <span className="text-lg font-black">-</span>
                     </button>
                     <div className="flex-1 h-10 bg-white/[0.04] border border-[#D4AF37]/20 rounded-xl flex items-center justify-center text-white font-black">
                       {form.days} {form.days === 1 ? 'Day' : 'Days'}
                     </div>
-                    <button type="button" onClick={() => setForm(f => ({ ...f, days: Math.min(30, f.days + 1) }))}
+                    <button type="button" onClick={() => { setBudgetTouched(false); setForm(f => { const days = Math.min(30, f.days + 1); return { ...f, days, budget: getRecommendedPackageBudgetUsd(f.destination, days, f.travelStyle) }; }); }}
                       className="w-10 h-10 rounded-xl bg-white/[0.04] border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] hover:bg-white/[0.08] hover:border-[#D4AF37]/50 transition-all">
                       <span className="text-lg font-black">+</span>
                     </button>
@@ -544,21 +629,29 @@ function AddPackageModal({ isOpen, onClose }) {
 
                 {/* Budget */}
                 <div>
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center mb-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-[#D4AF37]">Precision Budget Engine</label>
-                    <div className="px-2 py-1 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/40 text-[#D4AF37] font-black text-[10px] shadow-[0_0_15px_rgba(212,175,55,0.2)]">
-                      {getCurrencySymbol(form.destination)}{form.budget.toLocaleString()}
+                    <div className="px-2 py-1 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/40 text-[#D4AF37] font-black text-[10px] shadow-[0_0_15px_rgba(212,175,55,0.2)] self-start sm:self-auto">
+                      {displayBudget}
+                      <span className="ml-2 text-[9px] text-white/35">
+                        ({currencyMeta.code} · ${form.budget.toLocaleString()})
+                      </span>
                     </div>
                   </div>
-                  <input type="range" min="500" max="15000" step="100" value={form.budget} onChange={e => setForm({ ...form, budget: parseInt(e.target.value) })} className="w-full h-1 rounded-full bg-[#D4AF37]/20 appearance-none cursor-pointer" />
+                  <input type="range" min="150" max="8000" step="50" value={form.budget} onChange={e => { setBudgetTouched(true); setForm({ ...form, budget: parseInt(e.target.value, 10) }); }} className="w-full h-1 rounded-full bg-[#D4AF37]/20 appearance-none cursor-pointer" />
+                  {!!form.destination && !budgetTouched && (
+                    <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-white/35">
+                      Smart baseline for {form.days} days · {form.travelStyle}
+                    </p>
+                  )}
 
                   {/* Budget Split */}
-                  <div className="grid grid-cols-4 gap-2 mt-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
                     {[{ l: "Stay", p: 0.35, c: "from-emerald-500/20" }, { l: "Travel", p: 0.25, c: "from-blue-500/20" }, { l: "Food", p: 0.30, c: "from-orange-500/20" }, { l: "Misc", p: 0.10, c: "from-yellow-500/20" }].map(b => (
                       <div key={b.l} className="bg-white/[0.03] border border-[#D4AF37]/10 rounded-xl p-2 relative overflow-hidden group hover:border-[#D4AF37]/40 transition-colors">
                         <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${b.c} to-transparent group-hover:h-full group-hover:opacity-10 transition-all`} />
                         <div className="text-[8px] font-black uppercase tracking-widest text-[#D4AF37]/70 mb-0.5">{b.l}</div>
-                        <div className="text-sm font-black text-white">{getCurrencySymbol(form.destination)}{Math.round(form.budget * b.p).toLocaleString()}</div>
+                        <div className="text-sm font-black text-white">{formatDestinationMoneyFromUsd(Math.round(form.budget * b.p), form.destination)}</div>
                       </div>
                     ))}
                   </div>
@@ -567,9 +660,9 @@ function AddPackageModal({ isOpen, onClose }) {
                 {/* Travel Architecture */}
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-widest text-[#D4AF37] mb-1.5 block">Travel Architecture</label>
-                  <div className="grid grid-cols-5 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
                     {Object.keys(stylePreferencesMap).map(style => (
-                      <button type="button" key={style} onClick={() => { setForm({ ...form, travelStyle: style }); setPreferences([]); }}
+                      <button type="button" key={style} onClick={() => { setBudgetTouched(false); setForm((prev) => ({ ...prev, travelStyle: style, budget: getRecommendedPackageBudgetUsd(prev.destination, prev.days, style) })); setPreferences([]); }}
                         className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border ${form.travelStyle === style ? 'bg-gradient-to-br from-[#D4AF37]/20 to-transparent border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.3)] scale-105' : 'bg-white/[0.03] border-[#D4AF37]/10 hover:border-[#D4AF37]/30'}`}
                       >
                         {style === "cultural" && <Globe className={`w-4 h-4 ${form.travelStyle === style ? 'text-[#D4AF37]' : 'text-[#D4AF37]/40'}`} />}
@@ -609,7 +702,7 @@ function AddPackageModal({ isOpen, onClose }) {
             </div>
 
             {/* Footer Base Strip */}
-            <div className="shrink-0 px-6 py-3 border-t border-[#D4AF37]/10 flex justify-end gap-3 bg-black/20 relative z-20">
+            <div className="shrink-0 px-4 md:px-6 py-3 border-t border-[#D4AF37]/10 flex flex-col-reverse sm:flex-row justify-end gap-3 bg-black/20 relative z-20">
               <button type="button" onClick={onClose} className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#D4AF37]/40 hover:text-[#D4AF37] transition-colors hover:bg-[#D4AF37]/5 rounded-xl">CANCEL</button>
               <button type="button" onClick={handleCreate} disabled={createTourPackage?.isPending} className="bg-gradient-to-r from-[#D4AF37] to-amber-500 hover:from-amber-400 text-black font-black uppercase tracking-widest py-2 px-5 rounded-xl text-[10px] flex items-center gap-1.5 shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:scale-105 transition-all">
                 {createTourPackage?.isPending ? <Loader2 className="w-3 h-3 animate-spin text-black" /> : <Sparkles className="w-3 h-3" />}

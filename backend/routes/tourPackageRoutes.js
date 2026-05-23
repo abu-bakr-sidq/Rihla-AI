@@ -39,36 +39,36 @@ const CURRENCY_SYMBOLS = {
 };
 
 const DESTINATION_PRESETS = [
-  { keys: ["kerala", "kochi", "munnar", "alleppey", "kovalam", "thiruvananthapuram", "india", "chennai", "pondicherry", "kanyakumari", "mumbai", "delhi", "jaipur", "goa", "hyderabad", "bangalore", "bengaluru", "kolkata"], code: "INR", rate: 83, dailyUsd: 52 },
-  { keys: ["tokyo", "kyoto", "osaka", "nara", "hakone", "sapporo", "japan"], code: "JPY", rate: 149, dailyUsd: 128 },
-  { keys: ["seoul", "busan", "jeju", "korea"], code: "KRW", rate: 1320, dailyUsd: 118 },
-  { keys: ["bali", "jakarta", "ubud", "indonesia"], code: "IDR", rate: 15800, dailyUsd: 82 },
-  { keys: ["bangkok", "phuket", "chiang mai", "thailand"], code: "THB", rate: 35, dailyUsd: 90 },
-  { keys: ["kuala lumpur", "langkawi", "malaysia"], code: "MYR", rate: 4.7, dailyUsd: 88 },
-  { keys: ["singapore"], code: "SGD", rate: 1.35, dailyUsd: 150 },
-  { keys: ["dubai", "abu dhabi", "uae"], code: "AED", rate: 3.67, dailyUsd: 180 },
-  { keys: ["doha", "qatar"], code: "QAR", rate: 3.64, dailyUsd: 175 },
-  { keys: ["riyadh", "jeddah", "saudi", "madinah", "medina", "makkah", "mecca"], code: "SAR", rate: 3.75, dailyUsd: 110 },
-  { keys: ["muscat", "oman"], code: "OMR", rate: 0.38, dailyUsd: 135 },
-  { keys: ["kuwait"], code: "KWD", rate: 0.31, dailyUsd: 170 },
-  { keys: ["bahrain"], code: "BHD", rate: 0.38, dailyUsd: 165 },
-  { keys: ["istanbul", "cappadocia", "antalya", "turkey"], code: "TRY", rate: 32, dailyUsd: 85 },
-  { keys: ["cairo", "luxor", "sharm", "egypt"], code: "EGP", rate: 49, dailyUsd: 78 },
-  { keys: ["marrakech", "casablanca", "morocco"], code: "MAD", rate: 10, dailyUsd: 82 },
-  { keys: ["petra", "amman", "jordan"], code: "JOD", rate: 0.71, dailyUsd: 105 },
-  { keys: ["paris", "nice", "lyon", "france", "rome", "venice", "milan", "amalfi", "florence", "italy", "barcelona", "madrid", "seville", "spain", "amsterdam", "netherlands", "athens", "santorini", "greece", "berlin", "munich", "germany", "lisbon", "porto", "portugal", "vienna", "austria"], code: "EUR", rate: 0.93, dailyUsd: 165 },
-  { keys: ["zurich", "lucerne", "interlaken", "switzerland"], code: "CHF", rate: 0.88, dailyUsd: 210 },
-  { keys: ["london", "manchester", "edinburgh", "uk", "united kingdom"], code: "GBP", rate: 0.79, dailyUsd: 185 },
-  { keys: ["new york", "san francisco", "los angeles", "chicago", "miami", "usa", "united states"], code: "USD", rate: 1, dailyUsd: 220 },
-  { keys: ["toronto", "vancouver", "canada"], code: "CAD", rate: 1.37, dailyUsd: 175 },
-  { keys: ["sydney", "melbourne", "australia"], code: "AUD", rate: 1.52, dailyUsd: 180 },
-  { keys: ["auckland", "queenstown", "new zealand"], code: "NZD", rate: 1.66, dailyUsd: 175 },
-  { keys: ["hong kong"], code: "HKD", rate: 7.81, dailyUsd: 170 },
-  { keys: ["beijing", "shanghai", "china"], code: "CNY", rate: 7.24, dailyUsd: 105 },
-  { keys: ["machu", "cusco", "peru"], code: "PEN", rate: 3.7, dailyUsd: 88 },
-  { keys: ["rio", "sao paulo", "brazil"], code: "BRL", rate: 4.98, dailyUsd: 92 },
-  { keys: ["cape town", "johannesburg", "south africa"], code: "ZAR", rate: 18.8, dailyUsd: 95 },
-  { keys: ["bora bora", "polynesia"], code: "XPF", rate: 110, dailyUsd: 240 },
+  { keys: ["kerala", "kochi", "munnar", "alleppey", "kovalam", "thiruvananthapuram", "india", "chennai", "pondicherry", "kanyakumari", "mumbai", "delhi", "jaipur", "goa", "hyderabad", "bangalore", "bengaluru", "kolkata"], code: "INR", rate: 83, dailyUsd: 34 },
+  { keys: ["tokyo", "kyoto", "osaka", "nara", "hakone", "sapporo", "japan"], code: "JPY", rate: 149, dailyUsd: 92 },
+  { keys: ["seoul", "busan", "jeju", "korea"], code: "KRW", rate: 1320, dailyUsd: 85 },
+  { keys: ["bali", "jakarta", "ubud", "indonesia"], code: "IDR", rate: 15800, dailyUsd: 60 },
+  { keys: ["bangkok", "phuket", "chiang mai", "thailand"], code: "THB", rate: 35, dailyUsd: 62 },
+  { keys: ["kuala lumpur", "langkawi", "malaysia"], code: "MYR", rate: 4.7, dailyUsd: 66 },
+  { keys: ["singapore"], code: "SGD", rate: 1.35, dailyUsd: 105 },
+  { keys: ["dubai", "abu dhabi", "uae"], code: "AED", rate: 3.67, dailyUsd: 125 },
+  { keys: ["doha", "qatar"], code: "QAR", rate: 3.64, dailyUsd: 120 },
+  { keys: ["riyadh", "jeddah", "saudi", "madinah", "medina", "makkah", "mecca"], code: "SAR", rate: 3.75, dailyUsd: 75 },
+  { keys: ["muscat", "oman"], code: "OMR", rate: 0.38, dailyUsd: 95 },
+  { keys: ["kuwait"], code: "KWD", rate: 0.31, dailyUsd: 115 },
+  { keys: ["bahrain"], code: "BHD", rate: 0.38, dailyUsd: 110 },
+  { keys: ["istanbul", "cappadocia", "antalya", "turkey"], code: "TRY", rate: 32, dailyUsd: 60 },
+  { keys: ["cairo", "luxor", "sharm", "egypt"], code: "EGP", rate: 49, dailyUsd: 52 },
+  { keys: ["marrakech", "casablanca", "morocco"], code: "MAD", rate: 10, dailyUsd: 58 },
+  { keys: ["petra", "amman", "jordan"], code: "JOD", rate: 0.71, dailyUsd: 72 },
+  { keys: ["paris", "nice", "lyon", "france", "rome", "venice", "milan", "amalfi", "florence", "italy", "barcelona", "madrid", "seville", "spain", "amsterdam", "netherlands", "athens", "santorini", "greece", "berlin", "munich", "germany", "lisbon", "porto", "portugal", "vienna", "austria"], code: "EUR", rate: 0.93, dailyUsd: 115 },
+  { keys: ["zurich", "lucerne", "interlaken", "switzerland"], code: "CHF", rate: 0.88, dailyUsd: 150 },
+  { keys: ["london", "manchester", "edinburgh", "uk", "united kingdom"], code: "GBP", rate: 0.79, dailyUsd: 130 },
+  { keys: ["new york", "san francisco", "los angeles", "chicago", "miami", "usa", "united states"], code: "USD", rate: 1, dailyUsd: 145 },
+  { keys: ["toronto", "vancouver", "canada"], code: "CAD", rate: 1.37, dailyUsd: 105 },
+  { keys: ["sydney", "melbourne", "australia"], code: "AUD", rate: 1.52, dailyUsd: 120 },
+  { keys: ["auckland", "queenstown", "new zealand"], code: "NZD", rate: 1.66, dailyUsd: 118 },
+  { keys: ["hong kong"], code: "HKD", rate: 7.81, dailyUsd: 115 },
+  { keys: ["beijing", "shanghai", "china"], code: "CNY", rate: 7.24, dailyUsd: 72 },
+  { keys: ["machu", "cusco", "peru"], code: "PEN", rate: 3.7, dailyUsd: 65 },
+  { keys: ["rio", "sao paulo", "brazil"], code: "BRL", rate: 4.98, dailyUsd: 68 },
+  { keys: ["cape town", "johannesburg", "south africa"], code: "ZAR", rate: 18.8, dailyUsd: 70 },
+  { keys: ["bora bora", "polynesia"], code: "XPF", rate: 110, dailyUsd: 190 },
 ];
 
 function getPackageCurrencyMeta(destination = "") {
@@ -77,7 +77,7 @@ function getPackageCurrencyMeta(destination = "") {
   if (preset) {
     return { ...preset, symbol: CURRENCY_SYMBOLS[preset.code] || preset.code };
   }
-  return { code: "USD", rate: 1, dailyUsd: 125, symbol: "$" };
+  return { code: "USD", rate: 1, dailyUsd: 88, symbol: "$" };
 }
 
 function parseBudgetNumber(value) {
@@ -107,7 +107,7 @@ function normalizePackageBudgetUsd(pkg, days) {
   if (!Number.isFinite(parsedBudget) || parsedBudget <= 0) return estimatedTotalUsd;
 
   const parsedPerDay = parsedBudget / safeDays;
-  if (parsedPerDay < meta.dailyUsd * 0.5 || parsedPerDay > meta.dailyUsd * 2.2) {
+  if (parsedPerDay < meta.dailyUsd * 0.6 || parsedPerDay > meta.dailyUsd * 1.55) {
     return estimatedTotalUsd;
   }
   return Math.round(parsedBudget);
