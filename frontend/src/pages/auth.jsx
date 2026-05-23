@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, Link } from "wouter";
 import { Lock, Mail, User, ArrowRight, Loader2, Eye, EyeOff, PlaneTakeoff } from "lucide-react";
@@ -143,6 +144,7 @@ export default function Auth() {
   const [resetOTP, setResetOTP] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   const { data: user } = useUser();
   const loginMutation = useLogin();
   const registerMutation = useRegister();
@@ -184,16 +186,52 @@ export default function Auth() {
 
   // Handle Google Auth Token in URL
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-    if (token) {
+    let active = true;
+
+    async function completeGoogleAuth() {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get("token");
+      if (!token) return;
+
       localStorage.setItem("auth_token", token);
-      // Clean up the URL
       window.history.replaceState({}, document.title, window.location.pathname);
-      // Refresh the user state
-      toast({ title: "Welcome!", description: "Successfully authenticated with Google." });
+
+      try {
+        await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        const result = await queryClient.fetchQuery({
+          queryKey: ["/api/auth/me"],
+          staleTime: 0,
+        });
+
+        if (!active) return;
+
+        toast({ title: "Welcome!", description: "Successfully authenticated with Google." });
+
+        if (result?.role === "admin") {
+          setLocation("/admin");
+          return;
+        }
+
+        const savedRedirect = sessionStorage.getItem("rihla_redirect");
+        sessionStorage.removeItem("rihla_redirect");
+        setLocation(savedRedirect && savedRedirect !== "/auth" ? savedRedirect : "/dashboard");
+      } catch (error) {
+        if (!active) return;
+        localStorage.removeItem("auth_token");
+        toast({
+          title: "Authentication Error",
+          description: error?.message || "Unable to complete Google login.",
+          variant: "destructive",
+        });
+      }
     }
-  }, [toast]);
+
+    completeGoogleAuth();
+
+    return () => {
+      active = false;
+    };
+  }, [queryClient, setLocation, toast]);
 
   const onSubmit = async (data) => {
     try {
