@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+
 const errorSchemas = {
   validation: z.object({
     message: z.string(),
@@ -242,4 +244,11 @@ export function buildUrl(path, params = {}) {
     url = url.replace(`:${key}`, String(value));
   });
   return url;
+}
+
+export function resolveApiUrl(path, params = {}) {
+  const resolvedPath = buildUrl(path, params);
+  if (!API_BASE_URL) return resolvedPath;
+  if (/^https?:\/\//i.test(resolvedPath)) return resolvedPath;
+  return `${API_BASE_URL}${resolvedPath.startsWith("/") ? "" : "/"}${resolvedPath}`;
 }

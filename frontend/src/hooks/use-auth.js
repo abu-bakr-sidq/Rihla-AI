@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api-contract";
+import { api, resolveApiUrl } from "@/lib/api-contract";
 
 function parseWithLogging(schema, data, label) {
   const result = schema.safeParse(data);
@@ -21,7 +21,7 @@ export function useUser() {
   return useQuery({
     queryKey: [api.auth.me.path],
     queryFn: async () => {
-      const res = await fetch(api.auth.me.path, {
+      const res = await fetch(resolveApiUrl(api.auth.me.path), {
         headers: getAuthHeaders(),
         credentials: "include"
       });
@@ -42,7 +42,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: async (data) => {
       const validated = api.auth.login.input.parse(data);
-      const res = await fetch(api.auth.login.path, {
+      const res = await fetch(resolveApiUrl(api.auth.login.path), {
         method: api.auth.login.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validated),
@@ -68,7 +68,7 @@ export function useRegister() {
   return useMutation({
     mutationFn: async (data) => {
       const validated = api.auth.register.input.parse(data);
-      const res = await fetch(api.auth.register.path, {
+      const res = await fetch(resolveApiUrl(api.auth.register.path), {
         method: api.auth.register.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validated),
@@ -88,7 +88,7 @@ export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const res = await fetch(api.auth.logout.path, {
+      const res = await fetch(resolveApiUrl(api.auth.logout.path), {
         method: api.auth.logout.method,
         headers: getAuthHeaders(),
         credentials: "include"
@@ -108,7 +108,7 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: async (data) => {
       const validated = api.auth.updateProfile.input.parse(data);
-      const res = await fetch(api.auth.updateProfile.path, {
+      const res = await fetch(resolveApiUrl(api.auth.updateProfile.path), {
         method: api.auth.updateProfile.method,
         headers: getAuthHeaders(),
         body: JSON.stringify(validated),
@@ -134,7 +134,7 @@ export function useUpdatePassword() {
   return useMutation({
     mutationFn: async (data) => {
       const validated = api.auth.updatePassword.input.parse(data);
-      const res = await fetch(api.auth.updatePassword.path, {
+      const res = await fetch(resolveApiUrl(api.auth.updatePassword.path), {
         method: api.auth.updatePassword.method,
         headers: getAuthHeaders(),
         body: JSON.stringify(validated),
@@ -159,7 +159,7 @@ export function useRevokeSessions() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const res = await fetch(api.auth.revokeSessions.path, {
+      const res = await fetch(resolveApiUrl(api.auth.revokeSessions.path), {
         method: api.auth.revokeSessions.method,
         headers: getAuthHeaders(),
         credentials: "include"

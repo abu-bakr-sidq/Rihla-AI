@@ -1,3 +1,5 @@
+import { resolveApiUrl } from "@/lib/api-contract";
+
 // frontend/src/services/chatService.js
 // Sends a message to /api/chat and returns { reply, itinerary }.
 
@@ -8,7 +10,7 @@
  * @returns {Promise<{ reply: string, itinerary: object|null }>}
  */
 export async function sendChatMessage(message, history = []) {
-  const res = await fetch("/api/chat", {
+  const res = await fetch(resolveApiUrl("/api/chat"), {
     method:  "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",

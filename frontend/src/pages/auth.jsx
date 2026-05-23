@@ -8,6 +8,7 @@ import { Lock, Mail, User, ArrowRight, Loader2, Eye, EyeOff, PlaneTakeoff } from
 import { useUser, useLogin, useRegister } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import BrandLogo from "@/components/BrandLogo";
+import { resolveApiUrl } from "@/lib/api-contract";
 
 /* ── Travel background images for auth page ── */
 const AUTH_TRAVEL_IMAGES = [
@@ -339,7 +340,7 @@ export default function Auth() {
                   e.preventDefault();
                   const email = e.target.email.value;
                   try {
-                    const res = await fetch("/api/auth/forgot-password", {
+                    const res = await fetch(resolveApiUrl("/api/auth/forgot-password"), {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ email }),
@@ -402,7 +403,7 @@ export default function Auth() {
                     return;
                   }
                   try {
-                    const res = await fetch("/api/auth/reset-password", {
+                    const res = await fetch(resolveApiUrl("/api/auth/reset-password"), {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ email: resetEmail, otp: resetOTP, newPassword }),
@@ -606,7 +607,7 @@ export default function Auth() {
               <div className="mt-6">
                 <button
                   type="button"
-                  onClick={() => (window.location.href = "/api/auth/google")}
+                  onClick={() => (window.location.href = resolveApiUrl("/api/auth/google"))}
                   className="w-full h-14 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 flex items-center justify-center gap-3 font-semibold text-sm text-foreground hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-[0.98]"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -656,7 +657,7 @@ function VerifyOTPStep({ email, previewUrl, setPreviewUrl, onVerify, onBack, toa
   const handleResend = async () => {
     setIsResending(true);
     try {
-      const res = await fetch("/api/auth/forgot-password", {
+      const res = await fetch(resolveApiUrl("/api/auth/forgot-password"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

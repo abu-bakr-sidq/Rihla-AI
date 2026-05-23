@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api-contract";
+import { api, resolveApiUrl } from "@/lib/api-contract";
 
 function getAuthHeaders() {
   const token = localStorage.getItem("auth_token");
@@ -12,7 +12,7 @@ function useAdminUsers() {
   return useQuery({
     queryKey: [api.admin.users.path],
     queryFn: async () => {
-      const res = await fetch(api.admin.users.path, { headers: getAuthHeaders(), credentials: "include" });
+      const res = await fetch(resolveApiUrl(api.admin.users.path), { headers: getAuthHeaders(), credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch users");
       return await res.json();
     },
@@ -25,7 +25,7 @@ function useAdminStats() {
   return useQuery({
     queryKey: [api.admin.stats.path],
     queryFn: async () => {
-      const res = await fetch(api.admin.stats.path, { headers: getAuthHeaders(), credentials: "include" });
+      const res = await fetch(resolveApiUrl(api.admin.stats.path), { headers: getAuthHeaders(), credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch stats");
       return await res.json();
     }
@@ -36,7 +36,7 @@ function useAdminActivity() {
   return useQuery({
     queryKey: ["/api/admin/activity"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/activity", { headers: getAuthHeaders(), credentials: "include" });
+      const res = await fetch(resolveApiUrl("/api/admin/activity"), { headers: getAuthHeaders(), credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch activity logs");
       return await res.json();
     }
@@ -47,7 +47,7 @@ function useAdminAllTrips() {
   return useQuery({
     queryKey: [api.admin.allTrips.path, "v2"],
     queryFn: async () => {
-      const res = await fetch(api.admin.allTrips.path, { headers: getAuthHeaders(), credentials: "include" });
+      const res = await fetch(resolveApiUrl(api.admin.allTrips.path), { headers: getAuthHeaders(), credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch all trips");
       return await res.json();
     }
@@ -61,7 +61,7 @@ function useUpdateUserStatus() {
       if (!userId) throw new Error("User ID is required");
       const idStr = userId.toString();
       const path = api.admin.updateUser.path.replace(":id", idStr);
-      const res = await fetch(path, {
+      const res = await fetch(resolveApiUrl(path), {
         method: api.admin.updateUser.method,
         headers: getAuthHeaders(),
         body: JSON.stringify({ status }),
@@ -83,7 +83,7 @@ function useDeleteUser() {
       if (!userId) throw new Error("User ID is required");
       const idStr = userId.toString();
       const path = api.admin.deleteUser.path.replace(":id", idStr);
-      const res = await fetch(path, {
+      const res = await fetch(resolveApiUrl(path), {
         method: api.admin.deleteUser.method,
         headers: getAuthHeaders(),
         credentials: "include"

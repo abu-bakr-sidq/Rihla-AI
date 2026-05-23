@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl } from "@/lib/api-contract";
+import { api, buildUrl, resolveApiUrl } from "@/lib/api-contract";
 
 function getAuthHeaders() {
   const token = localStorage.getItem("auth_token");
@@ -20,7 +20,7 @@ function useTrips() {
   return useQuery({
     queryKey: [api.trips.list.path],
     queryFn: async () => {
-      const res = await fetch(api.trips.list.path, { headers: getAuthHeaders(), credentials: "include" });
+      const res = await fetch(resolveApiUrl(api.trips.list.path), { headers: getAuthHeaders(), credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch trips");
       return parseWithLogging(api.trips.list.responses[200], await res.json(), "trips.list");
     }
@@ -31,7 +31,7 @@ function useTrip(id) {
     queryKey: [api.trips.get.path, id],
     queryFn: async () => {
       const url = buildUrl(api.trips.get.path, { id });
-      const res = await fetch(url, { headers: getAuthHeaders(), credentials: "include" });
+      const res = await fetch(resolveApiUrl(url), { headers: getAuthHeaders(), credentials: "include" });
       if (res.status === 404) return null;
       if (!res.ok) throw new Error("Failed to fetch trip");
       return parseWithLogging(api.trips.get.responses[200], await res.json(), "trips.get");
@@ -43,7 +43,7 @@ function useGenerateTrip() {
   return useMutation({
     mutationFn: async (data) => {
       // Allow the backend to handle the raw payload since Drizzle schema might be mismatched
-      const res = await fetch(api.trips.generate.path, {
+      const res = await fetch(resolveApiUrl(api.trips.generate.path), {
         method: api.trips.generate.method,
         headers: getAuthHeaders(),
         body: JSON.stringify(data),
@@ -65,7 +65,7 @@ function useCreateTrip() {
       // Use safeParse — if validation fails, send raw data anyway
       const parseResult = api.trips.create.input.safeParse(data);
       const payload = parseResult.success ? parseResult.data : data;
-      const res = await fetch(api.trips.create.path, {
+      const res = await fetch(resolveApiUrl(api.trips.create.path), {
         method: api.trips.create.method,
         headers: getAuthHeaders(),
         body: JSON.stringify(payload),
@@ -93,7 +93,7 @@ function useDeleteTrip() {
     mutationFn: async (id) => {
       if (!id) throw new Error("Trip ID is required");
       const url = buildUrl(api.trips.delete.path, { id: id.toString() });
-      const res = await fetch(url, {
+      const res = await fetch(resolveApiUrl(url), {
         method: api.trips.delete.method,
         headers: getAuthHeaders(),
         credentials: "include"
@@ -111,7 +111,7 @@ function useUpdateTrip() {
       if (!id) throw new Error("Trip ID is required");
       const payload = api.trips.update.input.parse(data);
       const url = buildUrl(api.trips.update.path, { id: id.toString() });
-      const res = await fetch(url, {
+      const res = await fetch(resolveApiUrl(url), {
         method: api.trips.update.method,
         headers: getAuthHeaders(),
         body: JSON.stringify(payload),
@@ -138,7 +138,7 @@ function useDeleteAllTrips() {
   return useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("auth_token");
-      const res = await fetch("/api/trips", {
+      const res = await fetch(resolveApiUrl("/api/trips"), {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
