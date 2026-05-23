@@ -5,6 +5,7 @@
  */
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
+import { resolveApiUrl } from "@/lib/api-contract";
 import { useUser } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import BrandLogo from "@/components/BrandLogo";
@@ -136,7 +137,7 @@ export default function MapPage() {
   useEffect(() => {
     if (!userLoading && !user) { setLocation("/auth"); return; }
     if (!id) { setLoading(false); return; }
-    fetch(`/api/trips/${id}`, { credentials:"include" })
+    fetch(resolveApiUrl(`/api/trips/${id}`), { credentials:"include" })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(data => { setTrip(data); setLoading(false); })
       .catch(e => {
