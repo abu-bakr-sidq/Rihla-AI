@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
+import { useEffect } from "react";
 import { TripProvider } from "@/context/TripContext";
 import { useUser } from "@/hooks/use-auth";
 import FloatingBackground from "@/components/FloatingBackground";
