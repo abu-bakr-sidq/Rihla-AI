@@ -8,7 +8,7 @@ import { usePrayerTimes } from '@/hooks/usePrayerTimes';
 import { exportTripPDF, downloadTripPDF } from '@/services/exportTripPDF';
 import { useDeleteTrip } from '@/hooks/use-trips';
 import { useToast } from '@/hooks/use-toast';
-import { buildActivityDisplayContent, buildPlaceImageQueries, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from '@/lib/trip-itinerary';
+import { buildActivityDisplayContent, buildDestinationHeroQueries, buildPlaceImageQueries, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from '@/lib/trip-itinerary';
 import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerTimesCard, TripPreviewCard } from '@/components/trip/EnhancedPanels';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -786,7 +786,7 @@ export default function TripDetail() {
   useEffect(() => {
     if (!trip?.destination) return;
     let alive = true;
-    const heroQuery = buildPlaceImageQueries(trip.destination, trip.destination, "", "");
+    const heroQuery = buildDestinationHeroQueries(trip.destination);
     _fetchActivityImage(heroQuery, 0).then(url => {
       if (alive && url) setHeroImage(url);
     });
@@ -854,7 +854,7 @@ export default function TripDetail() {
   const tripDatesLabel = trip.startDate && trip.endDate
     ? `${new Date(trip.startDate).toLocaleDateString('en-US')} - ${new Date(trip.endDate).toLocaleDateString('en-US')}`
     : ov.dates || 'Dates TBD';
-  const backgroundSlides = [...new Set([focusImage, heroImage].filter(Boolean))].slice(0, 2);
+  const backgroundSlides = heroImage ? [heroImage] : [];
 
   const AI_GEMS = res.ai_suggestions?.hidden_gems || [];
   const AI_TIPS = res.ai_suggestions?.tips || [];

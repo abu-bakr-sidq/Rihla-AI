@@ -361,6 +361,30 @@ export function buildPlaceImageQueries(placeName = "", destination = "", activit
   return queries;
 }
 
+export function buildDestinationHeroQueries(destination = "") {
+  const destinationShort = cleanDisplayText(destination).split(",")[0].trim();
+  const queries = [];
+  const seen = new Set();
+
+  const pushQuery = (value) => {
+    const query = cleanDisplayText(value);
+    if (!query || query.length < 3) return;
+    const key = query.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    queries.push(query);
+  };
+
+  pushQuery(destinationShort);
+  pushQuery(`${destinationShort} landmark`);
+  pushQuery(`${destinationShort} landscape`);
+  pushQuery(`${destinationShort} old city`);
+  pushQuery(`${destinationShort} travel`);
+  pushQuery(`${destinationShort} tourism`);
+
+  return queries;
+}
+
 export function normalizeLegacyArrayItinerary(days = [], options = {}) {
   const {
     destination = "",
