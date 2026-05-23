@@ -96,7 +96,8 @@ async function getGooglePhotoRef(query, photoIndex = 0) {
 
 /** Proxy URL for photo binary â€” keeps API key server-side */
 function buildProxiedPhotoUrl(photoRef, maxwidth = 800) {
-  return `/api/place-image/photo?ref=${encodeURIComponent(photoRef)}&w=${maxwidth}`;
+  const backendBase = (process.env.BACKEND_URL || "http://localhost:5000").replace(/\/$/, "");
+  return `${backendBase}/api/place-image/photo?ref=${encodeURIComponent(photoRef)}&w=${maxwidth}`;
 }
 
 // â”€â”€ Fallback: Wikipedia thumbnail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

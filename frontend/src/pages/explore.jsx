@@ -12,6 +12,8 @@ import DashboardSlideshow from "@/components/ui/DashboardSlideshow";
 import { DestinationCard } from "@/components/ui/card-21";
 import { usePlaceImage, PlaceImage } from "@/hooks/use-place-image";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
+
 function normalizeSearchValue(value = "") {
   return sanitizeVisibleText(value)
     .toLowerCase()
@@ -161,7 +163,7 @@ function useDestSearch(query) {
             const searchQuery = `${rawName}${country ? " " + country : ""}`;
             let src = null;
             try {
-              const r = await fetch(`/api/place-image?query=${encodeURIComponent(searchQuery)}`, { signal: ctrl.signal });
+              const r = await fetch(`${API_BASE_URL}/place-image?query=${encodeURIComponent(searchQuery)}`, { signal: ctrl.signal });
               if (r.ok) {
                 const d = await r.json();
                 src = d?.url || null;

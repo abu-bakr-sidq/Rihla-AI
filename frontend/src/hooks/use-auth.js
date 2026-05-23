@@ -1,6 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-contract";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
+
+function apiUrl(path) {
+  if (!path) return API_BASE_URL;
+  if (/^https?:\/\//i.test(path)) return path;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (normalizedPath === "/api") return API_BASE_URL;
+  if (normalizedPath.startsWith("/api/")) {
+    return `${API_BASE_URL}${normalizedPath.slice(4)}`;
+  }
+  return `${API_BASE_URL}${normalizedPath}`;
+}
+
 function parseWithLogging(schema, data, label) {
   const result = schema.safeParse(data);
   if (!result.success) {
@@ -13,7 +26,7 @@ function parseWithLogging(schema, data, label) {
 function getAuthHeaders() {
   const token = localStorage.getItem("auth_token");
   const headers = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (token) headers.Authorization = `Bearer ${token}`;
   return headers;
 }
 
@@ -21,9 +34,9 @@ export function useUser() {
   return useQuery({
     queryKey: [api.auth.me.path],
     queryFn: async () => {
-      const res = await fetch(api.auth.me.path, {
+      const res = await fetch(apiUrl(api.auth.me.path), {
         headers: getAuthHeaders(),
-        credentials: "include"
+        credentials: "include",
       });
       if (res.status === 401) {
         localStorage.removeItem("auth_token");
@@ -33,7 +46,7 @@ export function useUser() {
       const raw = await res.json();
       return parseWithLogging(api.auth.me.responses[200], raw, "auth.me");
     },
-    retry: false
+    retry: false,
   });
 }
 
@@ -42,24 +55,23 @@ export function useLogin() {
   return useMutation({
     mutationFn: async (data) => {
       const validated = api.auth.login.input.parse(data);
-      const res = await fetch(api.auth.login.path, {
+      const res = await fetch(apiUrl(api.auth.login.path), {
         method: api.auth.login.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validated),
-        credentials: "include"
+        credentials: "include",
       });
       const raw = await res.json();
       if (!res.ok) {
         throw new Error(raw.message || "Login failed");
       }
       const parsed = parseWithLogging(api.auth.login.responses[200], raw, "auth.login");
-
       if (parsed.token) {
         localStorage.setItem("auth_token", parsed.token);
       }
       return parsed.user || parsed;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.auth.me.path] })
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.auth.me.path] }),
   });
 }
 
@@ -68,11 +80,11 @@ export function useRegister() {
   return useMutation({
     mutationFn: async (data) => {
       const validated = api.auth.register.input.parse(data);
-      const res = await fetch(api.auth.register.path, {
+      const res = await fetch(apiUrl(api.auth.register.path), {
         method: api.auth.register.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validated),
-        credentials: "include"
+        credentials: "include",
       });
       const raw = await res.json();
       if (!res.ok) {
@@ -80,7 +92,7 @@ export function useRegister() {
       }
       return raw;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.auth.me.path] })
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.auth.me.path] }),
   });
 }
 
@@ -88,10 +100,10 @@ export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const res = await fetch(api.auth.logout.path, {
+      const res = await fetch(apiUrl(api.auth.logout.path), {
         method: api.auth.logout.method,
         headers: getAuthHeaders(),
-        credentials: "include"
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Logout failed");
       localStorage.removeItem("auth_token");
@@ -99,7 +111,7 @@ export function useLogout() {
     onSuccess: () => {
       queryClient.setQueryData([api.auth.me.path], null);
       queryClient.clear();
-    }
+    },
   });
 }
 
@@ -108,11 +120,11 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: async (data) => {
       const validated = api.auth.updateProfile.input.parse(data);
-      const res = await fetch(api.auth.updateProfile.path, {
+      const res = await fetch(apiUrl(api.auth.updateProfile.path), {
         method: api.auth.updateProfile.method,
         headers: getAuthHeaders(),
         body: JSON.stringify(validated),
-        credentials: "include"
+        credentials: "include",
       });
       const raw = await res.json();
       if (!res.ok) {
@@ -125,7 +137,7 @@ export function useUpdateProfile() {
       queryClient.invalidateQueries({ queryKey: [api.admin.users.path] });
       queryClient.invalidateQueries({ queryKey: [api.admin.stats.path] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/activity"] });
-    }
+    },
   });
 }
 
@@ -134,11 +146,11 @@ export function useUpdatePassword() {
   return useMutation({
     mutationFn: async (data) => {
       const validated = api.auth.updatePassword.input.parse(data);
-      const res = await fetch(api.auth.updatePassword.path, {
+      const res = await fetch(apiUrl(api.auth.updatePassword.path), {
         method: api.auth.updatePassword.method,
         headers: getAuthHeaders(),
         body: JSON.stringify(validated),
-        credentials: "include"
+        credentials: "include",
       });
       const raw = await res.json();
       if (!res.ok) {
@@ -151,7 +163,7 @@ export function useUpdatePassword() {
       queryClient.invalidateQueries({ queryKey: [api.admin.users.path] });
       queryClient.invalidateQueries({ queryKey: [api.admin.stats.path] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/activity"] });
-    }
+    },
   });
 }
 
@@ -159,10 +171,10 @@ export function useRevokeSessions() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const res = await fetch(api.auth.revokeSessions.path, {
+      const res = await fetch(apiUrl(api.auth.revokeSessions.path), {
         method: api.auth.revokeSessions.method,
         headers: getAuthHeaders(),
-        credentials: "include"
+        credentials: "include",
       });
       const raw = await res.json();
       if (!res.ok) {
@@ -175,6 +187,6 @@ export function useRevokeSessions() {
       queryClient.invalidateQueries({ queryKey: [api.admin.users.path] });
       queryClient.invalidateQueries({ queryKey: [api.admin.stats.path] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/activity"] });
-    }
+    },
   });
 }

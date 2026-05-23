@@ -4,10 +4,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, Link } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { Lock, Mail, User, ArrowRight, Loader2, Eye, EyeOff, PlaneTakeoff } from "lucide-react";
 import { useUser, useLogin, useRegister } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import BrandLogo from "@/components/BrandLogo";
+import { api } from "@/lib/api-contract";
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 const BACKEND_BASE_URL = API_BASE_URL.endsWith("/api") ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
@@ -145,6 +147,7 @@ export default function Auth() {
   const [previewUrl, setPreviewUrl] = useState("");
   const [, setLocation] = useLocation();
   const { data: user } = useUser();
+  const queryClient = useQueryClient();
   const loginMutation = useLogin();
   const registerMutation = useRegister();
   const { toast } = useToast();
@@ -191,10 +194,11 @@ export default function Auth() {
       localStorage.setItem("auth_token", token);
       // Clean up the URL
       window.history.replaceState({}, document.title, window.location.pathname);
-      // Refresh the user state
+      queryClient.invalidateQueries({ queryKey: [api.auth.me.path] });
       toast({ title: "Welcome!", description: "Successfully authenticated with Google." });
+      window.location.replace("/dashboard");
     }
-  }, [toast]);
+  }, [toast, queryClient]);
 
   const onSubmit = async (data) => {
     try {

@@ -13,6 +13,8 @@ import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerT
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import ThemeToggle from '@/components/ThemeToggle';
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
+
 function fmtCur(amount, currency = 'USD') {
   try { return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount); } catch { return '$' + amount; }
 }
@@ -229,7 +231,7 @@ const _fetchActivityImage = async (query, globalIndex) => {
 
   try {
     const r = await fetch(
-      `/api/place-image?query=${encodeURIComponent(query)}&photoIndex=${globalIndex || 0}&onlyGoogle=1`,
+      `${API_BASE_URL}/place-image?query=${encodeURIComponent(query)}&photoIndex=${globalIndex || 0}&onlyGoogle=1`,
       { signal: AbortSignal.timeout(8000) }
     );
     if (r.ok) {
