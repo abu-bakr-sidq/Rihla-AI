@@ -32,6 +32,39 @@ function parseWithLogging(schema, data, label) {
   return result.data;
 }
 
+function normalizeTripRecord(raw = {}) {
+  return {
+    ...raw,
+    id: raw?.id ?? raw?._id ?? null,
+    _id: raw?._id ?? raw?.id ?? null,
+    destination: String(raw?.destination || "").trim(),
+    startDate: raw?.startDate ? String(raw.startDate) : "",
+    endDate: raw?.endDate ? String(raw.endDate) : "",
+    days: Number(raw?.days) || raw?.itinerary?.trip_overview?.total_days || 1,
+    budget: raw?.budget != null ? String(raw.budget) : "moderate",
+    currency: raw?.currency ? String(raw.currency) : "USD",
+    travelStyle: raw?.travelStyle ? String(raw.travelStyle) : "balanced",
+    interests: Array.isArray(raw?.interests) ? raw.interests : [],
+    itinerary: raw?.itinerary ?? null,
+    costBreakdown: raw?.costBreakdown ?? {},
+    status: raw?.status ? String(raw.status) : "planned",
+    travelers: Number(raw?.travelers) || raw?.preferences?.travelers || 1,
+    preferences: raw?.preferences && typeof raw.preferences === "object" ? raw.preferences : {},
+    createdAt: raw?.createdAt ? String(raw.createdAt) : undefined,
+  };
+}
+
+function parseTripListSafely(data) {
+  const parsed = api.trips.list.responses[200].safeParse(data);
+  if (parsed.success) return parsed.data;
+
+  console.error("[Zod] trips.list validation failed, attempting salvage:", parsed.error.format());
+  const rawTrips = Array.isArray(data) ? data : [];
+  return rawTrips
+    .map((item) => normalizeTripRecord(item))
+    .filter((trip) => Boolean(trip.id) && Boolean(trip.destination));
+}
+
 function getPendingTrips() {
   try {
     const parsed = JSON.parse(localStorage.getItem(PENDING_TRIPS_KEY) || "[]");
@@ -150,7 +183,7 @@ function useTrips() {
         return [];
       }
       if (!res.ok) throw new Error("Failed to fetch trips");
-      const parsed = parseWithLogging(api.trips.list.responses[200], await res.json(), "trips.list");
+      const parsed = parseTripListSafely(await res.json());
       return mergeTripsWithPending(parsed);
     },
   });
