@@ -4,6 +4,7 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { User } from "../models/User.js";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import { ADMIN_ACCOUNT, isAdminIdentity } from "../services/adminAccountService.js";
 
 function getGoogleCallbackUrl() {
     const explicitCallback = String(process.env.GOOGLE_CALLBACK_URL || "").trim();
@@ -58,11 +59,13 @@ export function setupPassport(app) {
                     let user = await User.findOne({ email });
                     if (!user) {
                         user = await User.create({
-                            username: profile.displayName || email.split("@")[0],
+                            username: isAdminIdentity(email)
+                                ? ADMIN_ACCOUNT.username
+                                : (profile.displayName || email.split("@")[0]),
                             email,
                             googleId: profile.id,
                             profilePicture,
-                            role: "user",
+                            role: isAdminIdentity(email) ? "admin" : "user",
                         });
                     } else {
                         // Ensure Google image is captured even for users who registered via email first
@@ -75,11 +78,22 @@ export function setupPassport(app) {
                             user.profilePicture = profilePicture;
                             needsUpdate = true;
                         }
+                        const desiredRole = isAdminIdentity(email) ? "admin" : user.role;
+                        if (user.role !== desiredRole) {
+                            user.role = desiredRole;
+                            needsUpdate = true;
+                        }
+                        if (isAdminIdentity(email) && user.username !== ADMIN_ACCOUNT.username) {
+                            user.username = ADMIN_ACCOUNT.username;
+                            needsUpdate = true;
+                        }
                         if (needsUpdate) {
                             await User.updateOne({ _id: user._id }, { 
                                 $set: { 
                                     googleId: user.googleId, 
-                                    profilePicture: user.profilePicture 
+                                    profilePicture: user.profilePicture,
+                                    role: user.role,
+                                    username: user.username,
                                 } 
                             });
                         }

@@ -3,10 +3,14 @@ import { User } from "../models/User.js";
 
 export const ADMIN_ACCOUNT = {
     username: process.env.ADMIN_USERNAME || "Rihla Admin",
-    email: process.env.ADMIN_EMAIL || "jabubackersiddiq@gmail.com",
+    email: process.env.ADMIN_EMAIL || "rihla.ai.travel@gmail.com",
     password: process.env.ADMIN_PASSWORD || "Rihla867",
     role: "admin",
 };
+
+export function isAdminIdentity(email) {
+    return String(email || "").trim().toLowerCase() === ADMIN_ACCOUNT.email.toLowerCase();
+}
 
 export async function ensureAdminUser() {
     const email = ADMIN_ACCOUNT.email.toLowerCase();
