@@ -5,6 +5,19 @@ import { User } from "../models/User.js";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 
+function getGoogleCallbackUrl() {
+    const explicitCallback = String(process.env.GOOGLE_CALLBACK_URL || "").trim();
+    if (/^https?:\/\//i.test(explicitCallback)) {
+        return explicitCallback;
+    }
+
+    const backendBase = String(
+        process.env.BACKEND_URL || "http://localhost:5000"
+    ).replace(/\/+$/, "");
+
+    return `${backendBase}/api/auth/google/callback`;
+}
+
 export function setupPassport(app) {
     app.use(passport.initialize());
     app.use(passport.session());
@@ -33,7 +46,7 @@ export function setupPassport(app) {
             {
                 clientID: process.env.GOOGLE_CLIENT_ID || "PROVIDE_ME",
                 clientSecret: process.env.GOOGLE_CLIENT_SECRET || "PROVIDE_ME",
-                callbackURL: (process.env.BACKEND_URL || "http://localhost:5000") + "/api/auth/google/callback",
+                callbackURL: getGoogleCallbackUrl(),
                 scope: ["profile", "email"],
             },
             async (accessToken, refreshToken, profile, done) => {

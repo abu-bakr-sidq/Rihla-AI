@@ -22,6 +22,14 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET || "travel-ai-jwt-secret";
 const router = express.Router();
 
+function getClientUrl() {
+    return String(
+        process.env.CLIENT_URL ||
+        process.env.FRONTEND_URL ||
+        "https://rihla-ai-travel.onrender.com"
+    ).replace(/\/+$/, "");
+}
+
 router.post("/register", register);
 router.post("/login", (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
@@ -47,12 +55,14 @@ router.get("/google", (req, res, next) => {
 });
 
 router.get("/google/callback", (req, res, next) => {
-    passport.authenticate("google", { failureRedirect: "/auth?error=GoogleAuthFailed" }, (err, user) => {
+    const clientUrl = getClientUrl();
+
+    passport.authenticate("google", { failureRedirect: `${clientUrl}/auth?error=GoogleAuthFailed` }, (err, user) => {
         if (err || !user) {
-            return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/auth?error=google_failed`);
+            return res.redirect(`${clientUrl}/auth?error=google_failed`);
         }
         req.login(user, (loginErr) => {
-            if (loginErr) return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/auth?error=google_failed`);
+            if (loginErr) return res.redirect(`${clientUrl}/auth?error=google_failed`);
 
             const token = jwt.sign(
                 {
@@ -66,7 +76,7 @@ router.get("/google/callback", (req, res, next) => {
                 { expiresIn: "7d" }
             );
 
-            res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/auth?token=${token}`);
+            res.redirect(`${clientUrl}/auth?token=${encodeURIComponent(token)}`);
         });
     })(req, res, next);
 });

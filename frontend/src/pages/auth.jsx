@@ -9,7 +9,7 @@ import { Lock, Mail, User, ArrowRight, Loader2, Eye, EyeOff, PlaneTakeoff } from
 import { useUser, useLogin, useRegister } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import BrandLogo from "@/components/BrandLogo";
-import { resolveApiUrl } from "@/lib/api-contract";
+import { api, resolveApiUrl } from "@/lib/api-contract";
 
 /* ── Travel background images for auth page ── */
 const AUTH_TRAVEL_IMAGES = [
@@ -138,6 +138,10 @@ export default function Auth() {
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("token")
       : null;
+  const initialGoogleError =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("error")
+      : null;
 
   // steps: 'login' | 'register' | 'success' | 'forgot-password' | 'verify-otp' | 'reset-password' | 'reset-success'
   const [step, setStep] = useState("login");
@@ -198,7 +202,20 @@ export default function Auth() {
 
     async function completeGoogleAuth() {
       const params = new URLSearchParams(window.location.search);
+      const googleError = params.get("error");
       const token = params.get("token");
+
+      if (googleError) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        toast({
+          title: "Authentication Error",
+          description: "Google sign-in was cancelled or failed. Please try again.",
+          variant: "destructive",
+        });
+        setIsCompletingGoogleAuth(false);
+        return;
+      }
+
       if (!token) {
         setIsCompletingGoogleAuth(false);
         return;
@@ -208,10 +225,36 @@ export default function Auth() {
       window.history.replaceState({}, document.title, window.location.pathname);
 
       try {
-        await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
         const result = await queryClient.fetchQuery({
-          queryKey: ["/api/auth/me"],
+          queryKey: [api.auth.me.path],
           staleTime: 0,
+          retry: false,
+          queryFn: async () => {
+            const response = await fetch(resolveApiUrl(api.auth.me.path), {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              credentials: "include",
+            });
+
+            const contentType = response.headers.get("content-type") || "";
+            if (!contentType.includes("application/json")) {
+              const text = await response.text();
+              throw new Error(
+                text && text.trim().startsWith("<")
+                  ? "Google login reached the wrong live URL. Check Render frontend/backend URLs and redeploy both services."
+                  : "Unable to complete Google login."
+              );
+            }
+
+            const payload = await response.json();
+            if (!response.ok) {
+              throw new Error(payload?.message || "Unable to complete Google login.");
+            }
+
+            return payload;
+          },
         });
 
         if (!active) return;
@@ -246,7 +289,7 @@ export default function Auth() {
     return () => {
       active = false;
     };
-  }, [queryClient, setLocation, toast]);
+  }, [initialGoogleError, queryClient, setLocation, toast]);
 
   const onSubmit = async (data) => {
     try {
