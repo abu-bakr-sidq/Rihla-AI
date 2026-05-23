@@ -801,7 +801,7 @@ export const CustomCalendar = ({ startDate, endDate, onRangeSelect, numDays }) =
   };
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 relative z-10 w-full max-w-[840px] mx-auto items-stretch">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10 w-full max-w-[840px] mx-auto items-stretch">
       <div
         className="min-h-[360px] p-4 sm:p-5 rounded-[28px] border border-white/10 shadow-2xl relative overflow-hidden group/dep flex flex-col"
         style={{ background: 'rgba(4,12,28,0.75)', backdropFilter: 'blur(40px)', boxShadow: 'inset 0 0 40px rgba(212,175,55,0.05)' }}
@@ -3202,7 +3202,7 @@ export default function Planner() {
             {step === 2 && (
               <motion.div key="s2" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} transition={{ duration: 0.4 }} className="space-y-6">
                 {/* ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ Dates & Travelers Core Correction [TRUE PERFECTION] ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ */}
-                <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_240px] gap-4 max-w-[1080px] mx-auto overflow-visible px-2 md:px-3 pb-4 items-stretch">
+                <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_220px] xl:grid-cols-[minmax(0,1fr)_240px] gap-4 max-w-[1080px] mx-auto overflow-visible px-2 md:px-3 pb-4 items-stretch">
                   {/* Boutique Calendars [SEPARATE RESTORATION] */}
                   <div className="min-w-0 overflow-visible">
                     <CustomCalendar
@@ -3704,12 +3704,12 @@ export default function Planner() {
                   )}
                   style={{ background: isLightPlannerResult ? '#edf3f8' : '#060f1c' }}
                 >
-                  <div className="mx-auto w-full max-w-[1320px] px-[clamp(12px,1.6vw,24px)] pt-[clamp(78px,7vh,100px)]">
+                  <div className="mx-auto w-full max-w-[1320px] px-[clamp(12px,1.6vw,24px)] pt-[clamp(64px,5vh,88px)] md:pt-[clamp(72px,6vh,96px)]">
 
                     {/* ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ COMPACT HEADER ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ */}
                     <div
                       className={cn(
-                        "mb-6 relative overflow-hidden rounded-[34px] border px-6 py-8 md:px-8 md:py-10 shadow-[0_28px_70px_rgba(0,0,0,0.22)]",
+                        "mb-5 md:mb-6 relative overflow-hidden rounded-[28px] md:rounded-[34px] border px-4 py-6 md:px-8 md:py-10 shadow-[0_28px_70px_rgba(0,0,0,0.22)]",
                         isLightPlannerResult ? "border-slate-200/80" : "border-white/[0.07]"
                       )}
                       style={{
@@ -3731,7 +3731,7 @@ export default function Planner() {
                             >
                               <div className="grid h-full w-full grid-cols-1 md:grid-cols-3 gap-2 opacity-95">
                                 {headerImages.slice(0, 3).map((src, idx) => (
-                                  <div key={`${src}-${idx}`} className={cn("relative h-full min-h-[220px] overflow-hidden", idx > 0 && "hidden md:block")}>
+                                  <div key={`${src}-${idx}`} className={cn("relative h-full min-h-[180px] md:min-h-[220px] overflow-hidden", idx > 0 && "hidden md:block")}>
                                     <img src={src} alt={`${DEST_SHORT} itinerary visual ${idx + 1}`} className="absolute inset-0 h-full w-full object-cover" />
                                   </div>
                                 ))}
@@ -3745,7 +3745,7 @@ export default function Planner() {
                       <div className="planner-result-hero-grid relative z-10 items-center gap-4 xl:gap-6">
                         <div className="min-w-0 text-center md:text-left">
                           <p className="text-[9px] font-black text-[#D4AF37] uppercase tracking-[0.6em] mb-2">Rihla AI - Your Journey</p>
-                          <h1 className={cn("text-[clamp(2rem,4.3vw,3.6rem)] font-display font-black uppercase tracking-tight leading-[0.94] mb-4", isLightPlannerResult ? "text-slate-950" : "text-white")} style={{ letterSpacing: '-0.05em' }}>{DEST_SHORT}</h1>
+                          <h1 className={cn("text-[clamp(1.85rem,7vw,3.6rem)] font-display font-black uppercase tracking-tight leading-[0.94] mb-4", isLightPlannerResult ? "text-slate-950" : "text-white")} style={{ letterSpacing: '-0.05em' }}>{DEST_SHORT}</h1>
                           <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5">
                             <span className={cn("text-xs font-mono", isLightPlannerResult ? "text-slate-600" : "text-white/45")}>{ov.dates}</span>
                             <span className={cn("w-0.5 h-0.5 rounded-full", isLightPlannerResult ? "bg-slate-300" : "bg-white/20")} />
@@ -3842,7 +3842,7 @@ export default function Planner() {
                       <button
                         onClick={(e) => { e.preventDefault(); document.getElementById('day-pills-carousel')?.scrollBy({ left: -200, behavior: 'smooth' }) }}
                         className={cn(
-                          "shrink-0 w-8 h-8 flex items-center justify-center rounded-full shadow-lg transition-all opacity-0 group-hover/pill-carousel:opacity-100 disabled:opacity-0",
+                          "shrink-0 w-8 h-8 flex items-center justify-center rounded-full shadow-lg transition-all opacity-100 md:opacity-0 md:group-hover/pill-carousel:opacity-100 disabled:opacity-0",
                           isLightPlannerResult
                             ? "bg-white/80 border border-slate-300/70 text-slate-500 hover:text-slate-950 hover:bg-[#D4AF37] hover:border-[#D4AF37]"
                             : "bg-[#111A24] border border-white/10 text-white/70 hover:text-white hover:bg-[#D4AF37] hover:border-[#D4AF37]"
@@ -3894,7 +3894,7 @@ export default function Planner() {
                       <button
                         onClick={(e) => { e.preventDefault(); document.getElementById('day-pills-carousel')?.scrollBy({ left: 200, behavior: 'smooth' }) }}
                         className={cn(
-                          "shrink-0 w-8 h-8 flex items-center justify-center rounded-full shadow-lg transition-all opacity-0 group-hover/pill-carousel:opacity-100 disabled:opacity-0",
+                          "shrink-0 w-8 h-8 flex items-center justify-center rounded-full shadow-lg transition-all opacity-100 md:opacity-0 md:group-hover/pill-carousel:opacity-100 disabled:opacity-0",
                           isLightPlannerResult
                             ? "bg-white/80 border border-slate-300/70 text-slate-500 hover:text-slate-950 hover:bg-[#D4AF37] hover:border-[#D4AF37]"
                             : "bg-[#111A24] border border-white/10 text-white/70 hover:text-white hover:bg-[#D4AF37] hover:border-[#D4AF37]"
@@ -3978,14 +3978,16 @@ export default function Planner() {
 
 
 
-                        <AIExplorationDeck
-                          destination={DEST_SHORT}
-                          aiSuggestions={res.ai_suggestions}
-                          travelStyle={formData.travelStyle}
-                          dayTheme={activeDay?.theme}
-                          isLight={isLightPlannerResult}
-                        />
-                        <div className={cn("mt-10 pt-8 flex items-center justify-between gap-6 flex-wrap border-t", isLightPlannerResult ? "border-slate-300/45" : "border-white/10")}>
+                        <div className="hidden xl:block">
+                          <AIExplorationDeck
+                            destination={DEST_SHORT}
+                            aiSuggestions={res.ai_suggestions}
+                            travelStyle={formData.travelStyle}
+                            dayTheme={activeDay?.theme}
+                            isLight={isLightPlannerResult}
+                          />
+                        </div>
+                        <div className={cn("mt-8 md:mt-10 pt-6 md:pt-8 flex items-center justify-between gap-6 flex-wrap border-t", isLightPlannerResult ? "border-slate-300/45" : "border-white/10")}>
                           <div>
                             <p className={cn("text-[9px] uppercase tracking-widest mb-2", isLightPlannerResult ? "text-slate-500" : "text-white/28")}>Total Trip Cost</p>
                             <p className={cn("text-4xl font-display font-black tracking-tight", isLightPlannerResult ? "text-slate-950" : "text-white")}>{fmtCur(res.total_budget?.total || 0, formData.currency)}</p>
@@ -4008,7 +4010,7 @@ export default function Planner() {
                         </div>
                       </div>
 
-                      <div className="w-[320px] flex-shrink-0 hidden lg:flex flex-col gap-5 sticky top-6 self-start">
+                      <div className="w-full md:w-[320px] flex-shrink-0 flex flex-col gap-5 self-start xl:sticky xl:top-6 xl:self-start">
                         <TripPreviewCard
                           destination={DEST_SHORT}
                           imageUrl={planFocusAct ? planFocusAct.srcs?.panel : heroSrc}
@@ -4053,6 +4055,15 @@ export default function Planner() {
                           isLight={isLightPlannerResult}
                         />
                       </div>
+                    </div>
+                    <div className="xl:hidden mt-6">
+                      <AIExplorationDeck
+                        destination={DEST_SHORT}
+                        aiSuggestions={res.ai_suggestions}
+                        travelStyle={formData.travelStyle}
+                        dayTheme={activeDay?.theme}
+                        isLight={isLightPlannerResult}
+                      />
                     </div>
                   </div>
                 </motion.div>

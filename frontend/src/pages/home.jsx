@@ -117,22 +117,22 @@ export default function Home() {
       <div className="relative bg-[#060b18] text-white overflow-x-hidden">
 
         {/* ── HERO ── */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <section className="relative min-h-[calc(100vh-4rem)] md:min-h-screen flex items-center justify-center overflow-hidden">
           <HeroSlideshow />
 
 
-          <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-10 pt-32 pb-24 text-center">
+          <div className="relative z-10 max-w-7xl mx-auto px-5 md:px-10 pt-20 md:pt-28 pb-16 md:pb-24 text-center">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/5 mb-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/5 mb-6 md:mb-8">
                 <Tent className="w-3.5 h-3.5 text-[#D4AF37]" />
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#D4AF37]">Rihla AI · Your Journey Begins</span>
               </div>
 
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] mb-8 uppercase">
+              <h1 className="text-[clamp(2.8rem,10vw,5rem)] md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.92] mb-6 md:mb-8 uppercase">
                 Explore the{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-[#D4AF37] to-amber-600">
                   Unknown
@@ -144,16 +144,16 @@ export default function Home() {
                 </span>
               </h1>
 
-              <p className="text-white/60 text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
+              <p className="text-white/70 text-base md:text-xl max-w-2xl mx-auto mb-9 md:mb-12 leading-relaxed font-medium">
                 AI-powered travel planning that crafts personalized itineraries for every adventure — from mountain treks to coastal retreats.
               </p>
 
-              <div className="flex flex-wrap items-center justify-center gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 max-w-[22rem] sm:max-w-none mx-auto">
                 <Link href="/planner">
                   <motion.button
                     whileHover={{ scale: 1.04 }}
                     whileTap={{ scale: 0.97 }}
-                    className="flex items-center gap-3 px-10 py-4 rounded-full font-black text-sm uppercase tracking-widest shadow-[0_0_40px_rgba(212,175,55,0.4)]"
+                    className="flex items-center justify-center gap-3 px-8 py-3.5 rounded-full font-black text-sm uppercase tracking-widest shadow-[0_0_40px_rgba(212,175,55,0.4)]"
                     style={{ background: "linear-gradient(135deg,#D4AF37,#B8860B)", color: "#000" }}
                   >
                     <Sparkles className="w-4 h-4" />
@@ -164,7 +164,7 @@ export default function Home() {
                   <motion.button
                     whileHover={{ scale: 1.04 }}
                     whileTap={{ scale: 0.97 }}
-                    className="flex items-center gap-3 px-10 py-4 rounded-full font-black text-sm uppercase tracking-widest border border-white/20 bg-white/5 backdrop-blur-md text-white hover:bg-white/10 transition-all"
+                    className="flex items-center justify-center gap-3 px-8 py-3.5 rounded-full font-black text-sm uppercase tracking-widest border border-white/20 bg-black/30 backdrop-blur-md text-white hover:bg-white/10 transition-all"
                   >
                     <Globe className="w-4 h-4" />
                     Explore Destinations

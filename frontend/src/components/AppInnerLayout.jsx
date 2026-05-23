@@ -69,10 +69,10 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
         <div className={`w-full transition-all duration-700 border-b border-white/[0.05] ${
           scrolled
             ? "bg-[#040c1c]/90 backdrop-blur-[32px] shadow-[0_10px_40px_rgba(0,0,0,0.3)]"
-            : "bg-transparent backdrop-blur-md"
+            : "bg-[#07101c]/72 backdrop-blur-[20px] shadow-[0_6px_24px_rgba(0,0,0,0.18)]"
         }`}>
         {/* COMMAND BAR */}
-        <div className="flex items-center justify-between px-4 sm:px-6 md:px-8 xl:px-10 h-16 relative z-50">
+        <div className="flex items-center justify-between px-4 sm:px-5 md:px-7 xl:px-9 h-16 relative z-50">
             
             {/* Left: Brand Branding - flex-1 to balance center nav */}
             <div className="flex items-center flex-1">
@@ -84,7 +84,7 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
             </div>
 
             {/* Center: Desktop Nav - Absolute Center Group */}
-            <nav className="hidden lg:flex items-center justify-center gap-8 xl:gap-12 2xl:gap-16 flex-shrink-0 px-4">
+            <nav className="hidden lg:flex items-center justify-center gap-6 xl:gap-10 2xl:gap-14 flex-shrink-0 px-4">
               {NAV_ITEMS.map((item) => (
                 <Link key={item.path} href={item.path}>
                   <span className={`nav-link cursor-pointer flex items-center gap-1.5 text-xs font-black tracking-widest uppercase transition-all ${

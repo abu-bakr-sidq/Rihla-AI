@@ -308,7 +308,7 @@ export default function Explore() {
       </div>
 
       {/* ── HERO — constrained height ─────────────────────────── */}
-      <section className="relative pt-32 pb-12 lg:pt-40 lg:pb-16 flex flex-col items-center justify-center text-center px-4"
+      <section className="relative pt-20 pb-10 md:pt-24 lg:pt-36 lg:pb-16 flex flex-col items-center justify-center text-center px-4"
         style={{ zIndex: 10 }}>
 
         {/* Top gradient for navbar legibility */}
@@ -331,7 +331,7 @@ export default function Explore() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#D4AF37]/35 mb-8"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#D4AF37]/35 mb-6 md:mb-8"
             style={{ backdropFilter: "blur(16px)", background: "rgba(212,175,55,0.08)" }}
           >
             <Globe className="w-3.5 h-3.5 text-[#D4AF37]" />

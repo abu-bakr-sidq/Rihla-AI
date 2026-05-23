@@ -900,7 +900,7 @@ export default function TripDetail() {
           />
         </div>
 
-        <div className="mx-auto w-full max-w-[1320px] px-[clamp(12px,1.6vw,24px)] pt-[clamp(78px,7vh,100px)]">
+        <div className="mx-auto w-full max-w-[1320px] px-[clamp(12px,1.6vw,24px)] pt-[clamp(62px,5vh,84px)] md:pt-[clamp(74px,6vh,96px)]">
           <div
             className="trip-glass-panel mb-4 rounded-[28px] border px-4 py-4 md:px-5 md:py-5 shadow-[0_28px_90px_rgba(0,0,0,0.18)]"
             style={{
@@ -911,10 +911,10 @@ export default function TripDetail() {
               backdropFilter: 'blur(22px)'
             }}
           >
-            <div className="trip-detail-hero-grid mb-6 items-center gap-4 xl:gap-6">
+            <div className="trip-detail-hero-grid mb-5 md:mb-6 items-center gap-4 xl:gap-6">
               <div className="min-w-0 text-center md:text-left">
                 <p className="text-[9px] font-black text-[#D4AF37] uppercase tracking-[0.6em] mb-3">Rihla AI - Your Journey</p>
-                <h1 className={`text-[clamp(2rem,4.3vw,3.6rem)] font-black uppercase tracking-tight leading-[0.94] mb-4 ${isLightDetail ? 'text-slate-950' : 'text-white'}`} style={{ letterSpacing: '-0.05em' }}>{DEST_SHORT}</h1>
+                <h1 className={`text-[clamp(1.85rem,7vw,3.6rem)] font-black uppercase tracking-tight leading-[0.94] mb-4 ${isLightDetail ? 'text-slate-950' : 'text-white'}`} style={{ letterSpacing: '-0.05em' }}>{DEST_SHORT}</h1>
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5">
                   <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{tripDatesLabel}</span>
                   <span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} />
@@ -946,7 +946,7 @@ export default function TripDetail() {
                 </div>
                 <div className={`rounded-[20px] border px-4 py-3 text-center backdrop-blur-xl ${isLightDetail ? 'border-[#D4AF37]/20 bg-white/72' : 'border-[#D4AF37]/16 bg-black/18'}`}>
                   <p className={`text-[9px] uppercase tracking-[0.26em] mb-1 ${isLightDetail ? 'text-slate-500' : 'text-white/45'}`}>Total Budget</p>
-                  <p className="text-[clamp(1.75rem,3vw,2.7rem)] font-black text-[#D4AF37] tracking-tight leading-none">{fmtCur(TOTAL_BUDGET, tripCurrency)}</p>
+                  <p className="text-[clamp(1.45rem,6vw,2.7rem)] font-black text-[#D4AF37] tracking-tight leading-none">{fmtCur(TOTAL_BUDGET, tripCurrency)}</p>
                 </div>
               </div>
               <div className="flex flex-col items-center xl:items-end gap-2.5 w-full xl:w-auto">
@@ -1009,7 +1009,7 @@ export default function TripDetail() {
           <div className="flex items-center gap-1 mb-2 group/pill-carousel w-full">
             <button
               onClick={() => document.getElementById('trip-day-pills-carousel')?.scrollBy({ left: -200, behavior: 'smooth' })}
-              className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-full border shadow-lg transition-all opacity-0 group-hover/pill-carousel:opacity-100 ${isLightDetail ? 'bg-white/80 border-slate-200 text-slate-500 hover:text-slate-950 hover:bg-[#D4AF37] hover:border-[#D4AF37]' : 'bg-[#111A24]/85 border-white/10 text-white/70 hover:text-white hover:bg-[#D4AF37] hover:border-[#D4AF37]'}`}
+              className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-full border shadow-lg transition-all opacity-100 md:opacity-0 md:group-hover/pill-carousel:opacity-100 ${isLightDetail ? 'bg-white/80 border-slate-200 text-slate-500 hover:text-slate-950 hover:bg-[#D4AF37] hover:border-[#D4AF37]' : 'bg-[#111A24]/85 border-white/10 text-white/70 hover:text-white hover:bg-[#D4AF37] hover:border-[#D4AF37]'}`}
             >
               <ChevronLeft size={16} />
             </button>
@@ -1042,7 +1042,7 @@ export default function TripDetail() {
             </div>
             <button
               onClick={() => document.getElementById('trip-day-pills-carousel')?.scrollBy({ left: 200, behavior: 'smooth' })}
-              className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-full border shadow-lg transition-all opacity-0 group-hover/pill-carousel:opacity-100 ${isLightDetail ? 'bg-white/80 border-slate-200 text-slate-500 hover:text-slate-950 hover:bg-[#D4AF37] hover:border-[#D4AF37]' : 'bg-[#111A24]/85 border-white/10 text-white/70 hover:text-white hover:bg-[#D4AF37] hover:border-[#D4AF37]'}`}
+              className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-full border shadow-lg transition-all opacity-100 md:opacity-0 md:group-hover/pill-carousel:opacity-100 ${isLightDetail ? 'bg-white/80 border-slate-200 text-slate-500 hover:text-slate-950 hover:bg-[#D4AF37] hover:border-[#D4AF37]' : 'bg-[#111A24]/85 border-white/10 text-white/70 hover:text-white hover:bg-[#D4AF37] hover:border-[#D4AF37]'}`}
             >
               <ChevronRight size={16} />
             </button>
@@ -1103,16 +1103,18 @@ export default function TripDetail() {
                 </AnimatePresence>
               )}
 
-              <AIExplorationDeck
-                destination={DEST_SHORT}
-                aiSuggestions={res.ai_suggestions}
-                travelStyle={trip.travelStyle}
-                dayTheme={activeDay?.theme}
-                isLight={isLightDetail}
-              />
+              <div className="hidden xl:block">
+                <AIExplorationDeck
+                  destination={DEST_SHORT}
+                  aiSuggestions={res.ai_suggestions}
+                  travelStyle={trip.travelStyle}
+                  dayTheme={activeDay?.theme}
+                  isLight={isLightDetail}
+                />
+              </div>
 
             </div>
-            <div className="w-full xl:w-[300px] flex-shrink-0 flex flex-col gap-4 sticky top-5 self-start">
+            <div className="w-full xl:w-[300px] flex-shrink-0 flex flex-col gap-4 xl:sticky xl:top-5 self-start">
               <TripPreviewCard
                 destination={DEST_SHORT}
                 imageUrl={planFocusAct ? (focusImage || heroImage) : heroImage}
@@ -1153,6 +1155,15 @@ export default function TripDetail() {
                 aiSuggestions={res.ai_suggestions}
                 destination={DEST_SHORT}
                 travelStyle={trip.travelStyle || "Balanced"}
+                isLight={isLightDetail}
+              />
+            </div>
+            <div className="xl:hidden w-full">
+              <AIExplorationDeck
+                destination={DEST_SHORT}
+                aiSuggestions={res.ai_suggestions}
+                travelStyle={trip.travelStyle}
+                dayTheme={activeDay?.theme}
                 isLight={isLightDetail}
               />
             </div>

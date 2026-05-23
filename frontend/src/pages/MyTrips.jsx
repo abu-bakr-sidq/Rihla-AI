@@ -209,7 +209,7 @@ function TripCard({ trip, onDelete, i }) {
       transition={{ delay: Math.min(i * 0.07, 0.5), duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="group relative w-full overflow-hidden rounded-2xl cursor-pointer transition-all duration-300 hover:shadow-[0_24px_60px_rgba(0,0,0,0.7)] hover:-translate-y-1"
-        style={{ height: 320, border: "1px solid rgba(255,255,255,0.07)" }}>
+        style={{ height: 272, border: "1px solid rgba(255,255,255,0.07)" }}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(212,175,55,0.18),transparent_42%),linear-gradient(180deg,#162233_0%,#0a111d_100%)]" />
         <div className="absolute inset-0 w-full h-full transition-transform duration-700 group-hover:scale-110">
           <PlaceImage
@@ -222,7 +222,7 @@ function TripCard({ trip, onDelete, i }) {
         <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(2,6,12,0.96)_0%,rgba(2,6,12,0.38)_45%,rgba(2,6,12,0.08)_100%)]" />
 
         {/* Status + days */}
-        <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between">
+        <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.15em] px-2.5 py-1.5 rounded-full"
             style={{ color: cfg.color, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)", border: `1px solid ${cfg.color}30` }}>
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.color }} />
@@ -236,11 +236,11 @@ function TripCard({ trip, onDelete, i }) {
         </div>
 
         {/* Content slides up */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 transition-transform duration-500 ease-out group-hover:-translate-y-14">
+        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 transition-transform duration-500 ease-out md:group-hover:-translate-y-14">
           <p className="flex items-center gap-1 text-[9px] font-black uppercase tracking-[0.2em] text-[#D4AF37]/88 mb-1">
             <MapPin className="w-2.5 h-2.5" />{trip.destination}
           </p>
-          <h3 className="text-[1.15rem] font-black text-white leading-tight tracking-tight drop-shadow-[0_2px_14px_rgba(0,0,0,0.55)]">{trip.destination}</h3>
+          <h3 className="text-[1rem] sm:text-[1.15rem] font-black text-white leading-tight tracking-tight drop-shadow-[0_2px_14px_rgba(0,0,0,0.55)]">{trip.destination}</h3>
           {tStyle && <p className="text-[10px] text-white/58 font-medium capitalize mt-0.5">{tStyle} style</p>}
           <div className="flex items-center gap-3 mt-2 opacity-100 transition-opacity duration-300 delay-75">
             <span className="flex items-center gap-1 text-[10px] text-white/72">
@@ -253,7 +253,7 @@ function TripCard({ trip, onDelete, i }) {
         </div>
 
         {/* Action CTA from below */}
-        <div className="absolute -bottom-16 left-0 right-0 px-5 pb-4 transition-all duration-500 ease-out group-hover:bottom-0 opacity-0 group-hover:opacity-100">
+        <div className="absolute left-0 right-0 bottom-0 md:-bottom-16 px-4 sm:px-5 pb-4 transition-all duration-500 ease-out opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-hover:bottom-0">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[8px] text-white/25 font-black uppercase tracking-widest">Budget</p>
@@ -421,7 +421,7 @@ export default function MyTrips() {
       {/* Dark scrim so content is readable */}
       <div className="fixed inset-0 z-0 pointer-events-none bg-black/50" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-10 py-10 page-enter">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-10 py-8 md:py-10 page-enter">
 
         {/* HEADER */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-6">
@@ -517,7 +517,7 @@ export default function MyTrips() {
               </div>
             ) : (
               <AnimatePresence mode="popLayout">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
                   {filtered.map((trip, i) => (
                     <TripCard key={trip.id} trip={trip} i={i} onDelete={t => setToDelete(t)} />
                   ))}

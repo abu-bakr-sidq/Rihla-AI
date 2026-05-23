@@ -560,7 +560,7 @@ export default function TourPackages() {
           <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.68)" }} />
         </div>
 
-        <div className="relative z-10 w-full px-3 sm:px-4 md:px-6 pt-20 md:pt-24 pb-20 md:pb-24 page-enter" style={{ maxWidth: 1500, margin: "0 auto" }}>
+        <div className="relative z-10 w-full px-3 sm:px-4 md:px-6 pt-16 md:pt-22 pb-16 md:pb-24 page-enter" style={{ maxWidth: 1500, margin: "0 auto" }}>
 
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" style={{ border: "1px solid rgba(212,175,55,0.3)", background: "rgba(212,175,55,0.05)" }}>
@@ -588,13 +588,13 @@ export default function TourPackages() {
                   <motion.div key={pkg._id}
                     initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04, duration: 0.44 }}
-                    className="group flex flex-col sm:flex-row rounded-2xl overflow-hidden"
+                    className="group flex flex-col rounded-2xl overflow-hidden md:flex-row"
                     style={{ background: "rgba(10,10,12,0.78)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)", transition: "box-shadow 0.3s, border-color 0.3s" }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(212,175,55,0.28)"; e.currentTarget.style.boxShadow = "0 0 32px rgba(212,175,55,0.14)"; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,0.4)"; }}
                   >
                     {/* Image */}
-                    <div className="relative shrink-0 overflow-hidden w-full h-40 sm:h-auto sm:w-[165px]">
+                    <div className="relative shrink-0 overflow-hidden w-full h-44 md:h-auto md:w-[215px]">
                       <DestImage destination={pkg.destination} />
                       <div className="absolute top-2.5 left-2.5 z-[4] flex items-center gap-1 px-2.5 py-1 rounded-full" style={{ background: "rgba(0,0,0,0.72)", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}>
                         <Star className="w-2.5 h-2.5 text-[#D4AF37]" fill="currentColor" />
@@ -603,14 +603,14 @@ export default function TourPackages() {
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 flex flex-col justify-between px-4 py-3.5 min-w-0">
+                    <div className="flex-1 flex flex-col justify-between px-4 py-4 min-w-0">
                       <div>
-                        <h3 className="text-[15px] font-black leading-tight mb-0.5 truncate" style={{ color: "rgba(255,255,255,0.96)" }}>
+                        <h3 className="text-[1.05rem] md:text-[15px] font-black leading-tight mb-1 break-words" style={{ color: "rgba(255,255,255,0.96)" }}>
                           {pkg.destination}
                         </h3>
-                        <p className="text-[10px] italic mb-2.5" style={{ color: "rgba(212,175,55,0.65)" }}>by Rihla AI in {pkg.travelStyle} Packages</p>
+                        <p className="text-[10px] italic mb-2.5" style={{ color: "rgba(212,175,55,0.72)" }}>by Rihla AI in {pkg.travelStyle} Packages</p>
                         {pkg.description && (
-                          <p className="text-[10.5px] leading-snug line-clamp-2 pl-2.5" style={{ color: "rgba(255,255,255,0.55)", borderLeft: "2px solid rgba(212,175,55,0.3)" }}>
+                          <p className="text-[10.5px] md:text-[11px] leading-snug line-clamp-3 md:line-clamp-2 pl-2.5" style={{ color: "rgba(255,255,255,0.68)", borderLeft: "2px solid rgba(212,175,55,0.3)" }}>
                             {pkg.description}
                           </p>
                         )}
@@ -637,7 +637,7 @@ export default function TourPackages() {
 
                     {/* Actions */}
                     <div
-                      className="shrink-0 flex flex-col items-center justify-center gap-3 px-3 py-4 w-full sm:w-[160px] border-t sm:border-t-0 sm:border-l"
+                      className="shrink-0 flex flex-col items-stretch justify-center gap-3 px-4 py-4 w-full md:w-[190px] border-t md:border-t-0 md:border-l bg-black/20"
                       style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(0,0,0,0.25)" }}
                     >
 
@@ -647,7 +647,7 @@ export default function TourPackages() {
                         <button
                           onClick={() => setPreviewPkg(pkg)}
                           className="gen-btn relative w-full rounded-full flex items-center justify-center gap-1.5 font-black overflow-hidden"
-                          style={{ padding: "9px 8px", fontSize: 9.5, letterSpacing: "0.04em", textTransform: "uppercase", whiteSpace: "nowrap", background: "linear-gradient(135deg, #D4AF37 0%, #F5D06E 50%, #B8860B 100%)", color: "#000", zIndex: 1, cursor: "pointer", border: "none", transition: "transform 0.15s" }}
+                          style={{ padding: "10px 10px", fontSize: 9.5, letterSpacing: "0.04em", textTransform: "uppercase", whiteSpace: "nowrap", background: "linear-gradient(135deg, #D4AF37 0%, #F5D06E 50%, #B8860B 100%)", color: "#000", zIndex: 1, cursor: "pointer", border: "none", transition: "transform 0.15s" }}
                           onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
                           onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
                           onMouseDown={e => e.currentTarget.style.transform = "scale(0.96)"}
@@ -661,7 +661,7 @@ export default function TourPackages() {
                       {/* Plan Now */}
                       <button onClick={() => handleBuild(pkg)}
                         className="w-full rounded-full font-black"
-                        style={{ padding: "9px 8px", fontSize: 9.5, letterSpacing: "0.04em", textTransform: "uppercase", whiteSpace: "nowrap", background: "transparent", border: "1.5px solid rgba(212,175,55,0.5)", color: "#D4AF37", cursor: "pointer", transition: "all 0.2s" }}
+                        style={{ padding: "10px 10px", fontSize: 9.5, letterSpacing: "0.04em", textTransform: "uppercase", whiteSpace: "nowrap", background: "rgba(10,10,12,0.2)", border: "1.5px solid rgba(212,175,55,0.5)", color: "#D4AF37", cursor: "pointer", transition: "all 0.2s" }}
                         onMouseEnter={e => { e.currentTarget.style.background = "#D4AF37"; e.currentTarget.style.color = "#000"; e.currentTarget.style.transform = "scale(1.03)"; }}
                         onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#D4AF37"; e.currentTarget.style.transform = "scale(1)"; }}>
                         Plan Now

@@ -9,7 +9,6 @@ import { useUser } from "@/hooks/use-auth";
 import { useTrips } from "@/hooks/use-trips";
 import AppInnerLayout from "@/components/AppInnerLayout";
 import DashboardSlideshow from "@/components/ui/DashboardSlideshow";
-import { LampContainer } from "@/components/ui/lamp";
 import { PlaceImage } from "@/hooks/use-place-image";
 import { getTripCardImageQuery } from "@/lib/trip-itinerary";
 import { 
@@ -151,13 +150,13 @@ export default function Dashboard() {
           <div className="absolute inset-0 bg-black/50 pointer-events-none" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pt-24 pb-8 space-y-8 md:space-y-10 page-enter">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pt-20 md:pt-24 pb-8 space-y-8 md:space-y-10 page-enter">
           
           {/* ── HERO WELCOME with LAMP ── */}
-          <LampContainer className="mb-4">
+          <div className="mb-4 rounded-[30px] px-4 pt-4 sm:px-6 sm:pt-6 md:px-8 md:pt-8 pb-3">
             <motion.div
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
-              className="flex flex-col items-center text-center"
+              className="flex flex-col items-center text-center min-h-[34vh] sm:min-h-[38vh] justify-end"
             >
               <motion.h1 
                 initial={{ opacity: 0, y: 20, filter: "blur(10px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
@@ -193,14 +192,14 @@ export default function Dashboard() {
                 }
               </p>
               
-              <div className="flex flex-wrap items-center justify-center gap-4">
+              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
                 <Link href="/planner">
                   <button className="btn-gold px-8 py-3.5 text-xs font-black uppercase tracking-widest shadow-[0_20px_60px_rgba(212,175,55,0.3)] transition-all rounded-xl">
                     <Sparkles className="w-4 h-4" /> Initiate AI Planning
                   </button>
                 </Link>
                 {user && (
-                  <Link href="/my-trips">
+                  <Link href="/explore">
                     <button className="btn-outline-white px-8 py-3.5 text-xs font-black uppercase tracking-widest bg-black/40 backdrop-blur-md hover:bg-white/10 transition-all rounded-xl border-white/20 flex items-center gap-2">
                       <Compass className="w-4 h-4" /> Explore Now
                     </button>
@@ -208,7 +207,7 @@ export default function Dashboard() {
                 )}
               </div>
             </motion.div>
-          </LampContainer>
+          </div>
 
           {user ? (
             /* ── LOGGED IN INTELLIGENCE CENTER ── */
