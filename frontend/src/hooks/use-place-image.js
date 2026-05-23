@@ -149,7 +149,7 @@ export function usePlaceImage(query, options = {}) {
 export function PlaceImage({ query, queries, alt, className, fallbackSrc, style, photoIndex = 0, onlyGoogle = false }) {
   const lookup = Array.isArray(queries) && queries.length ? queries : query;
   const { src, loading } = usePlaceImage(lookup, { photoIndex, onlyGoogle });
-  const displaySrc = src || (onlyGoogle ? null : fallbackSrc);
+  const displaySrc = src || fallbackSrc;
   const cls = className || "absolute inset-0 w-full h-full object-cover";
 
   if (loading && !displaySrc) {

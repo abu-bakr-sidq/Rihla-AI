@@ -50,23 +50,41 @@ function seedHash(str) {
   return Math.abs(h) % 900 + 100;
 }
 
+function getDestinationFallbackImage(destination = "") {
+  const seed = seedHash(String(destination || "world-destination"));
+  return `https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?auto=format&fit=crop&w=900&q=80&sig=${seed}`;
+}
+
 function DestImage({ destination }) {
   const query = [`${destination} landmark`, `${destination} travel`, destination];
   const { src } = usePlaceImage(query, { onlyGoogle: true });
+  const fallbackSrc = getDestinationFallbackImage(destination);
 
-  if (!src) {
-    return (
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(circle at top, rgba(212,175,55,0.22), transparent 45%), linear-gradient(160deg, rgba(9,17,29,0.95) 0%, rgba(17,29,44,0.98) 100%)",
-        }}
-      />
-    );
-  }
-
-  return <img src={src} alt={destination} className="absolute inset-0 w-full h-full object-cover" />;
+   return (
+     <>
+       <div
+         className="absolute inset-0"
+         style={{
+           background:
+             "radial-gradient(circle at top, rgba(212,175,55,0.22), transparent 45%), linear-gradient(160deg, rgba(9,17,29,0.95) 0%, rgba(17,29,44,0.98) 100%)",
+         }}
+       />
+       <img
+         src={src || fallbackSrc}
+         alt={destination}
+         className="absolute inset-0 w-full h-full object-cover"
+         loading="eager"
+         fetchPriority="high"
+         onError={(event) => {
+           if (event.currentTarget.src !== fallbackSrc) {
+             event.currentTarget.src = fallbackSrc;
+             return;
+           }
+           event.currentTarget.style.display = "none";
+         }}
+       />
+     </>
+   );
 }
 
 

@@ -3,6 +3,7 @@ import { api, buildUrl } from "@/lib/api-contract";
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 const PENDING_TRIPS_KEY = "pending_trips_sync";
+const PENDING_ID_PREFIX = "__pending__:";
 
 function apiUrl(path) {
   if (!path) return API_BASE_URL;
@@ -50,6 +51,47 @@ function setPendingTrips(trips) {
   } catch {}
 }
 
+function buildTripFingerprint(trip) {
+  return [
+    String(trip?.destination || "").trim().toLowerCase(),
+    String(trip?.startDate || "").trim(),
+    String(trip?.endDate || "").trim(),
+    String(trip?.travelStyle || trip?.preferences?.travelStyle || "").trim().toLowerCase(),
+  ].join("|");
+}
+
+function decoratePendingTrip(trip, index) {
+  return {
+    ...trip,
+    id: `${PENDING_ID_PREFIX}${index}`,
+    _id: `${PENDING_ID_PREFIX}${index}`,
+    pendingSync: true,
+    status: trip?.status || "planned",
+  };
+}
+
+function mergeTripsWithPending(serverTrips = []) {
+  const pendingTrips = getPendingTrips();
+  if (!pendingTrips.length) return serverTrips;
+
+  const existing = new Set(serverTrips.map((trip) => buildTripFingerprint(trip)));
+  const pendingOnly = pendingTrips
+    .map((trip, index) => decoratePendingTrip(trip, index))
+    .filter((trip) => !existing.has(buildTripFingerprint(trip)));
+
+  return [...pendingOnly, ...serverTrips];
+}
+
+function removePendingTripById(id) {
+  if (!String(id || "").startsWith(PENDING_ID_PREFIX)) return false;
+  const index = Number(String(id).slice(PENDING_ID_PREFIX.length));
+  const pending = getPendingTrips();
+  if (!Number.isInteger(index) || index < 0 || index >= pending.length) return false;
+  pending.splice(index, 1);
+  setPendingTrips(pending);
+  return true;
+}
+
 async function syncPendingTrips() {
   const token = localStorage.getItem("auth_token");
   if (!token) return;
@@ -92,7 +134,8 @@ function useTrips() {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to fetch trips");
-      return parseWithLogging(api.trips.list.responses[200], await res.json(), "trips.list");
+      const parsed = parseWithLogging(api.trips.list.responses[200], await res.json(), "trips.list");
+      return mergeTripsWithPending(parsed);
     },
   });
 }
@@ -165,6 +208,7 @@ function useDeleteTrip() {
   return useMutation({
     mutationFn: async (id) => {
       if (!id) throw new Error("Trip ID is required");
+      if (removePendingTripById(id)) return;
       const url = apiUrl(buildUrl(api.trips.delete.path, { id: id.toString() }));
       const res = await fetch(url, {
         method: api.trips.delete.method,
@@ -211,6 +255,7 @@ function useDeleteAllTrips() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
+      setPendingTrips([]);
       const res = await fetch(apiUrl("/api/trips"), {
         method: "DELETE",
         headers: getAuthHeaders(),
