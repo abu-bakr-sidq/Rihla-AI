@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useUser } from '@/hooks/use-auth';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,6 +28,50 @@ const PLAN_SLOT_COLORS = {
   night: '#8B5CF6',
   nightActivity: '#7C3AED',
 };
+
+const CLIMATE_BACKDROPS = {
+  nature: [
+    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=82',
+    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=82',
+    'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1800&q=82',
+    'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1800&q=82',
+  ],
+  adventure: [
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1800&q=82',
+    'https://images.unsplash.com/photo-1521335629791-ce4aec67dd53?auto=format&fit=crop&w=1800&q=82',
+    'https://images.unsplash.com/photo-1464820453369-31d2c0b651af?auto=format&fit=crop&w=1800&q=82',
+  ],
+  luxury: [
+    'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1800&q=82',
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1800&q=82',
+    'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1800&q=82',
+  ],
+  cultural: [
+    'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1800&q=82',
+    'https://images.unsplash.com/photo-1539650116574-75c0c6d73f41?auto=format&fit=crop&w=1800&q=82',
+    'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1800&q=82',
+  ],
+  coastal: [
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1800&q=82',
+    'https://images.unsplash.com/photo-1493558103817-58b2924bce98?auto=format&fit=crop&w=1800&q=82',
+    'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=1800&q=82',
+  ],
+  default: [
+    'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1800&q=82',
+    'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1800&q=82',
+    'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1800&q=82',
+  ],
+};
+
+function getClimateBackdropKey(travelStyle = '', destination = '') {
+  const value = `${travelStyle} ${destination}`.toLowerCase();
+  if (value.includes('nature') || value.includes('forest') || value.includes('mountain')) return 'nature';
+  if (value.includes('adventure') || value.includes('trek') || value.includes('hike') || value.includes('wild')) return 'adventure';
+  if (value.includes('luxury') || value.includes('premium') || value.includes('honeymoon')) return 'luxury';
+  if (value.includes('beach') || value.includes('coast') || value.includes('island') || value.includes('sea')) return 'coastal';
+  if (value.includes('culture') || value.includes('heritage') || value.includes('history') || value.includes('city')) return 'cultural';
+  return 'default';
+}
 
 function PlannerDetailTimeline({ slots, slotCfg, isLight = false }) {
   if (!slots?.length) return null;
@@ -746,6 +790,7 @@ export default function TripDetail() {
   const [heroImage, setHeroImage] = useState('');
   const [planFocusAct, setPlanFocusAct] = useState(null);
   const [focusImage, setFocusImage] = useState('');
+  const [backgroundIndex, setBackgroundIndex] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [detailTheme, setDetailTheme] = useState(() => {
@@ -856,32 +901,65 @@ export default function TripDetail() {
   const tripDatesLabel = trip.startDate && trip.endDate
     ? `${new Date(trip.startDate).toLocaleDateString('en-US')} - ${new Date(trip.endDate).toLocaleDateString('en-US')}`
     : ov.dates || 'Dates TBD';
-  const backgroundSlides = [...new Set([focusImage, heroImage].filter(Boolean))].slice(0, 2);
+  const backgroundSlides = useMemo(() => {
+    const backdropKey = getClimateBackdropKey(trip?.travelStyle, trip?.destination);
+    const styleSlides = CLIMATE_BACKDROPS[backdropKey] || CLIMATE_BACKDROPS.default;
+    return [...new Set([focusImage, heroImage, ...styleSlides].filter(Boolean))].slice(0, 6);
+  }, [focusImage, heroImage, trip?.travelStyle, trip?.destination]);
 
   const AI_GEMS = res.ai_suggestions?.hidden_gems || [];
   const AI_TIPS = res.ai_suggestions?.tips || [];
+
+  useEffect(() => {
+    setBackgroundIndex(0);
+  }, [backgroundSlides]);
+
+  useEffect(() => {
+    if (backgroundSlides.length < 2) return undefined;
+    const timer = window.setInterval(() => {
+      setBackgroundIndex((current) => (current + 1) % backgroundSlides.length);
+    }, 9000);
+    return () => window.clearInterval(timer);
+  }, [backgroundSlides]);
 
   return (
     <AppInnerLayout>
       <div className={`trip-detail-shell ${isLightDetail ? 'detail-light' : 'detail-dark'} relative w-full min-h-screen pb-10 overflow-hidden`}>
         <div className="fixed inset-0 -z-10 overflow-hidden">
           {backgroundSlides.length > 0 ? (
-            backgroundSlides.map((src, index) => (
+            <>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={backgroundSlides[backgroundIndex]}
+                  className="absolute inset-0"
+                  initial={{ opacity: 0, scale: 1.08, filter: 'blur(5px) saturate(0.92)' }}
+                  animate={{ opacity: 0.62, scale: 1.02, filter: 'blur(0px) saturate(1)' }}
+                  exit={{ opacity: 0, scale: 1.04, filter: 'blur(4px) saturate(0.95)' }}
+                  transition={{ duration: 1.6, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <motion.div
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${backgroundSlides[backgroundIndex]})` }}
+                    animate={{ scale: [1.02, 1.1, 1.02], x: [0, -18, 0], y: [0, 14, 0] }}
+                    transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                </motion.div>
+              </AnimatePresence>
+
               <motion.div
-                key={src}
                 className="absolute inset-0"
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: index === 0 ? 0.56 : 0.28,
-                  scale: [1.04, 1.11, 1.04],
-                  x: index === 0 ? [0, -18, 0] : [0, 16, 0],
-                  y: index === 0 ? [0, 12, 0] : [0, -14, 0],
-                }}
-                transition={{ duration: index === 0 ? 24 : 28, repeat: Infinity, ease: "easeInOut" }}
+                animate={{ opacity: [0.16, 0.28, 0.16] }}
+                transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${src})` }} />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      'radial-gradient(circle at 18% 22%, rgba(151, 245, 255, 0.18), transparent 20%), radial-gradient(circle at 82% 18%, rgba(255, 209, 102, 0.18), transparent 18%), radial-gradient(circle at 50% 78%, rgba(74, 222, 128, 0.12), transparent 22%)',
+                  }}
+                />
               </motion.div>
-            ))
+            </>
           ) : (
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_34%),linear-gradient(180deg,#0b1728_0%,#07111d_100%)]" />
           )}
@@ -898,9 +976,14 @@ export default function TripDetail() {
             animate={{ x: [0, -32, 0], y: [0, 24, 0], scale: [1, 1.08, 1] }}
             transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
           />
+          <motion.div
+            className={`absolute bottom-[8%] left-[16%] h-[220px] w-[360px] rounded-full blur-[96px] ${isLightDetail ? 'bg-emerald-300/10' : 'bg-emerald-400/10'}`}
+            animate={{ x: [0, 26, 0], y: [0, -18, 0], scale: [1, 1.12, 1] }}
+            transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+          />
         </div>
 
-        <div className="mx-auto w-full max-w-[1320px] px-[clamp(12px,1.6vw,24px)] pt-[clamp(62px,5vh,84px)] md:pt-[clamp(74px,6vh,96px)]">
+        <div className="mx-auto w-full max-w-[1320px] px-[clamp(12px,1.6vw,24px)] pt-[clamp(78px,7vh,100px)]">
           <div
             className="trip-glass-panel mb-4 rounded-[28px] border px-4 py-4 md:px-5 md:py-5 shadow-[0_28px_90px_rgba(0,0,0,0.18)]"
             style={{
@@ -911,10 +994,10 @@ export default function TripDetail() {
               backdropFilter: 'blur(22px)'
             }}
           >
-            <div className="trip-detail-hero-grid mb-5 md:mb-6 items-center gap-4 xl:gap-6">
+            <div className="trip-detail-hero-grid mb-6 items-center gap-4 xl:gap-6">
               <div className="min-w-0 text-center md:text-left">
                 <p className="text-[9px] font-black text-[#D4AF37] uppercase tracking-[0.6em] mb-3">Rihla AI - Your Journey</p>
-                <h1 className={`text-[clamp(1.85rem,7vw,3.6rem)] font-black uppercase tracking-tight leading-[0.94] mb-4 ${isLightDetail ? 'text-slate-950' : 'text-white'}`} style={{ letterSpacing: '-0.05em' }}>{DEST_SHORT}</h1>
+                <h1 className={`text-[clamp(2rem,4.3vw,3.6rem)] font-black uppercase tracking-tight leading-[0.94] mb-4 ${isLightDetail ? 'text-slate-950' : 'text-white'}`} style={{ letterSpacing: '-0.05em' }}>{DEST_SHORT}</h1>
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5">
                   <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{tripDatesLabel}</span>
                   <span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} />
@@ -946,7 +1029,7 @@ export default function TripDetail() {
                 </div>
                 <div className={`rounded-[20px] border px-4 py-3 text-center backdrop-blur-xl ${isLightDetail ? 'border-[#D4AF37]/20 bg-white/72' : 'border-[#D4AF37]/16 bg-black/18'}`}>
                   <p className={`text-[9px] uppercase tracking-[0.26em] mb-1 ${isLightDetail ? 'text-slate-500' : 'text-white/45'}`}>Total Budget</p>
-                  <p className="text-[clamp(1.45rem,6vw,2.7rem)] font-black text-[#D4AF37] tracking-tight leading-none">{fmtCur(TOTAL_BUDGET, tripCurrency)}</p>
+                  <p className="text-[clamp(1.75rem,3vw,2.7rem)] font-black text-[#D4AF37] tracking-tight leading-none">{fmtCur(TOTAL_BUDGET, tripCurrency)}</p>
                 </div>
               </div>
               <div className="flex flex-col items-center xl:items-end gap-2.5 w-full xl:w-auto">
@@ -1009,7 +1092,7 @@ export default function TripDetail() {
           <div className="flex items-center gap-1 mb-2 group/pill-carousel w-full">
             <button
               onClick={() => document.getElementById('trip-day-pills-carousel')?.scrollBy({ left: -200, behavior: 'smooth' })}
-              className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-full border shadow-lg transition-all opacity-100 md:opacity-0 md:group-hover/pill-carousel:opacity-100 ${isLightDetail ? 'bg-white/80 border-slate-200 text-slate-500 hover:text-slate-950 hover:bg-[#D4AF37] hover:border-[#D4AF37]' : 'bg-[#111A24]/85 border-white/10 text-white/70 hover:text-white hover:bg-[#D4AF37] hover:border-[#D4AF37]'}`}
+              className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-full border shadow-lg transition-all opacity-0 group-hover/pill-carousel:opacity-100 ${isLightDetail ? 'bg-white/80 border-slate-200 text-slate-500 hover:text-slate-950 hover:bg-[#D4AF37] hover:border-[#D4AF37]' : 'bg-[#111A24]/85 border-white/10 text-white/70 hover:text-white hover:bg-[#D4AF37] hover:border-[#D4AF37]'}`}
             >
               <ChevronLeft size={16} />
             </button>
@@ -1042,7 +1125,7 @@ export default function TripDetail() {
             </div>
             <button
               onClick={() => document.getElementById('trip-day-pills-carousel')?.scrollBy({ left: 200, behavior: 'smooth' })}
-              className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-full border shadow-lg transition-all opacity-100 md:opacity-0 md:group-hover/pill-carousel:opacity-100 ${isLightDetail ? 'bg-white/80 border-slate-200 text-slate-500 hover:text-slate-950 hover:bg-[#D4AF37] hover:border-[#D4AF37]' : 'bg-[#111A24]/85 border-white/10 text-white/70 hover:text-white hover:bg-[#D4AF37] hover:border-[#D4AF37]'}`}
+              className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-full border shadow-lg transition-all opacity-0 group-hover/pill-carousel:opacity-100 ${isLightDetail ? 'bg-white/80 border-slate-200 text-slate-500 hover:text-slate-950 hover:bg-[#D4AF37] hover:border-[#D4AF37]' : 'bg-[#111A24]/85 border-white/10 text-white/70 hover:text-white hover:bg-[#D4AF37] hover:border-[#D4AF37]'}`}
             >
               <ChevronRight size={16} />
             </button>
@@ -1103,18 +1186,16 @@ export default function TripDetail() {
                 </AnimatePresence>
               )}
 
-              <div className="hidden xl:block">
-                <AIExplorationDeck
-                  destination={DEST_SHORT}
-                  aiSuggestions={res.ai_suggestions}
-                  travelStyle={trip.travelStyle}
-                  dayTheme={activeDay?.theme}
-                  isLight={isLightDetail}
-                />
-              </div>
+              <AIExplorationDeck
+                destination={DEST_SHORT}
+                aiSuggestions={res.ai_suggestions}
+                travelStyle={trip.travelStyle}
+                dayTheme={activeDay?.theme}
+                isLight={isLightDetail}
+              />
 
             </div>
-            <div className="w-full xl:w-[300px] flex-shrink-0 flex flex-col gap-4 xl:sticky xl:top-5 self-start">
+            <div className="w-full xl:w-[300px] flex-shrink-0 flex flex-col gap-4 sticky top-5 self-start">
               <TripPreviewCard
                 destination={DEST_SHORT}
                 imageUrl={planFocusAct ? (focusImage || heroImage) : heroImage}
@@ -1155,15 +1236,6 @@ export default function TripDetail() {
                 aiSuggestions={res.ai_suggestions}
                 destination={DEST_SHORT}
                 travelStyle={trip.travelStyle || "Balanced"}
-                isLight={isLightDetail}
-              />
-            </div>
-            <div className="xl:hidden w-full">
-              <AIExplorationDeck
-                destination={DEST_SHORT}
-                aiSuggestions={res.ai_suggestions}
-                travelStyle={trip.travelStyle}
-                dayTheme={activeDay?.theme}
                 isLight={isLightDetail}
               />
             </div>
