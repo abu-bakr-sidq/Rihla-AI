@@ -910,19 +910,45 @@ export default function TripDetail() {
             }}
           >
             <div className="trip-detail-hero-grid mb-6 items-center gap-4 xl:gap-6">
-              <div className="min-w-0 text-center md:text-left">
-                <p className="text-[9px] font-black text-[#D4AF37] uppercase tracking-[0.6em] mb-3">Rihla AI - Your Journey</p>
-                <h1 className={`text-[clamp(2rem,4.3vw,3.6rem)] font-black uppercase tracking-tight leading-[0.94] mb-4 ${isLightDetail ? 'text-slate-950' : 'text-white'}`} style={{ letterSpacing: '-0.05em' }}>{DEST_SHORT}</h1>
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5">
-                  <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{tripDatesLabel}</span>
-                  <span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} />
-                  <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{ov.total_days || daysData.length} days</span>
-                  <span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} />
-                  <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{trip.travelers || 1} traveller{(trip.travelers || 1) > 1 ? 's' : ''}</span>
-                  {trip.travelStyle && <><span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} /><span className={`text-[12px] font-mono capitalize ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{trip.travelStyle}</span></>}
+              <div
+                className="relative min-w-0 overflow-hidden rounded-[24px] border px-5 py-5 text-center md:text-left"
+                style={{
+                  borderColor: isLightDetail ? 'rgba(148,163,184,0.2)' : 'rgba(255,255,255,0.08)',
+                  background: isLightDetail
+                    ? 'linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(241,245,249,0.9) 100%)'
+                    : 'linear-gradient(180deg, rgba(7,17,29,0.82) 0%, rgba(7,17,29,0.92) 100%)',
+                }}
+              >
+                {heroImage ? (
+                  <>
+                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroImage})` }} />
+                    <div className={`absolute inset-0 ${isLightDetail
+                      ? 'bg-[linear-gradient(90deg,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.68)_38%,rgba(255,255,255,0.5)_100%)]'
+                      : 'bg-[linear-gradient(90deg,rgba(7,17,29,0.94)_0%,rgba(7,17,29,0.74)_38%,rgba(7,17,29,0.58)_100%)]'}`} />
+                  </>
+                ) : null}
+                <div className="relative z-10">
+                  <p className="text-[9px] font-black text-[#D4AF37] uppercase tracking-[0.6em] mb-3">Rihla AI - Your Journey</p>
+                  <h1 className={`text-[clamp(2rem,4.3vw,3.6rem)] font-black uppercase tracking-tight leading-[0.94] mb-4 ${isLightDetail ? 'text-slate-950' : 'text-white'}`} style={{ letterSpacing: '-0.05em' }}>{DEST_SHORT}</h1>
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5">
+                    <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{tripDatesLabel}</span>
+                    <span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} />
+                    <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{ov.total_days || daysData.length} days</span>
+                    <span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} />
+                    <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{trip.travelers || 1} traveller{(trip.travelers || 1) > 1 ? 's' : ''}</span>
+                    {trip.travelStyle && <><span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} /><span className={`text-[12px] font-mono capitalize ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{trip.travelStyle}</span></>}
+                  </div>
                 </div>
               </div>
-              <div className="trip-detail-hero-center flex flex-col sm:flex-row items-stretch justify-center gap-3">
+              <div
+                className="trip-detail-hero-center flex flex-col sm:flex-row items-stretch justify-center gap-3 rounded-[24px] border px-4 py-4"
+                style={{
+                  borderColor: isLightDetail ? 'rgba(148,163,184,0.2)' : 'rgba(255,255,255,0.08)',
+                  background: isLightDetail
+                    ? 'linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(241,245,249,0.92) 100%)'
+                    : 'linear-gradient(180deg, rgba(7,17,29,0.84) 0%, rgba(7,17,29,0.92) 100%)',
+                }}
+              >
                 <div className={`rounded-[18px] border px-3 py-2.5 shadow-[0_14px_34px_rgba(15,23,42,0.14)] backdrop-blur-xl ${
                   isLightDetail
                     ? 'border-slate-300/70 bg-white/88'
@@ -947,7 +973,15 @@ export default function TripDetail() {
                   <p className="text-[clamp(1.75rem,3vw,2.7rem)] font-black text-[#D4AF37] tracking-tight leading-none">{fmtCur(TOTAL_BUDGET, tripCurrency)}</p>
                 </div>
               </div>
-              <div className="flex flex-col items-center xl:items-end gap-2.5 w-full xl:w-auto">
+              <div
+                className="flex flex-col items-center xl:items-end gap-2.5 w-full xl:w-auto rounded-[24px] border px-4 py-4"
+                style={{
+                  borderColor: isLightDetail ? 'rgba(148,163,184,0.2)' : 'rgba(255,255,255,0.08)',
+                  background: isLightDetail
+                    ? 'linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(241,245,249,0.92) 100%)'
+                    : 'linear-gradient(180deg, rgba(7,17,29,0.84) 0%, rgba(7,17,29,0.92) 100%)',
+                }}
+              >
                 <div className="flex flex-wrap items-center justify-center xl:justify-end gap-2">
                   <button
                     onClick={async () => {
