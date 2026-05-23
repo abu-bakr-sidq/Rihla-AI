@@ -134,6 +134,11 @@ function SandRevealAlert({ message }) {
 }
 
 export default function Auth() {
+  const initialGoogleToken =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("token")
+      : null;
+
   // steps: 'login' | 'register' | 'success' | 'forgot-password' | 'verify-otp' | 'reset-password' | 'reset-success'
   const [step, setStep] = useState("login");
   const [quoteIndex, setQuoteIndex] = useState(0);
@@ -143,9 +148,10 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState("");
   const [resetOTP, setResetOTP] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
+  const [isCompletingGoogleAuth, setIsCompletingGoogleAuth] = useState(Boolean(initialGoogleToken));
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  const { data: user } = useUser();
+  const { data: user } = useUser({ enabled: !isCompletingGoogleAuth });
   const loginMutation = useLogin();
   const registerMutation = useRegister();
   const { toast } = useToast();
@@ -191,7 +197,10 @@ export default function Auth() {
     async function completeGoogleAuth() {
       const params = new URLSearchParams(window.location.search);
       const token = params.get("token");
-      if (!token) return;
+      if (!token) {
+        setIsCompletingGoogleAuth(false);
+        return;
+      }
 
       localStorage.setItem("auth_token", token);
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -223,6 +232,10 @@ export default function Auth() {
           description: error?.message || "Unable to complete Google login.",
           variant: "destructive",
         });
+      } finally {
+        if (active) {
+          setIsCompletingGoogleAuth(false);
+        }
       }
     }
 

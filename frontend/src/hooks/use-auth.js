@@ -17,7 +17,8 @@ function getAuthHeaders() {
   return headers;
 }
 
-export function useUser() {
+export function useUser(options = {}) {
+  const { enabled = true } = options;
   return useQuery({
     queryKey: [api.auth.me.path],
     queryFn: async () => {
@@ -33,7 +34,8 @@ export function useUser() {
       const raw = await res.json();
       return parseWithLogging(api.auth.me.responses[200], raw, "auth.me");
     },
-    retry: false
+    retry: false,
+    enabled,
   });
 }
 
