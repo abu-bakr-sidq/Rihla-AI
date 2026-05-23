@@ -39,13 +39,18 @@ const transporterPromise = (async () => {
   }
 })();
 
+function getSenderAddress() {
+  const senderEmail = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@rihla-ai.com";
+  return `"Rihla AI" <${senderEmail}>`;
+}
+
 export async function sendOTPEmail(email, otp) {
   try {
     const transporter = await transporterPromise;
     if (!transporter) return { success: false };
 
     const info = await transporter.sendMail({
-      from: '"Rihla AI" <noreply@rihla-ai.com>',
+      from: getSenderAddress(),
       to: email,
       // - [x] Phase 19: Email Branding & Final Polish 📧✨
       // - [x] Update sender name to 'Rihla AI' (Backend)
