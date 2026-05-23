@@ -1,27 +1,13 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 const isReplit = process.env.REPL_ID !== undefined;
 const isDev = process.env.NODE_ENV !== "production";
 
 export default defineConfig({
   envDir: path.resolve(import.meta.dirname, ".."),
-  plugins: [
-    react(),
-    ...(isReplit && isDev ? [runtimeErrorOverlay()] : []),
-    ...(isReplit && isDev
-      ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
-          await import("@replit/vite-plugin-dev-banner").then((m) =>
-            m.devBanner(),
-          ),
-        ]
-      : []),
-  ],
+  plugins: [react()],
   resolve: {
     dedupe: ["react", "react-dom"],
     alias: {
@@ -42,7 +28,7 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname),
   build: {
-    outDir: path.resolve(import.meta.dirname, "../dist/public"),
+    outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
   },
   server: {
