@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@/lib/api-contract";
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
+const PENDING_TRIPS_KEY = "pending_trips_sync";
 
 function apiUrl(path) {
   if (!path) return API_BASE_URL;
@@ -30,10 +31,62 @@ function parseWithLogging(schema, data, label) {
   return result.data;
 }
 
+function getPendingTrips() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PENDING_TRIPS_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function setPendingTrips(trips) {
+  try {
+    if (!trips?.length) {
+      localStorage.removeItem(PENDING_TRIPS_KEY);
+      return;
+    }
+    localStorage.setItem(PENDING_TRIPS_KEY, JSON.stringify(trips));
+  } catch {}
+}
+
+async function syncPendingTrips() {
+  const token = localStorage.getItem("auth_token");
+  if (!token) return;
+
+  const pending = getPendingTrips();
+  if (!pending.length) return;
+
+  const remaining = [];
+
+  for (const trip of pending) {
+    try {
+      const res = await fetch(apiUrl(api.trips.create.path), {
+        method: api.trips.create.method,
+        headers: getAuthHeaders(),
+        body: JSON.stringify(trip),
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        remaining.push(trip);
+      }
+    } catch {
+      remaining.push(trip);
+    }
+  }
+
+  setPendingTrips(remaining);
+}
+
 function useTrips() {
   return useQuery({
     queryKey: [api.trips.list.path],
     queryFn: async () => {
+      const token = localStorage.getItem("auth_token");
+      if (!token) return [];
+
+      await syncPendingTrips();
       const res = await fetch(apiUrl(api.trips.list.path), {
         headers: getAuthHeaders(),
         credentials: "include",

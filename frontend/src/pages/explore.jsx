@@ -10,7 +10,7 @@ import { sanitizeVisibleText } from "@/lib/display-text";
 import AppInnerLayout from "@/components/AppInnerLayout";
 import DashboardSlideshow from "@/components/ui/DashboardSlideshow";
 import { DestinationCard } from "@/components/ui/card-21";
-import { usePlaceImage, PlaceImage } from "@/hooks/use-place-image";
+import { usePlaceImage, preloadPlaceImageQueries } from "@/hooks/use-place-image";
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 
@@ -294,6 +294,14 @@ export default function Explore() {
   const filteredStatic = DESTINATIONS.filter(d =>
     (region === "All" || d.region === region)
   );
+
+  useEffect(() => {
+    if (isSearchMode) return;
+    const preloadQueries = filteredStatic
+      .slice(0, 12)
+      .map((dest) => `${dest.name} ${dest.country} landmark`);
+    preloadPlaceImageQueries(preloadQueries, { onlyGoogle: true });
+  }, [filteredStatic, isSearchMode]);
 
   const handleSelect = useCallback((card) => {
     setLocation(`/planner?dest=${encodeURIComponent(card.title)}`);

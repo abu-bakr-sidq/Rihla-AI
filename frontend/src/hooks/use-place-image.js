@@ -11,6 +11,14 @@ const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "")
 
 // Module-level cache: query → resolved URL (persists across component remounts)
 const _cache = new Map();
+const _pending = new Map();
+
+function primeImage(url) {
+  if (!url || typeof Image === "undefined") return;
+  const img = new Image();
+  img.decoding = "async";
+  img.src = url;
+}
 
 /**
  * Resolve an image URL for a given search query.
@@ -30,47 +38,67 @@ async function resolvePlaceImage(query, options = {}) {
 
   const cacheKey = `${normalizedQueries.join("||").toLowerCase()}__pi${photoIndex}__og${onlyGoogle ? 1 : 0}`;
   if (_cache.has(cacheKey)) return _cache.get(cacheKey);
+  if (_pending.has(cacheKey)) return _pending.get(cacheKey);
 
-  for (const currentQuery of normalizedQueries) {
-    const key = `${currentQuery.toLowerCase()}__pi${photoIndex}__og${onlyGoogle ? 1 : 0}`;
-    if (_cache.has(key)) {
-      const cached = _cache.get(key);
-      if (cached) {
-        _cache.set(cacheKey, cached);
-        return cached;
-      }
-      continue;
-    }
-
-    try {
-      const params = new URLSearchParams({
-        query: currentQuery,
-        photoIndex: String(photoIndex || 0),
-      });
-      if (onlyGoogle) params.set("onlyGoogle", "1");
-
-      const res = await fetch(`${API_BASE_URL}/place-image?${params.toString()}`, {
-        signal: AbortSignal.timeout(8000),
-      });
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (onlyGoogle && data?.source !== "google_places" && data?.source !== "cache") {
-        _cache.set(key, null);
+  const pendingPromise = (async () => {
+    for (const currentQuery of normalizedQueries) {
+      const key = `${currentQuery.toLowerCase()}__pi${photoIndex}__og${onlyGoogle ? 1 : 0}`;
+      if (_cache.has(key)) {
+        const cached = _cache.get(key);
+        if (cached) {
+          _cache.set(cacheKey, cached);
+          return cached;
+        }
         continue;
       }
-      const url = data?.url || null;
-      _cache.set(key, url);
-      if (url) {
-        _cache.set(cacheKey, url);
-        return url;
-      }
-    } catch (_) {
-      // Try next candidate query
-    }
-  }
 
-  _cache.set(cacheKey, null);
-  return null;
+      try {
+        const params = new URLSearchParams({
+          query: currentQuery,
+          photoIndex: String(photoIndex || 0),
+        });
+        if (onlyGoogle) params.set("onlyGoogle", "1");
+
+        const res = await fetch(`${API_BASE_URL}/place-image?${params.toString()}`, {
+          signal: AbortSignal.timeout(8000),
+        });
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (onlyGoogle && data?.source !== "google_places" && data?.source !== "cache") {
+          _cache.set(key, null);
+          continue;
+        }
+        const url = data?.url || null;
+        _cache.set(key, url);
+        if (url) {
+          primeImage(url);
+          _cache.set(cacheKey, url);
+          return url;
+        }
+      } catch (_) {
+        // Try next candidate query
+      }
+    }
+
+    _cache.set(cacheKey, null);
+    return null;
+  })();
+
+  _pending.set(cacheKey, pendingPromise);
+  try {
+    return await pendingPromise;
+  } finally {
+    _pending.delete(cacheKey);
+  }
+}
+
+export async function preloadPlaceImageQueries(queries, options = {}) {
+  const list = Array.isArray(queries) ? queries : [queries];
+  await Promise.all(
+    list
+      .filter(Boolean)
+      .map((query, index) => resolvePlaceImage(query, { photoIndex: index, ...options }).catch(() => null)),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -157,6 +185,8 @@ export function PlaceImage({ query, queries, alt, className, fallbackSrc, style,
     alt: alt || (Array.isArray(lookup) ? lookup[0] : lookup),
     className: cls,
     style,
+    loading: "eager",
+    fetchPriority: "high",
     onError: (e) => {
       if (!onlyGoogle && fallbackSrc && e.target.src !== fallbackSrc) {
         e.target.src = fallbackSrc;

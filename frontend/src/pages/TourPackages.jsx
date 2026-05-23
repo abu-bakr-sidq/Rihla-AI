@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Globe, Star, Wallet, Calendar, Clock, Sparkles, X, Zap, Sun, Sunrise, Moon, CalendarDays, BarChart3, Lightbulb, Plane, MapPin, ChevronRight } from "lucide-react";
 import AppInnerLayout from "@/components/AppInnerLayout";
 import DashboardSlideshow from "@/components/ui/DashboardSlideshow";
-import { usePlaceImage } from "@/hooks/use-place-image";
+import { usePlaceImage, preloadPlaceImageQueries } from "@/hooks/use-place-image";
+import { sanitizeVisibleText } from "@/lib/display-text";
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 
@@ -50,19 +51,22 @@ function seedHash(str) {
 }
 
 function DestImage({ destination }) {
-  const query = `${destination} travel landmark`;
-  const { src } = usePlaceImage(query);
-  const fallback = `https://picsum.photos/seed/${seedHash(destination)}/640/430`;
-  const imgSrc = src || fallback;
+  const query = [`${destination} landmark`, `${destination} travel`, destination];
+  const { src } = usePlaceImage(query, { onlyGoogle: true });
 
-  return (
-    <img
-      src={imgSrc}
-      alt={destination}
-      className="absolute inset-0 w-full h-full object-cover"
-      onError={(e) => { if (e.target.src !== fallback) e.target.src = fallback; }}
-    />
-  );
+  if (!src) {
+    return (
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at top, rgba(212,175,55,0.22), transparent 45%), linear-gradient(160deg, rgba(9,17,29,0.95) 0%, rgba(17,29,44,0.98) 100%)",
+        }}
+      />
+    );
+  }
+
+  return <img src={src} alt={destination} className="absolute inset-0 w-full h-full object-cover" />;
 }
 
 
@@ -91,9 +95,56 @@ const CURRENCY_MAP = {
   "south africa": { sym: "R", code: "ZAR", rate: 18.8 }, "cape town": { sym: "R", code: "ZAR", rate: 18.8 },
   "bora bora": { sym: "XPF", code: "XPF", rate: 110 }, polynesia: { sym: "XPF", code: "XPF", rate: 110 },
 };
+const CLEAN_CURRENCY_MAP = {
+  japan: { sym: "¥", code: "JPY", rate: 149 }, kyoto: { sym: "¥", code: "JPY", rate: 149 }, tokyo: { sym: "¥", code: "JPY", rate: 149 },
+  korea: { sym: "₩", code: "KRW", rate: 1320 }, seoul: { sym: "₩", code: "KRW", rate: 1320 },
+  india: { sym: "₹", code: "INR", rate: 83 }, chennai: { sym: "₹", code: "INR", rate: 83 }, pondicherry: { sym: "₹", code: "INR", rate: 83 }, kanyakumari: { sym: "₹", code: "INR", rate: 83 },
+  bali: { sym: "Rp", code: "IDR", rate: 15800 }, indonesia: { sym: "Rp", code: "IDR", rate: 15800 },
+  thailand: { sym: "฿", code: "THB", rate: 35 }, phuket: { sym: "฿", code: "THB", rate: 35 },
+  london: { sym: "£", code: "GBP", rate: 0.79 }, uk: { sym: "£", code: "GBP", rate: 0.79 },
+  france: { sym: "€", code: "EUR", rate: 0.93 }, paris: { sym: "€", code: "EUR", rate: 0.93 },
+  italy: { sym: "€", code: "EUR", rate: 0.93 }, rome: { sym: "€", code: "EUR", rate: 0.93 }, venice: { sym: "€", code: "EUR", rate: 0.93 }, amalfi: { sym: "€", code: "EUR", rate: 0.93 },
+  spain: { sym: "€", code: "EUR", rate: 0.93 }, barcelona: { sym: "€", code: "EUR", rate: 0.93 },
+  greece: { sym: "€", code: "EUR", rate: 0.93 }, santorini: { sym: "€", code: "EUR", rate: 0.93 },
+  netherlands: { sym: "€", code: "EUR", rate: 0.93 }, amsterdam: { sym: "€", code: "EUR", rate: 0.93 },
+  swiss: { sym: "CHF", code: "CHF", rate: 0.88 }, switzerland: { sym: "CHF", code: "CHF", rate: 0.88 },
+  turkey: { sym: "₺", code: "TRY", rate: 32 }, istanbul: { sym: "₺", code: "TRY", rate: 32 },
+  dubai: { sym: "AED", code: "AED", rate: 3.67 }, uae: { sym: "AED", code: "AED", rate: 3.67 },
+  morocco: { sym: "MAD", code: "MAD", rate: 10 }, marrakech: { sym: "MAD", code: "MAD", rate: 10 },
+  egypt: { sym: "EGP", code: "EGP", rate: 49 }, cairo: { sym: "EGP", code: "EGP", rate: 49 },
+  jordan: { sym: "JOD", code: "JOD", rate: 0.71 }, petra: { sym: "JOD", code: "JOD", rate: 0.71 },
+  peru: { sym: "PEN", code: "PEN", rate: 3.7 }, machu: { sym: "PEN", code: "PEN", rate: 3.7 },
+  brazil: { sym: "R$", code: "BRL", rate: 4.98 }, rio: { sym: "R$", code: "BRL", rate: 4.98 },
+  "south africa": { sym: "R", code: "ZAR", rate: 18.8 }, "cape town": { sym: "R", code: "ZAR", rate: 18.8 },
+  "bora bora": { sym: "XPF", code: "XPF", rate: 110 }, polynesia: { sym: "XPF", code: "XPF", rate: 110 },
+};
+const SAFE_CURRENCY_MAP = {
+  japan: { sym: "\u00A5", code: "JPY", rate: 149 }, kyoto: { sym: "\u00A5", code: "JPY", rate: 149 }, tokyo: { sym: "\u00A5", code: "JPY", rate: 149 },
+  korea: { sym: "\u20A9", code: "KRW", rate: 1320 }, seoul: { sym: "\u20A9", code: "KRW", rate: 1320 },
+  india: { sym: "\u20B9", code: "INR", rate: 83 }, chennai: { sym: "\u20B9", code: "INR", rate: 83 }, pondicherry: { sym: "\u20B9", code: "INR", rate: 83 }, kanyakumari: { sym: "\u20B9", code: "INR", rate: 83 },
+  bali: { sym: "Rp", code: "IDR", rate: 15800 }, indonesia: { sym: "Rp", code: "IDR", rate: 15800 },
+  thailand: { sym: "\u0E3F", code: "THB", rate: 35 }, phuket: { sym: "\u0E3F", code: "THB", rate: 35 },
+  london: { sym: "\u00A3", code: "GBP", rate: 0.79 }, uk: { sym: "\u00A3", code: "GBP", rate: 0.79 },
+  france: { sym: "\u20AC", code: "EUR", rate: 0.93 }, paris: { sym: "\u20AC", code: "EUR", rate: 0.93 },
+  italy: { sym: "\u20AC", code: "EUR", rate: 0.93 }, rome: { sym: "\u20AC", code: "EUR", rate: 0.93 }, venice: { sym: "\u20AC", code: "EUR", rate: 0.93 }, amalfi: { sym: "\u20AC", code: "EUR", rate: 0.93 },
+  spain: { sym: "\u20AC", code: "EUR", rate: 0.93 }, barcelona: { sym: "\u20AC", code: "EUR", rate: 0.93 },
+  greece: { sym: "\u20AC", code: "EUR", rate: 0.93 }, santorini: { sym: "\u20AC", code: "EUR", rate: 0.93 },
+  netherlands: { sym: "\u20AC", code: "EUR", rate: 0.93 }, amsterdam: { sym: "\u20AC", code: "EUR", rate: 0.93 },
+  swiss: { sym: "CHF", code: "CHF", rate: 0.88 }, switzerland: { sym: "CHF", code: "CHF", rate: 0.88 },
+  turkey: { sym: "\u20BA", code: "TRY", rate: 32 }, istanbul: { sym: "\u20BA", code: "TRY", rate: 32 },
+  dubai: { sym: "AED", code: "AED", rate: 3.67 }, uae: { sym: "AED", code: "AED", rate: 3.67 },
+  morocco: { sym: "MAD", code: "MAD", rate: 10 }, marrakech: { sym: "MAD", code: "MAD", rate: 10 },
+  egypt: { sym: "EGP", code: "EGP", rate: 49 }, cairo: { sym: "EGP", code: "EGP", rate: 49 },
+  jordan: { sym: "JOD", code: "JOD", rate: 0.71 }, petra: { sym: "JOD", code: "JOD", rate: 0.71 },
+  peru: { sym: "PEN", code: "PEN", rate: 3.7 }, machu: { sym: "PEN", code: "PEN", rate: 3.7 },
+  brazil: { sym: "R$", code: "BRL", rate: 4.98 }, rio: { sym: "R$", code: "BRL", rate: 4.98 },
+  "south africa": { sym: "R", code: "ZAR", rate: 18.8 }, "cape town": { sym: "R", code: "ZAR", rate: 18.8 },
+  "bora bora": { sym: "XPF", code: "XPF", rate: 110 }, polynesia: { sym: "XPF", code: "XPF", rate: 110 },
+};
 function getCurrency(dest) {
-  const d = dest.toLowerCase();
-  return Object.keys(CURRENCY_MAP).find(k => d.includes(k)) ? CURRENCY_MAP[Object.keys(CURRENCY_MAP).find(k => d.includes(k))] : { sym: "$", code: "USD", rate: 1 };
+  const d = String(dest || "").toLowerCase();
+  const matchedKey = Object.keys(SAFE_CURRENCY_MAP).find((key) => d.includes(key));
+  return matchedKey ? SAFE_CURRENCY_MAP[matchedKey] : { sym: "$", code: "USD", rate: 1 };
 }
 function fmtBudget(usd, cur, days) {
   const local = Math.round(usd * cur.rate);
@@ -374,6 +425,14 @@ export default function TourPackages() {
   const [, setLocation] = useLocation();
   const [previewPkg, setPreviewPkg] = useState(null);
 
+  useEffect(() => {
+    if (!packages.length) return;
+    preloadPlaceImageQueries(
+      packages.slice(0, 12).map((pkg) => [`${pkg.destination} landmark`, `${pkg.destination} travel`, pkg.destination]),
+      { onlyGoogle: true },
+    );
+  }, [packages]);
+
   const handleBuild = (pkg) => {
     const d = pkg.days || Math.max(1, Math.round((new Date(pkg.endDate || Date.now()) - new Date(pkg.startDate || Date.now())) / 86400000));
     const start = new Date();
@@ -413,6 +472,11 @@ export default function TourPackages() {
                 const currency = getCurrency(pkg.destination);
                 const days = pkg.days || Math.max(1, Math.round((new Date(pkg.endDate || Date.now()) - new Date(pkg.startDate || Date.now())) / 86400000));
                 const budget = fmtBudget(pkg.budget, currency, days);
+                const safeDestination = sanitizeVisibleText(pkg.destination, "Destination");
+                const safeDescription = sanitizeVisibleText(pkg.description);
+                const safePreferences = Array.isArray(pkg.preferences)
+                  ? pkg.preferences.map((pref) => sanitizeVisibleText(pref)).filter(Boolean)
+                  : [];
 
                 return (
                   <motion.div key={pkg._id}
@@ -436,12 +500,12 @@ export default function TourPackages() {
                     <div className="flex-1 flex flex-col justify-between px-4 py-3.5 min-w-0">
                       <div>
                         <h3 className="text-[15px] font-black leading-tight mb-0.5 truncate" style={{ color: "rgba(255,255,255,0.96)" }}>
-                          {pkg.destination}
+                          {safeDestination}
                         </h3>
                         <p className="text-[10px] italic mb-2.5" style={{ color: "rgba(212,175,55,0.65)" }}>by Rihla AI in {pkg.travelStyle} Packages</p>
-                        {pkg.description && (
+                        {safeDescription && (
                           <p className="text-[10.5px] leading-snug line-clamp-2 pl-2.5" style={{ color: "rgba(255,255,255,0.55)", borderLeft: "2px solid rgba(212,175,55,0.3)" }}>
-                            {pkg.description}
+                            {safeDescription}
                           </p>
                         )}
                       </div>
@@ -456,10 +520,10 @@ export default function TourPackages() {
                           <strong className="text-[#D4AF37]">{budget.local}</strong>
                           <span className="ml-1.5 text-[9.5px]" style={{ color: "rgba(255,255,255,0.32)" }}>({days}d · {budget.perDay} · {budget.usd})</span>
                         </p>
-                        {pkg.preferences?.length > 0 && (
+                        {safePreferences.length > 0 && (
                           <p className="text-[10.5px] truncate">
                             <span style={{ color: "rgba(255,255,255,0.38)" }}>For: </span>
-                            <strong style={{ color: "rgba(255,255,255,0.72)" }}>{pkg.preferences.slice(0, 2).join(", ")}</strong>
+                            <strong style={{ color: "rgba(255,255,255,0.72)" }}>{safePreferences.slice(0, 2).join(", ")}</strong>
                           </p>
                         )}
                       </div>

@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import AppInnerLayout from "@/components/AppInnerLayout";
 import DashboardSlideshow from "@/components/ui/DashboardSlideshow";
 import { DestinationCard } from "@/components/ui/card-21";
-import { PlaceImage } from "@/hooks/use-place-image";
+import { PlaceImage, preloadPlaceImageQueries } from "@/hooks/use-place-image";
 import { getTripCardImageQuery } from "@/lib/trip-itinerary";
 import {
   MapPin, Calendar, Trash2, ArrowRight, Loader2, Sparkles,
@@ -385,6 +385,12 @@ export default function MyTrips() {
   const [showDeleteAll, setShowDeleteAll] = useState(false);
 
   const FILTERS = ["All", "Planned", "Active", "Completed", "Draft"];
+
+  useEffect(() => {
+    if (!trips.length) return;
+    const preloadQueries = trips.slice(0, 12).map((trip) => getTripCardImageQuery(trip));
+    preloadPlaceImageQueries(preloadQueries, { onlyGoogle: true });
+  }, [trips]);
 
   const filtered = trips.filter(t => {
     const dest = (t.destination || "").toLowerCase();

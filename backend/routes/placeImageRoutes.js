@@ -16,6 +16,8 @@ setTimeout(() => {
 // â”€â”€ In-memory cache (key â†’ { url, ts }) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const _cache = new Map();
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+const _photoCache = new Map();
+const PHOTO_CACHE_TTL = 24 * 60 * 60 * 1000;
 
 const getCached = (key) => {
   const hit = _cache.get(key);
@@ -24,6 +26,55 @@ const getCached = (key) => {
   return hit.url;
 };
 const setCache = (key, url) => _cache.set(key, { url, ts: Date.now() });
+
+const getPhotoCache = (key) => {
+  const hit = _photoCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.ts > PHOTO_CACHE_TTL) {
+    _photoCache.delete(key);
+    return null;
+  }
+  return hit;
+};
+
+const setPhotoCache = (key, value) => _photoCache.set(key, { ...value, ts: Date.now() });
+
+function normalizePlaceText(value = "") {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s'-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function compactPlaceText(value = "") {
+  return normalizePlaceText(value).replace(/[\s'-]/g, "");
+}
+
+function hasSearchSignal(value = "") {
+  const compact = compactPlaceText(value);
+  if (compact.length < 3) return false;
+  if (/^(.)\1+$/.test(compact)) return false;
+  return new Set(compact.split("")).size >= 3;
+}
+
+function isPlausibleGoogleMatch(query = "", candidate = "") {
+  const cleanQuery = normalizePlaceText(query);
+  const cleanCandidate = normalizePlaceText(candidate);
+  if (!cleanQuery || !cleanCandidate) return false;
+
+  const queryParts = cleanQuery.split(" ").filter(Boolean);
+  const candidateParts = cleanCandidate.split(" ").filter(Boolean);
+  const requiredParts = queryParts.filter((part) => part.length >= 3);
+  if (!requiredParts.length) return false;
+
+  const matchedParts = requiredParts.filter(
+    (part) => cleanCandidate.includes(part) || candidateParts.some((cand) => cand.startsWith(part)),
+  );
+
+  const ratio = matchedParts.length / requiredParts.length;
+  return ratio >= 0.6;
+}
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Helpers
@@ -58,7 +109,9 @@ async function getGooglePhotoRef(query, photoIndex = 0) {
         const photoRef = pick?.photo_reference;
         if (photoRef) {
           console.log(`[Places] findplace: "${query}" -> ${place.name} (photo ${photoIndex % photos.length}/${photos.length})`);
-          return { photoRef, name: place.name };
+          if (isPlausibleGoogleMatch(query, place.name)) {
+            return { photoRef, name: place.name };
+          }
         }
       }
     }
@@ -84,7 +137,9 @@ async function getGooglePhotoRef(query, photoIndex = 0) {
           const photoRef = photos[photoIndex % photos.length]?.photo_reference;
           if (photoRef) {
             console.log(`[Places] textsearch: "${query}" -> ${place.name} (result ${resultIdx}, photo ${photoIndex % photos.length})`);
-            return { photoRef, name: place.name };
+            if (isPlausibleGoogleMatch(query, place.name)) {
+              return { photoRef, name: place.name };
+            }
           }
         }
       }
@@ -99,6 +154,36 @@ function buildProxiedPhotoUrl(photoRef, maxwidth = 800) {
   const backendBase = (process.env.BACKEND_URL || "http://localhost:5000").replace(/\/$/, "");
   return `${backendBase}/api/place-image/photo?ref=${encodeURIComponent(photoRef)}&w=${maxwidth}`;
 }
+
+router.get("/validate", async (req, res) => {
+  const { query } = req.query;
+  const clean = String(query || "").trim();
+  if (!clean || !hasSearchSignal(clean)) {
+    return res.json({ ok: false, reason: "missing_query" });
+  }
+
+  const GOOGLE_KEY = getKey();
+  if (!GOOGLE_KEY) {
+    return res.json({ ok: false, reason: "google_key_missing" });
+  }
+
+  try {
+    const result = await getGooglePhotoRef(clean, 0);
+    if (!result?.photoRef) {
+      return res.json({ ok: false, reason: "no_google_match" });
+    }
+
+    return res.json({
+      ok: true,
+      title: result.name || clean,
+      imageUrl: buildProxiedPhotoUrl(result.photoRef, 800),
+      source: "google_places",
+    });
+  } catch (err) {
+    console.error("[PlaceImage] validate error:", err.message);
+    return res.status(500).json({ ok: false, reason: "validate_failed" });
+  }
+});
 
 // â”€â”€ Fallback: Wikipedia thumbnail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function getWikipediaImage(words) {
@@ -154,6 +239,9 @@ router.get("/", async (req, res) => {
   const { query, nocache, photoIndex: rawPhotoIdx, onlyGoogle } = req.query;
   if (!query) return res.json({ url: null, source: "no_query" });
   const strictGoogle = onlyGoogle === "1" || onlyGoogle === "true";
+  if (!hasSearchSignal(query)) {
+    return res.json({ url: null, source: strictGoogle ? "google_required" : "invalid_query" });
+  }
 
   // photoIndex lets callers request different photos of the SAME place
   // This guarantees unique images across all 8 slots Ã— N days
@@ -217,6 +305,14 @@ router.get("/photo", async (req, res) => {
   if (!GOOGLE_KEY) return res.status(500).json({ error: "No Google key configured" });
 
   try {
+    const photoCacheKey = `${ref}__${w}`;
+    const cachedPhoto = getPhotoCache(photoCacheKey);
+    if (cachedPhoto) {
+      res.setHeader("Content-Type", cachedPhoto.contentType);
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      return res.send(cachedPhoto.buffer);
+    }
+
     const googleUrl =
       `https://maps.googleapis.com/maps/api/place/photo` +
       `?maxwidth=${w}` +
@@ -234,11 +330,13 @@ router.get("/photo", async (req, res) => {
     }
 
     const contentType = photoRes.headers.get("content-type") || "image/jpeg";
-    res.setHeader("Content-Type", contentType);
-    res.setHeader("Cache-Control", "public, max-age=86400"); // 24hr browser cache
+    const buffer = Buffer.from(await photoRes.arrayBuffer());
 
-    const buffer = await photoRes.arrayBuffer();
-    res.send(Buffer.from(buffer));
+    setPhotoCache(photoCacheKey, { contentType, buffer });
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    res.send(buffer);
   } catch (err) {
     console.error("[PlacePhoto] Error:", err.message);
     res.status(500).json({ error: "Internal proxy error" });

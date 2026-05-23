@@ -227,9 +227,25 @@ export default function Auth() {
       <TravelAuthBackground />
       {isGoogleSigningIn && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="flex items-center gap-3 rounded-2xl border border-[#D4AF37]/20 bg-black/70 px-5 py-4 text-[#D4AF37] shadow-2xl">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="text-sm font-bold tracking-wide">Signing you in...</span>
+          <div className="relative overflow-hidden rounded-[28px] border border-[#D4AF37]/20 bg-[linear-gradient(135deg,rgba(8,12,20,0.96),rgba(18,28,40,0.94))] px-6 py-5 text-[#D4AF37] shadow-2xl">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(212,175,55,0.12),transparent_50%)]" />
+            <div className="relative flex items-center gap-4">
+              <div className="relative flex h-11 w-11 items-center justify-center">
+                <div className="absolute inset-0 rounded-full border border-[#D4AF37]/20" />
+                <div className="absolute inset-0 rounded-full border-t-2 border-[#D4AF37] animate-spin" />
+                <motion.div
+                  animate={{ x: [-10, 10, -10], y: [4, -4, 4], rotate: [-8, 8, -8] }}
+                  transition={{ duration: 2.1, repeat: Infinity, ease: "easeInOut" }}
+                  className="relative"
+                >
+                  <PlaneTakeoff className="h-4 w-4" />
+                </motion.div>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-[#D4AF37]/70">Boarding Pass</p>
+                <span className="mt-1 block text-sm font-bold tracking-wide text-white">Signing you in...</span>
+              </div>
+            </div>
           </div>
         </div>
       )}
