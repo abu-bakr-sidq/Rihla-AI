@@ -4,6 +4,7 @@ import { api, buildUrl } from "@/lib/api-contract";
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 const PENDING_TRIPS_KEY = "pending_trips_sync";
 const PENDING_ID_PREFIX = "__pending__:";
+const SAVED_TRIPS_CACHE_KEY = "saved_trips_cache";
 
 function apiUrl(path) {
   if (!path) return API_BASE_URL;
@@ -84,6 +85,25 @@ function setPendingTrips(trips) {
   } catch {}
 }
 
+function getSavedTripsCache() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SAVED_TRIPS_CACHE_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function setSavedTripsCache(trips) {
+  try {
+    if (!trips?.length) {
+      localStorage.removeItem(SAVED_TRIPS_CACHE_KEY);
+      return;
+    }
+    localStorage.setItem(SAVED_TRIPS_CACHE_KEY, JSON.stringify(trips));
+  } catch {}
+}
+
 function queuePendingTrip(trip) {
   if (!trip?.destination) return;
 
@@ -119,15 +139,30 @@ function decoratePendingTrip(trip, index) {
 }
 
 function mergeTripsWithPending(serverTrips = []) {
-  const pendingTrips = getPendingTrips();
-  if (!pendingTrips.length) return serverTrips;
+  const cachedTrips = getSavedTripsCache()
+    .map((trip) => normalizeTripRecord(trip))
+    .filter((trip) => Boolean(trip.id) && Boolean(trip.destination));
 
-  const existing = new Set(serverTrips.map((trip) => buildTripFingerprint(trip)));
+  const mergedSaved = [];
+  const mergedSavedSeen = new Set();
+
+  [...serverTrips, ...cachedTrips].forEach((trip) => {
+    const normalized = normalizeTripRecord(trip);
+    const key = String(normalized.id || buildTripFingerprint(normalized));
+    if (!key || mergedSavedSeen.has(key)) return;
+    mergedSavedSeen.add(key);
+    mergedSaved.push(normalized);
+  });
+
+  const pendingTrips = getPendingTrips();
+  if (!pendingTrips.length) return mergedSaved;
+
+  const existing = new Set(mergedSaved.map((trip) => buildTripFingerprint(trip)));
   const pendingOnly = pendingTrips
     .map((trip, index) => decoratePendingTrip(trip, index))
     .filter((trip) => !existing.has(buildTripFingerprint(trip)));
 
-  return [...pendingOnly, ...serverTrips];
+  return [...pendingOnly, ...mergedSaved];
 }
 
 function removePendingTripById(id) {
@@ -138,6 +173,24 @@ function removePendingTripById(id) {
   pending.splice(index, 1);
   setPendingTrips(pending);
   return true;
+}
+
+function upsertSavedTripCache(trip) {
+  const normalized = normalizeTripRecord(trip);
+  if (!normalized.id || !normalized.destination) return;
+
+  const existing = getSavedTripsCache();
+  const next = [
+    normalized,
+    ...existing.filter((item) => String(item?.id || item?._id) !== String(normalized.id)),
+  ];
+  setSavedTripsCache(next.slice(0, 30));
+}
+
+function removeSavedTripById(id) {
+  const existing = getSavedTripsCache();
+  const next = existing.filter((item) => String(item?.id || item?._id) !== String(id));
+  setSavedTripsCache(next);
 }
 
 async function syncPendingTrips() {
@@ -161,6 +214,11 @@ async function syncPendingTrips() {
           continue;
         }
         remaining.push(trip);
+      } else {
+        try {
+          const savedTrip = await res.json();
+          upsertSavedTripCache(savedTrip);
+        } catch {}
       }
     } catch {
       remaining.push(trip);
@@ -180,10 +238,11 @@ function useTrips() {
         credentials: "include",
       });
       if (res.status === 401 || res.status === 403) {
-        return [];
+        return mergeTripsWithPending([]);
       }
       if (!res.ok) throw new Error("Failed to fetch trips");
       const parsed = parseTripListSafely(await res.json());
+      parsed.forEach((trip) => upsertSavedTripCache(trip));
       return mergeTripsWithPending(parsed);
     },
   });
@@ -197,7 +256,9 @@ function useTrip(id) {
       const res = await fetch(url, { headers: getAuthHeaders(), credentials: "include" });
       if (res.status === 404) return null;
       if (!res.ok) throw new Error("Failed to fetch trip");
-      return parseWithLogging(api.trips.get.responses[200], await res.json(), "trips.get");
+      const parsed = parseWithLogging(api.trips.get.responses[200], await res.json(), "trips.get");
+      upsertSavedTripCache(parsed);
+      return parsed;
     },
     enabled: !!id,
   });
@@ -252,7 +313,9 @@ function useCreateTrip() {
 
           throw new Error(errMsg);
         }
-        return await res.json();
+        const parsed = await res.json();
+        upsertSavedTripCache(parsed);
+        return parsed;
       } catch (err) {
         if (err instanceof TypeError) {
           queuePendingTrip(payload);
@@ -269,7 +332,10 @@ function useDeleteTrip() {
   return useMutation({
     mutationFn: async (id) => {
       if (!id) throw new Error("Trip ID is required");
-      if (removePendingTripById(id)) return;
+      if (removePendingTripById(id)) {
+        removeSavedTripById(id);
+        return;
+      }
       const url = apiUrl(buildUrl(api.trips.delete.path, { id: id.toString() }));
       const res = await fetch(url, {
         method: api.trips.delete.method,
@@ -277,6 +343,7 @@ function useDeleteTrip() {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to delete trip");
+      removeSavedTripById(id);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.trips.list.path] }),
   });
@@ -303,7 +370,9 @@ function useUpdateTrip() {
         } catch {}
         throw new Error(errMsg);
       }
-      return await res.json();
+      const parsed = await res.json();
+      upsertSavedTripCache(parsed);
+      return parsed;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [api.trips.list.path] });
@@ -317,6 +386,7 @@ function useDeleteAllTrips() {
   return useMutation({
     mutationFn: async () => {
       setPendingTrips([]);
+      setSavedTripsCache([]);
       const res = await fetch(apiUrl("/api/trips"), {
         method: "DELETE",
         headers: getAuthHeaders(),
