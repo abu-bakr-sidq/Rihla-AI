@@ -6,15 +6,12 @@ import AppInnerLayout from '@/components/AppInnerLayout';
 import { Calendar, Clock, Sun, CloudSun, Sunset, Moon, Lightbulb, AlertTriangle, Users, Compass, MapPin, ChevronDown, ChevronLeft, ChevronRight, Utensils, Gem, Camera, Bed, ExternalLink, Download, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { usePrayerTimes } from '@/hooks/usePrayerTimes';
 import { exportTripPDF, downloadTripPDF } from '@/services/exportTripPDF';
-import { getLocalTripById, useDeleteTrip } from '@/hooks/use-trips';
+import { useDeleteTrip } from '@/hooks/use-trips';
 import { useToast } from '@/hooks/use-toast';
-import { buildActivityDisplayContent, buildDestinationHeroQueries, buildPlaceImageQueries, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from '@/lib/trip-itinerary';
+import { buildActivityDisplayContent, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from '@/lib/trip-itinerary';
 import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerTimesCard, TripPreviewCard } from '@/components/trip/EnhancedPanels';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import ThemeToggle from '@/components/ThemeToggle';
-import { sanitizeVisibleText } from '@/lib/display-text';
-
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 
 function fmtCur(amount, currency = 'USD') {
   try { return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount); } catch { return '$' + amount; }
@@ -67,13 +64,13 @@ function PlannerDetailTimeline({ slots, slotCfg, isLight = false }) {
                   <Icon size={16} style={{ color }} strokeWidth={2} />
                 </div>
                 <span
-                  className={`text-[11px] font-black tracking-[0.05em] py-0.5 px-2 rounded-md mb-1.5 shadow-sm transition-all duration-500 ${isLight ? 'bg-slate-900/90 border border-slate-700/80 text-white' : 'bg-black/40 border border-white/5'}`}
+                  className={`text-[11px] font-black tracking-[0.05em] py-0.5 px-2 rounded-md mb-1.5 shadow-sm transition-all duration-500 ${isLight ? 'bg-white/85 border border-slate-300/70' : 'bg-black/40 border border-white/5'}`}
                   style={{ color }}
                 >
                   {cfg.time.replace(' AM', '').replace(' PM', '')}
                 </span>
                 <div className="flex items-start justify-center w-full px-1 mt-1">
-                  <span className={`text-[9px] sm:text-[10px] font-bold text-center leading-tight ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{sanitizeVisibleText(act.place, cfg.label)}</span>
+                  <span className={`text-[9px] sm:text-[10px] font-bold text-center leading-tight ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{act.place}</span>
                 </div>
               </div>
             );
@@ -87,17 +84,12 @@ function PlannerDetailTimeline({ slots, slotCfg, isLight = false }) {
 function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slotColor, slotTime, cost, destination, cardIndex, currency, onClick, isSelected, details, isLight = false }) {
   const [imgSrc, setImgSrc] = useState('');
   const [expanded, setExpanded] = useState(false);
-  const displayPlace = sanitizeVisibleText(resolvePlannedPlaceName(place, destination, slotKey, cardIndex), 'Planned stop');
-  const safeActivity = sanitizeVisibleText(activity, 'Curated activity');
-  const query = extractLocationQuery(displayPlace, destination, safeActivity, details?.title || "");
+  const displayPlace = resolvePlannedPlaceName(place, destination, slotKey, cardIndex);
+  const query = extractLocationQuery(displayPlace, destination);
   const accentColor = PLAN_SLOT_COLORS[slotKey] || slotColor || '#D4AF37';
-  const fallbackContent = generatePlaceCardFallbackContent(displayPlace, safeActivity, destination, slotKey);
+  const fallbackContent = generatePlaceCardFallbackContent(displayPlace, activity, destination, slotKey);
   const { schedule, ideas } = buildActivityDisplayContent(details, fallbackContent);
-  const streetFinds = buildStreetFindChips(details, fallbackContent, { placeName: displayPlace, destination, slotKey, fallbackIndex: cardIndex }).map((item) => ({
-    ...item,
-    label: sanitizeVisibleText(item.label, 'Local find'),
-    query: sanitizeVisibleText(item.query, item.label || 'Local find'),
-  }));
+  const streetFinds = buildStreetFindChips(details, fallbackContent, { placeName: displayPlace, destination, slotKey, fallbackIndex: cardIndex });
 
   useEffect(() => {
     let alive = true;
@@ -123,8 +115,8 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
           {SlotIcon ? <SlotIcon size={12} strokeWidth={2.5} style={{ color: accentColor }} /> : null}
           <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: accentColor }}>{slotLabel}</span>
         </div>
-        <div className="absolute top-3 right-3 backdrop-blur-xl px-3 py-1.5 rounded-full shadow-lg" style={{ background: isLight ? 'rgba(15,23,42,0.92)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(51,65,85,0.55)' : '1px solid rgba(255,255,255,0.1)' }}>
-          <span className={`text-[10px] font-black tracking-wider ${isLight ? 'text-white' : 'text-white/90'}`}>{slotTime}</span>
+        <div className="absolute top-3 right-3 backdrop-blur-xl px-3 py-1.5 rounded-full shadow-lg" style={{ background: isLight ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(148,163,184,0.22)' : '1px solid rgba(255,255,255,0.1)' }}>
+          <span className={`text-[10px] font-black tracking-wider ${isLight ? 'text-slate-700' : 'text-white/90'}`}>{slotTime}</span>
         </div>
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 backdrop-blur-xl px-3 py-1.5 rounded-[10px] shadow-lg" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.25)' }}>
           <span className="text-[11px] font-bold text-[#D4AF37]">{cost ? fmtCur(cost, currency) : 'Free'}</span>
@@ -133,7 +125,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
 
       <div className="p-5 flex flex-col gap-0 flex-1">
         <h3 className={`text-[17px] font-black leading-tight mb-2 tracking-wide transition-colors ${isLight ? 'text-slate-900 group-hover:text-sky-600' : 'text-white group-hover:text-[#38BDF8]'}`}>{displayPlace}</h3>
-        <p className={`text-[12px] leading-relaxed mb-4 line-clamp-3 ${isLight ? 'text-slate-600' : 'text-white/55'}`}>{safeActivity}</p>
+        <p className={`text-[12px] leading-relaxed mb-4 line-clamp-3 ${isLight ? 'text-slate-600' : 'text-white/55'}`}>{activity}</p>
 
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
@@ -147,7 +139,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
                   <div className="absolute inset-0 rounded-full blur-[2px]" style={{ background: accentColor, opacity: 0.6 }} />
                   <div className="relative w-1.5 h-1.5 rounded-full z-10" style={{ background: accentColor }} />
                 </div>
-                <p className={`text-[11.5px] leading-relaxed font-medium ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{sanitizeVisibleText(step, 'Planned step')}</p>
+                <p className={`text-[11.5px] leading-relaxed font-medium ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{step}</p>
               </div>
             ))}
           </div>
@@ -167,7 +159,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
                 className={`text-[10px] px-2.5 py-1 rounded-[6px] font-bold tracking-wide hover:scale-[1.02] transition-transform ${isLight ? 'hover:bg-sky-50' : ''}`}
                 style={{ background: isLight ? 'rgba(255,255,255,0.82)' : 'rgba(56,189,248,0.06)', border: isLight ? '1px solid rgba(56,189,248,0.22)' : '1px solid rgba(56,189,248,0.2)', color: isLight ? '#0284C7' : '#7DD3FC' }}
               >
-                {sanitizeVisibleText(s.label, 'Local find')}
+                {s.label}
               </a>
             ))}
           </div>
@@ -189,7 +181,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
             {ideas.slice(0, expanded ? ideas.length : 2).map((idea, i) => (
               <div key={i} className={`flex gap-2.5 items-start p-2.5 rounded-xl border ${isLight ? 'bg-white/70 border-slate-300/45' : 'bg-white/[0.02] border-white/[0.02]'}`}>
                 <span className="text-[12px] shrink-0 font-bold" style={{ color: '#10B981' }}>-</span>
-                <p className={`text-[11.5px] leading-relaxed italic ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{sanitizeVisibleText(idea, 'Curated idea')}</p>
+                <p className={`text-[11.5px] leading-relaxed italic ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{idea}</p>
               </div>
             ))}
           </div>
@@ -211,39 +203,43 @@ const _hashQuery = (str) => {
   return h;
 };
 
-const buildPhotoVariantIndex = (queryOrQueries, globalIndex = 0) => {
-  const joined = Array.isArray(queryOrQueries)
-    ? queryOrQueries.filter(Boolean).join("||")
-    : String(queryOrQueries || "");
-  const hashOffset = _hashQuery(joined) % 11;
-  return Math.max(0, Number(globalIndex) || 0) + hashOffset;
+const extractLocationQuery = (placeName, destination) => {
+  if (!placeName) return destination || '';
+  const dest = destination || '';
+  const atMatch = placeName.match(/\bat\s+(.+)$/i);
+  if (atMatch) return `${atMatch[1].trim()} ${dest}`.trim();
+  const inMatch = placeName.match(/\bin\s+(.+)$/i);
+  if (inMatch) return `${inMatch[1].trim()} ${dest}`.trim();
+
+  let cleaned = placeName
+    .replace(/\b(sunrise|sunset|morning|evening|afternoon|night|guided|premium|luxury|classic|curated|traditional|live|private|exclusive)\b/gi, '')
+    .replace(/\b(tour|walk|visit|stroll|trek|hike|excursion|ride|cruise|session|class|workshop|retreat|show|performance|ceremony|experience|adventure|exploration|discovery|immersion|journey|tasting|sampling|dining|lunch|dinner|breakfast)\b/gi, '')
+    .replace(/\b(yoga|meditation|massage|spa|wellness|relaxation|fitness|workout)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (cleaned.length > 3) return `${cleaned} ${dest}`.trim();
+  const shortName = placeName.split(' ').slice(0, 4).join(' ');
+  return `${shortName} ${dest}`.trim();
 };
 
-const extractLocationQuery = (placeName, destination, activity = "", title = "") =>
-  buildPlaceImageQueries(placeName, destination, activity, title);
-
-const _fetchActivityImage = async (queryOrQueries, globalIndex) => {
-  const queries = Array.isArray(queryOrQueries) ? queryOrQueries.filter(Boolean) : [queryOrQueries].filter(Boolean);
-  const photoVariantIndex = buildPhotoVariantIndex(queries, globalIndex);
-  const cacheKey = queries.join("||") + '__gi' + photoVariantIndex;
+const _fetchActivityImage = async (query, globalIndex) => {
+  const cacheKey = query + '__gi' + (globalIndex || 0);
   if (_imgCache[cacheKey]) return _imgCache[cacheKey];
 
-  for (let index = 0; index < queries.length; index += 1) {
-    const query = queries[index];
-    try {
-      const r = await fetch(
-        `${API_BASE_URL}/place-image?query=${encodeURIComponent(query)}&photoIndex=${photoVariantIndex + index}&onlyGoogle=1`,
-        { signal: AbortSignal.timeout(8000) }
-      );
-      if (r.ok) {
-        const d = await r.json();
-        if (d?.url) {
-          _imgCache[cacheKey] = d.url;
-          return d.url;
-        }
+  try {
+    const r = await fetch(
+      `/api/place-image?query=${encodeURIComponent(query)}&photoIndex=${globalIndex || 0}&onlyGoogle=1`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (r.ok) {
+      const d = await r.json();
+      if (d?.url) {
+        _imgCache[cacheKey] = d.url;
+        return d.url;
       }
-    } catch (_) {}
-  }
+    }
+  } catch (_) {}
 
   return null;
 };
@@ -462,9 +458,8 @@ function ActivityVerticalCard({ place, activity, slotLabel, slotIcon: SlotIcon, 
   const [imgSrc, setImgSrc] = useState('');
   const [expanded, setExpanded] = useState(false);
   const displayPlace = resolvePlannedPlaceName(place, destination, slotKey, globalIndex);
-  const safeActivity = sanitizeVisibleText(activity, 'Curated activity');
-  const query = extractLocationQuery(displayPlace, destination, safeActivity, details?.title || "");
-  const fallbackContent = generatePlaceCardFallbackContent(displayPlace, safeActivity, destination, slotKey);
+  const query = extractLocationQuery(displayPlace, destination);
+  const fallbackContent = generatePlaceCardFallbackContent(displayPlace, activity, destination, slotKey);
   const { schedule, ideas } = buildActivityDisplayContent(details, fallbackContent);
   const streetFinds = buildStreetFindChips(details, fallbackContent, { placeName: displayPlace, destination, slotKey, fallbackIndex: globalIndex });
 
@@ -667,13 +662,9 @@ function MapWidget({ destination, isLight = false }) {
             <p className={`truncate text-[12px] font-semibold ${isLight ? 'text-slate-700' : 'text-white/72'}`}>{destination}</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination)}`, "_blank", "noopener,noreferrer")}
-          className={`rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] transition-all hover:scale-[1.03] ${isLight ? 'border-emerald-300/70 bg-emerald-50 text-emerald-700 hover:border-emerald-400' : 'border-emerald-400/25 bg-emerald-400/8 text-emerald-300/90 hover:border-emerald-400/45 hover:bg-emerald-400/14'}`}
-        >
+        <span className={`rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] ${isLight ? 'border-emerald-300/70 bg-emerald-50 text-emerald-700' : 'border-emerald-400/15 bg-emerald-400/8 text-emerald-300/80'}`}>
           Explore
-        </button>
+        </span>
       </div>
     </div>
   );
@@ -778,22 +769,12 @@ export default function TripDetail() {
 
   // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ Data fetch: only run when user is confirmed present ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬
   useEffect(() => {
-    if (!id) return;
-
-    const localTrip = getLocalTripById(id);
-    if (localTrip) {
-      setTrip(localTrip);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
-    if (userLoading || !user) return;  // wait for auth to settle
+    if (userLoading || !user || !id) return;  // wait for auth to settle
 
     const token = localStorage.getItem('auth_token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    fetch(`${API_BASE_URL}/trips/${id}`, { headers, credentials: 'include' })
+    fetch(`/api/trips/${id}`, { headers, credentials: 'include' })
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -806,7 +787,7 @@ export default function TripDetail() {
   useEffect(() => {
     if (!trip?.destination) return;
     let alive = true;
-    const heroQuery = buildDestinationHeroQueries(trip.destination);
+    const heroQuery = trip.destination.split(',')[0].trim();
     _fetchActivityImage(heroQuery, 0).then(url => {
       if (alive && url) setHeroImage(url);
     });
@@ -820,7 +801,7 @@ export default function TripDetail() {
     }
 
     let alive = true;
-    const query = extractLocationQuery(planFocusAct.place, trip?.destination || '', planFocusAct.activity || '', planFocusAct.title || '');
+    const query = extractLocationQuery(planFocusAct.place, trip?.destination || '');
     _fetchActivityImage(query, selectedDay * 100 + (planFocusAct?.sk?.length || 0)).then(url => {
       if (alive && url) setFocusImage(url);
     });
@@ -874,7 +855,7 @@ export default function TripDetail() {
   const tripDatesLabel = trip.startDate && trip.endDate
     ? `${new Date(trip.startDate).toLocaleDateString('en-US')} - ${new Date(trip.endDate).toLocaleDateString('en-US')}`
     : ov.dates || 'Dates TBD';
-  const backgroundSlides = heroImage ? [heroImage] : [];
+  const backgroundSlides = [...new Set([focusImage, heroImage].filter(Boolean))].slice(0, 2);
 
   const AI_GEMS = res.ai_suggestions?.hidden_gems || [];
   const AI_TIPS = res.ai_suggestions?.tips || [];
@@ -930,45 +911,19 @@ export default function TripDetail() {
             }}
           >
             <div className="trip-detail-hero-grid mb-6 items-center gap-4 xl:gap-6">
-              <div
-                className="relative min-w-0 overflow-hidden rounded-[24px] border px-5 py-5 text-center md:text-left"
-                style={{
-                  borderColor: isLightDetail ? 'rgba(148,163,184,0.2)' : 'rgba(255,255,255,0.08)',
-                  background: isLightDetail
-                    ? 'linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(241,245,249,0.9) 100%)'
-                    : 'linear-gradient(180deg, rgba(7,17,29,0.82) 0%, rgba(7,17,29,0.92) 100%)',
-                }}
-              >
-                {heroImage ? (
-                  <>
-                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroImage})` }} />
-                    <div className={`absolute inset-0 ${isLightDetail
-                      ? 'bg-[linear-gradient(90deg,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.68)_38%,rgba(255,255,255,0.5)_100%)]'
-                      : 'bg-[linear-gradient(90deg,rgba(7,17,29,0.94)_0%,rgba(7,17,29,0.74)_38%,rgba(7,17,29,0.58)_100%)]'}`} />
-                  </>
-                ) : null}
-                <div className="relative z-10">
-                  <p className="text-[9px] font-black text-[#D4AF37] uppercase tracking-[0.6em] mb-3">Rihla AI - Your Journey</p>
-                  <h1 className={`text-[clamp(2rem,4.3vw,3.6rem)] font-black uppercase tracking-tight leading-[0.94] mb-4 ${isLightDetail ? 'text-slate-950' : 'text-white'}`} style={{ letterSpacing: '-0.05em' }}>{DEST_SHORT}</h1>
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5">
-                    <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{tripDatesLabel}</span>
-                    <span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} />
-                    <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{ov.total_days || daysData.length} days</span>
-                    <span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} />
-                    <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{trip.travelers || 1} traveller{(trip.travelers || 1) > 1 ? 's' : ''}</span>
-                    {trip.travelStyle && <><span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} /><span className={`text-[12px] font-mono capitalize ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{trip.travelStyle}</span></>}
-                  </div>
+              <div className="min-w-0 text-center md:text-left">
+                <p className="text-[9px] font-black text-[#D4AF37] uppercase tracking-[0.6em] mb-3">Rihla AI - Your Journey</p>
+                <h1 className={`text-[clamp(2rem,4.3vw,3.6rem)] font-black uppercase tracking-tight leading-[0.94] mb-4 ${isLightDetail ? 'text-slate-950' : 'text-white'}`} style={{ letterSpacing: '-0.05em' }}>{DEST_SHORT}</h1>
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5">
+                  <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{tripDatesLabel}</span>
+                  <span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} />
+                  <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{ov.total_days || daysData.length} days</span>
+                  <span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} />
+                  <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{trip.travelers || 1} traveller{(trip.travelers || 1) > 1 ? 's' : ''}</span>
+                  {trip.travelStyle && <><span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} /><span className={`text-[12px] font-mono capitalize ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{trip.travelStyle}</span></>}
                 </div>
               </div>
-              <div
-                className="trip-detail-hero-center flex flex-col sm:flex-row items-stretch justify-center gap-3 rounded-[24px] border px-4 py-4"
-                style={{
-                  borderColor: isLightDetail ? 'rgba(148,163,184,0.2)' : 'rgba(255,255,255,0.08)',
-                  background: isLightDetail
-                    ? 'linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(241,245,249,0.92) 100%)'
-                    : 'linear-gradient(180deg, rgba(7,17,29,0.84) 0%, rgba(7,17,29,0.92) 100%)',
-                }}
-              >
+              <div className="trip-detail-hero-center flex flex-col sm:flex-row items-stretch justify-center gap-3">
                 <div className={`rounded-[18px] border px-3 py-2.5 shadow-[0_14px_34px_rgba(15,23,42,0.14)] backdrop-blur-xl ${
                   isLightDetail
                     ? 'border-slate-300/70 bg-white/88'
@@ -993,15 +948,7 @@ export default function TripDetail() {
                   <p className="text-[clamp(1.75rem,3vw,2.7rem)] font-black text-[#D4AF37] tracking-tight leading-none">{fmtCur(TOTAL_BUDGET, tripCurrency)}</p>
                 </div>
               </div>
-              <div
-                className="flex flex-col items-center xl:items-end gap-2.5 w-full xl:w-auto rounded-[24px] border px-4 py-4"
-                style={{
-                  borderColor: isLightDetail ? 'rgba(148,163,184,0.2)' : 'rgba(255,255,255,0.08)',
-                  background: isLightDetail
-                    ? 'linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(241,245,249,0.92) 100%)'
-                    : 'linear-gradient(180deg, rgba(7,17,29,0.84) 0%, rgba(7,17,29,0.92) 100%)',
-                }}
-              >
+              <div className="flex flex-col items-center xl:items-end gap-2.5 w-full xl:w-auto">
                 <div className="flex flex-wrap items-center justify-center xl:justify-end gap-2">
                   <button
                     onClick={async () => {

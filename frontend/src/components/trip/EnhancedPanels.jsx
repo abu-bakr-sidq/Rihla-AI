@@ -21,7 +21,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PlaceImage, usePlaceImage } from "@/hooks/use-place-image";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { sanitizeTextList, sanitizeVisibleText } from "@/lib/display-text";
-import { buildDestinationHeroQueries } from "@/lib/trip-itinerary";
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -480,7 +479,7 @@ export function TripPreviewCard({ destination, imageUrl, selectedItem, currency,
   const dest = normalizeDestination(destination);
   const focusQueries = selectedItem?.place
     ? [`${selectedItem.place} ${dest}`, `${selectedItem.place}`, `${dest} travel landmark`]
-    : buildDestinationHeroQueries(dest);
+    : [`${dest} skyline`, `${dest} city`, `${dest} landmark`, `${dest} travel`];
   const { src } = usePlaceImage(focusQueries, { photoIndex: selectedItem ? 1 : 0 });
   const [activeImage, setActiveImage] = useState(imageUrl || src || null);
   useEffect(() => {

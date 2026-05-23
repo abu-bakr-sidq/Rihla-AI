@@ -1,18 +1,27 @@
 import { db } from "./db";
 import { 
-  users, trips, places,
+  users, trips, places, otps,
   type User, type InsertUser,
   type Trip, type InsertTrip,
   type Place, type InsertPlace
 } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  updateUserPassword(id: number, password: string): Promise<void>;
+  updateUser(id: number, updates: Partial<User>): Promise<User>;
+  deleteUser(id: number): Promise<void>;
+
+  // OTPs
+  createOTP(email: string, code: string): Promise<void>;
+  getOTP(email: string, code: string): Promise<boolean>;
+  deleteOTP(email: string): Promise<void>;
 
   // Trips
   getTrip(id: number): Promise<Trip | undefined>;
@@ -40,6 +49,11 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
@@ -47,6 +61,55 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return db.select().from(users).orderBy(desc(users.createdAt));
+  }
+ 
+  async updateUserPassword(id: number, password: string): Promise<void> {
+    await db.update(users)
+      .set({ password })
+      .where(eq(users.id, id));
+  }
+
+  async updateUser(id: number, updates: Partial<User>): Promise<User> {
+    const [updatedUser] = await db.update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
+
+  // --- OTPs ---
+  async createOTP(email: string, code: string): Promise<void> {
+    // Delete any existing OTPs for this email first
+    await this.deleteOTP(email);
+    
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15); // 15 minute expiry
+    
+    await db.insert(otps).values({
+      email,
+      code,
+      expiresAt
+    });
+  }
+
+  async getOTP(email: string, code: string): Promise<boolean> {
+    const [otp] = await db.select()
+      .from(otps)
+      .where(and(eq(otps.email, email), eq(otps.code, code)));
+    
+    if (!otp) return false;
+    
+    // Check expiry
+    const now = new Date();
+    return now < otp.expiresAt;
+  }
+
+  async deleteOTP(email: string): Promise<void> {
+    await db.delete(otps).where(eq(otps.email, email));
   }
 
   // --- Trips ---

@@ -9,13 +9,11 @@ import { useUser } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import BrandLogo from "@/components/BrandLogo";
 import ThemeToggle from "@/components/ThemeToggle";
-import {
+import { 
   ArrowLeft, List, MessageSquare, Map as MapIcon, 
   Navigation, Clock, Ruler, CreditCard, Calendar,
   ChevronLeft, Plus, Minus, Target
 } from "lucide-react";
-
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -138,7 +136,7 @@ export default function MapPage() {
   useEffect(() => {
     if (!userLoading && !user) { setLocation("/auth"); return; }
     if (!id) { setLoading(false); return; }
-    fetch(`${API_BASE_URL}/trips/${id}`, { credentials:"include" })
+    fetch(`/api/trips/${id}`, { credentials:"include" })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(data => { setTrip(data); setLoading(false); })
       .catch(e => {

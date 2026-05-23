@@ -6,9 +6,17 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
   role: text("role").notNull().default("user"), // 'user' or 'admin'
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const otps = pgTable("otps", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  code: text("code").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
 });
 
 export const trips = pgTable("trips", {
@@ -41,10 +49,23 @@ export const places = pgTable("places", {
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertTripSchema = createInsertSchema(trips).omit({ id: true, createdAt: true });
 export const insertPlaceSchema = createInsertSchema(places).omit({ id: true });
+export const insertOtpSchema = createInsertSchema(otps).omit({ id: true });
 
 // === EXPLICIT API CONTRACT TYPES ===
 
-export type User = typeof users.$inferSelect;
+// === HYBRID SCHEMAS (Mongoose & Drizzle Compatible) ===
+export const userSchema = z.object({
+  id: z.union([z.number(), z.string()]).optional(),
+  _id: z.union([z.number(), z.string()]).optional(),
+  username: z.string(),
+  email: z.string().email(),
+  role: z.enum(["user", "admin"]).default("user"),
+  profilePicture: z.string().optional(),
+  preferences: z.record(z.any()).optional().default({}),
+  createdAt: z.union([z.date(), z.string()]).optional(),
+});
+
+export type User = z.infer<typeof userSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type Trip = typeof trips.$inferSelect;

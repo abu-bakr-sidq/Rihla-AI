@@ -16,8 +16,6 @@ import { BrandMark } from "@/components/BrandLogo";
 import { sanitizeVisibleText } from "@/lib/display-text";
 import { PlaceImage } from "@/hooks/use-place-image";
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
-
 const PREDEFINED_QUESTIONS = [
   "Plan a 3-day trip to Goa",
   "5 days Dubai luxury trip",
@@ -1117,9 +1115,9 @@ export function ChatWindow({ onClose, onItinerary }) {
     setInputVal("");
     setIsTyping(true);
 
-    fetch(`${API_BASE_URL}/chat`, {
-        method: "POST",
-        credentials: "include",
+    fetch("/api/chat", {
+      method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: t,

@@ -1,8 +1,5 @@
-import OpenAI from "openai";
-
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL = "llama-3.3-70b-versatile";
-const XAI_MODEL = "grok-3-mini";
 
 const SYSTEM_PROMPT = `You are RIHLA AI, a smart general AI assistant with strong travel-planning skills.
 
@@ -433,32 +430,20 @@ export function smartFallback(msg, mode = "general") {
   };
 }
 
-function hasUsableKey(value = "") {
-  const key = String(value || "").trim();
-  return Boolean(key) && !/your_(groq|grok|xai)_api_key_here/i.test(key) && !/provide_me/i.test(key);
+function hasUsableGroqKey() {
+  const key = String(process.env.GROQ_API_KEY || "").trim();
+  return Boolean(key) && !/your_groq_api_key_here/i.test(key);
 }
 
-function getChatProvider() {
-  const xaiKey = process.env.XAI_API_KEY || process.env.GROK_API_KEY;
-  if (hasUsableKey(xaiKey)) {
-    return { type: "xai", key: xaiKey };
-  }
-  const groqKey = process.env.GROQ_API_KEY;
-  if (hasUsableKey(groqKey)) {
-    return { type: "groq", key: groqKey };
-  }
-  return null;
-}
-
-async function callGroq(messages, apiKey) {
-  if (!hasUsableKey(apiKey)) {
+async function callGroq(messages) {
+  if (!hasUsableGroqKey()) {
     throw new Error("GROQ_API_KEY is missing or still set to a placeholder value.");
   }
 
   const res = await fetch(GROQ_API_URL, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -478,46 +463,17 @@ async function callGroq(messages, apiKey) {
   return data?.choices?.[0]?.message?.content || "";
 }
 
-async function callXai(messages, apiKey) {
-  if (!hasUsableKey(apiKey)) {
-    throw new Error("XAI_API_KEY/GROK_API_KEY is missing or still set to a placeholder value.");
-  }
-
-  const client = new OpenAI({
-    apiKey,
-    baseURL: "https://api.x.ai/v1",
-  });
-
-  const response = await client.chat.completions.create({
-    model: XAI_MODEL,
-    temperature: 0.2,
-    max_tokens: 5000,
-    messages,
-  });
-
-  return response?.choices?.[0]?.message?.content || "";
-}
-
-async function callChatModel(messages) {
-  const provider = getChatProvider();
-  if (!provider) {
-    throw new Error("No usable AI provider key configured for chatbot.");
-  }
-
-  if (provider.type === "xai") {
-    return callXai(messages, provider.key);
-  }
-
-  return callGroq(messages, provider.key);
-}
-
 export async function getChatbotResponse(message, history = [], mode = "general") {
   try {
     const currentMode = String(mode || "general").toLowerCase();
     const forcePlannerMode = currentMode === "planner";
     const forceGeneralMode = currentMode === "general";
 
-    if (!getChatProvider()) {
+    if (forceGeneralMode && isGreetingOrGeneralChat(message)) {
+      return smartFallback(message, currentMode);
+    }
+
+    if (!hasUsableGroqKey()) {
       return smartFallback(message, currentMode);
     }
 
@@ -531,7 +487,7 @@ export async function getChatbotResponse(message, history = [], mode = "general"
       .filter((h) => h.role === "user" || h.role === "assistant")
       .slice(-12);
 
-    const raw = await callChatModel([
+    const raw = await callGroq([
       {
         role: "system",
         content:
@@ -552,7 +508,7 @@ export async function getChatbotResponse(message, history = [], mode = "general"
       return smartFallback(message, currentMode);
     }
 
-    if (!wantsItinerary && (forceGeneralMode || isGeneralKnowledgeQuestion(message) || isGreetingOrGeneralChat(message))) {
+    if (!wantsItinerary && (forceGeneralMode || isGeneralKnowledgeQuestion(message))) {
       return {
         text: parsed.text || raw,
         itinerary: null,

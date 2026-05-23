@@ -5,9 +5,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect } from "react";
 import { TripProvider } from "@/context/TripContext";
 import { useUser } from "@/hooks/use-auth";
+import { useEffect } from "react";
+import Lenis from "lenis";
 import FloatingBackground from "@/components/FloatingBackground";
 import { DottedSurface } from "@/components/ui/dotted-surface";
 import { ChatButton } from "@/components/ChatBot/ChatButton";
@@ -32,21 +33,19 @@ import Navbar from "@/components/navbar";
 
 /* ── Protected / Admin route guards ── */
 const ProtectedRoute = ({ children }) => {
-  const { data: user, isLoading, isFetching } = useUser();
+  const { data: user, isLoading } = useUser();
   const [location, navigate] = useLocation();
-  const hasStoredToken = typeof window !== "undefined" && Boolean(localStorage.getItem("auth_token"));
-  const authPending = isLoading || (hasStoredToken && isFetching && !user);
 
   useEffect(() => {
-    if (!authPending && !user) {
+    if (!isLoading && !user) {
       // Save where the user wanted to go before redirecting to auth
       sessionStorage.setItem('rihla_redirect', location);
       // Replace the current history entry so browser Back works correctly
       navigate('/auth', { replace: true });
     }
-  }, [user, authPending, location, navigate]);
+  }, [user, isLoading, location, navigate]);
 
-  if (authPending) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-6 h-6 rounded-full border-2 border-foreground/20 border-t-foreground animate-spin" />
@@ -64,17 +63,15 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const AdminRoute = ({ children }) => {
-  const { data: user, isLoading, isFetching } = useUser();
+  const { data: user, isLoading } = useUser();
   const [, navigate] = useLocation();
-  const hasStoredToken = typeof window !== "undefined" && Boolean(localStorage.getItem("auth_token"));
-  const authPending = isLoading || (hasStoredToken && isFetching && !user);
 
   useEffect(() => {
-    if (!authPending && !user) navigate('/auth', { replace: true });
-    if (!authPending && user && user.role !== 'admin') navigate('/dashboard', { replace: true });
-  }, [user, authPending, navigate]);
+    if (!isLoading && !user) navigate('/auth', { replace: true });
+    if (!isLoading && user && user.role !== 'admin') navigate('/dashboard', { replace: true });
+  }, [user, isLoading, navigate]);
 
-  if (authPending || !user || user.role !== 'admin') {
+  if (isLoading || !user || user.role !== 'admin') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-6 h-6 rounded-full border-2 border-[#D4AF37]/20 border-t-[#D4AF37] animate-spin" />
@@ -143,6 +140,29 @@ function GlobalBackground() {
 
 /* ── Main App ── */
 export default function App() {
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      direction: 'vertical',
+      gestureDirection: 'vertical',
+      smooth: true,
+      mouseMultiplier: 1,
+      smoothTouch: false,
+      touchMultiplier: 2,
+      infinite: false,
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+
+    requestAnimationFrame(raf);
+
+    return () => { lenis.destroy(); };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" forcedTheme="dark" defaultTheme="dark" enableSystem={false}>

@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import AppInnerLayout from "@/components/AppInnerLayout";
 import DashboardSlideshow from "@/components/ui/DashboardSlideshow";
 import { DestinationCard } from "@/components/ui/card-21";
-import { PlaceImage, preloadPlaceImageQueries } from "@/hooks/use-place-image";
+import { PlaceImage } from "@/hooks/use-place-image";
 import { getTripCardImageQuery } from "@/lib/trip-itinerary";
 import {
   MapPin, Calendar, Trash2, ArrowRight, Loader2, Sparkles,
@@ -93,7 +93,6 @@ function calcDays(s, e) {
    DELETE DIALOG
    ════════════════════════════════════════════════════════════════════ */
 function DeleteDialog({ trip, onConfirm, onCancel, isPending }) {
-  const fallbackImage = getTripPhoto(trip?.destination);
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={onCancel}>
@@ -107,7 +106,6 @@ function DeleteDialog({ trip, onConfirm, onCancel, isPending }) {
           <PlaceImage
             query={getTripCardImageQuery(trip)}
             onlyGoogle={true}
-            fallbackSrc={fallbackImage}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-red-900/30 to-[#0c1420]" />
@@ -202,8 +200,6 @@ function TripCard({ trip, onDelete, i }) {
   const days = trip.itinerary?.trip_overview?.total_days || trip.days || calcDays(trip.startDate, trip.endDate);
   const cfg = STATUS_CFG[status] || STATUS_CFG.draft;
   const tripImageQuery = getTripCardImageQuery(trip);
-  const fallbackImage = getTripPhoto(trip.destination);
-  const tripLink = `/trips/${trip.id || trip._id}`;
 
   return (
     <motion.div
@@ -220,7 +216,6 @@ function TripCard({ trip, onDelete, i }) {
             query={tripImageQuery}
             photoIndex={0}
             onlyGoogle={true}
-            fallbackSrc={fallbackImage}
             className="w-full h-full object-cover"
           />
         </div>
@@ -266,13 +261,13 @@ function TripCard({ trip, onDelete, i }) {
             </div>
             <div className="flex items-center gap-2">
               <Link
-                href={tripLink}
+                href={`/trips/${trip.id || trip._id}`}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all"
                 style={{ background: "#D4AF37", color: "#000" }}
               >
-                <ExternalLink className="w-3 h-3" /> {trip.pendingSync ? "View Draft" : "View"}
+                <ExternalLink className="w-3 h-3" /> View
               </Link>
-              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(trip); }}
+              <button onClick={() => onDelete(trip)}
                 className="w-8 h-8 rounded-xl flex items-center justify-center text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-all border border-white/[0.06]">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -391,12 +386,6 @@ export default function MyTrips() {
 
   const FILTERS = ["All", "Planned", "Active", "Completed", "Draft"];
 
-  useEffect(() => {
-    if (!trips.length) return;
-    const preloadQueries = trips.slice(0, 12).map((trip) => getTripCardImageQuery(trip));
-    preloadPlaceImageQueries(preloadQueries, { onlyGoogle: true });
-  }, [trips]);
-
   const filtered = trips.filter(t => {
     const dest = (t.destination || "").toLowerCase();
     const status = (t.status || "planned").toLowerCase();
@@ -407,7 +396,7 @@ export default function MyTrips() {
   const handleConfirmDelete = async () => {
     if (!toDelete) return;
     try {
-      await deleteMutation.mutateAsync(toDelete.id || toDelete._id);
+      await deleteMutation.mutateAsync(toDelete.id);
       toast({ title: "Deleted", description: `${toDelete.destination} removed.` });
     } catch {
       toast({ title: "Error", description: "Could not delete.", variant: "destructive" });

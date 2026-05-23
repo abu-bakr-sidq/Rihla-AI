@@ -329,62 +329,6 @@ export function extractPlaceImageQuery(placeName, destination = "") {
   return `${placeName.split(" ").slice(0, 4).join(" ")} ${dest}`.trim();
 }
 
-export function buildPlaceImageQueries(placeName = "", destination = "", activity = "", title = "") {
-  const queries = [];
-  const seen = new Set();
-  const destinationShort = cleanDisplayText(destination).split(",")[0].trim();
-  const resolvedPlace = resolvePlannedPlaceName(placeName || title || activity, destination);
-
-  const pushQuery = (value) => {
-    const query = cleanDisplayText(value);
-    if (!query || query.length < 3) return;
-    const key = query.toLowerCase();
-    if (seen.has(key)) return;
-    seen.add(key);
-    queries.push(query);
-  };
-
-  pushQuery(extractPlaceImageQuery(placeName, destination));
-  pushQuery(extractPlaceImageQuery(title, destination));
-  pushQuery(extractPlaceImageQuery(activity, destination));
-  pushQuery(`${resolvedPlace} ${destinationShort}`.trim());
-  pushQuery(resolvedPlace);
-  pushQuery(`${compactPlaceName(placeName)} ${destinationShort}`.trim());
-  pushQuery(`${compactPlaceName(title)} ${destinationShort}`.trim());
-
-  if (destinationShort) {
-    pushQuery(destinationShort);
-    pushQuery(`${destinationShort} landmark`);
-    pushQuery(`${destinationShort} travel`);
-  }
-
-  return queries;
-}
-
-export function buildDestinationHeroQueries(destination = "") {
-  const destinationShort = cleanDisplayText(destination).split(",")[0].trim();
-  const queries = [];
-  const seen = new Set();
-
-  const pushQuery = (value) => {
-    const query = cleanDisplayText(value);
-    if (!query || query.length < 3) return;
-    const key = query.toLowerCase();
-    if (seen.has(key)) return;
-    seen.add(key);
-    queries.push(query);
-  };
-
-  pushQuery(destinationShort);
-  pushQuery(`${destinationShort} landmark`);
-  pushQuery(`${destinationShort} landscape`);
-  pushQuery(`${destinationShort} old city`);
-  pushQuery(`${destinationShort} travel`);
-  pushQuery(`${destinationShort} tourism`);
-
-  return queries;
-}
-
 export function normalizeLegacyArrayItinerary(days = [], options = {}) {
   const {
     destination = "",

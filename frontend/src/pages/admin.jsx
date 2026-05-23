@@ -27,9 +27,6 @@ import DashboardSlideshow from "@/components/ui/DashboardSlideshow";
 import { format } from "date-fns";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { CalendarGrid, isDisabled } from "./planner";
-import { sanitizeVisibleText } from "@/lib/display-text";
-
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 
 /* ── Mini Planner Calendar Wrapper ── */
 function MiniPlannerCalendar({ selectedDate, onSelect, dateLabel = "Departure" }) {
@@ -156,12 +153,6 @@ function PlatformIcon({ user }) {
   return <div title="Rihla AI (Email)"><BrandMark size={14} className="opacity-70 grayscale" /></div>
 }
 
-function formatDateSafe(value) {
-  const parsed = value ? new Date(value) : null;
-  if (!parsed || Number.isNaN(parsed.getTime())) return "—";
-  return parsed.toLocaleDateString();
-}
-
 
 /* ── Mocks & Data ── */
 const AI_SUGGESTIONS = [
@@ -226,15 +217,9 @@ const getCurrencySymbol = (dest) => {
     australia: "$", uk: "£", singapore: "S$", thailand: "฿",
     indonesia: "Rp", turkey: "₺", maldives: "$"
   };
-  const safeSymbols = {
-    india: "\u20B9", uae: "\u062F.\u0625", japan: "\u00A5", france: "\u20AC", spain: "\u20AC",
-    italy: "\u20AC", greece: "\u20AC", netherlands: "\u20AC", usa: "$", canada: "$",
-    australia: "$", uk: "\u00A3", singapore: "S$", thailand: "\u0E3F",
-    indonesia: "Rp", turkey: "\u20BA", maldives: "$"
-  };
   const dLower = dest.toLowerCase();
   const country = Object.keys(map).find(k => dLower.includes(k));
-  return safeSymbols[map[country]] || symbols[map[country]] || "$";
+  return symbols[map[country]] || "$";
 };
 
 /* ── Add Package Modal Component (Internal Scroll Engine + Custom Scrollbars) ── */
@@ -243,7 +228,6 @@ function AddPackageModal({ isOpen, onClose }) {
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [results, setResults] = useState([]);
-  const [searchError, setSearchError] = useState("");
 
   const [form, setForm] = useState({
     destination: "", src: "", days: 7, budget: 3000, travelStyle: "cultural"
@@ -253,121 +237,22 @@ function AddPackageModal({ isOpen, onClose }) {
   const createTourPackage = useCreateTourPackage();
 
   useEffect(() => {
-    const cleanQuery = query.trim();
-    if (cleanQuery.length <= 1) {
+    if (query.length > 1) {
+      setIsSearching(true);
+      const timer = setTimeout(() => {
+        setResults(AI_SUGGESTIONS.filter(d => d.title.toLowerCase().includes(query.toLowerCase())));
+        setIsSearching(false);
+      }, 400);
+      return () => clearTimeout(timer);
+    } else {
       setResults([]);
       setIsSearching(false);
-      setSearchError("");
-      return;
     }
-
-    const ctrl = new AbortController();
-    setIsSearching(true);
-    setSearchError("");
-
-    const timer = setTimeout(async () => {
-      try {
-        const searchRes = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleanQuery)}&format=json&limit=6&addressdetails=1&accept-language=en`,
-          { signal: ctrl.signal, headers: { Accept: "application/json" } }
-        );
-        if (!searchRes.ok) throw new Error("search_failed");
-        const rows = await searchRes.json();
-
-        const buildCandidateQueries = (row) => {
-          const rawParts = [
-            row?.address?.city,
-            row?.address?.town,
-            row?.address?.state,
-            row?.address?.country,
-            row?.name,
-          ]
-            .map((part) => sanitizeVisibleText(part || "", ""))
-            .filter(Boolean);
-
-          const uniqueParts = rawParts.filter((part, index, arr) =>
-            arr.findIndex((cand) => cand.toLowerCase() === part.toLowerCase()) === index
-          );
-
-          const primaryTitle = uniqueParts.slice(0, 2).join(", ")
-            || sanitizeVisibleText(row?.display_name || "", cleanQuery)
-            || cleanQuery;
-
-          const candidates = [
-            primaryTitle,
-            uniqueParts.join(", "),
-            uniqueParts[0] || "",
-            sanitizeVisibleText(row?.display_name || "", ""),
-            cleanQuery,
-          ]
-            .map((value) => sanitizeVisibleText(value || "", ""))
-            .filter(Boolean)
-            .filter((value, index, arr) => arr.findIndex((cand) => cand.toLowerCase() === value.toLowerCase()) === index);
-
-          return {
-            title: primaryTitle,
-            candidates,
-          };
-        };
-
-        const verified = await Promise.all(
-          (Array.isArray(rows) ? rows : []).map(async (row) => {
-            const { title, candidates } = buildCandidateQueries(row);
-
-            for (const candidate of candidates) {
-              try {
-                const params = new URLSearchParams({
-                  query: candidate,
-                  photoIndex: "0",
-                  onlyGoogle: "1",
-                });
-                const verifyRes = await fetch(`${API_BASE_URL}/place-image?${params.toString()}`, {
-                  signal: ctrl.signal,
-                });
-                if (!verifyRes.ok) continue;
-                const verify = await verifyRes.json();
-                if (!verify?.url) continue;
-                return {
-                  title: sanitizeVisibleText(title, cleanQuery),
-                  src: verify.url,
-                };
-              } catch {
-                return null;
-              }
-            }
-
-            return null;
-          })
-        );
-
-        const deduped = verified.filter(Boolean).filter((item, idx, arr) =>
-          arr.findIndex((cand) => cand.title.toLowerCase() === item.title.toLowerCase()) === idx
-        );
-
-        setResults(deduped);
-        if (!deduped.length) {
-          setSearchError("No verified destination found. Please search a real city, state, or country.");
-        }
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          setResults([]);
-          setSearchError("Destination search is temporarily unavailable.");
-        }
-      } finally {
-        setIsSearching(false);
-      }
-    }, 350);
-
-    return () => {
-      clearTimeout(timer);
-      ctrl.abort();
-    };
   }, [query]);
 
   const handleSelectDest = (r) => {
     setQuery(r.title);
     setForm(f => ({ ...f, destination: r.title, src: r.src }));
-    setSearchError("");
     setShowDropdown(false);
   };
 
@@ -377,7 +262,7 @@ function AddPackageModal({ isOpen, onClose }) {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!form.destination || !form.src) return;
+    if (!form.destination) return;
     try {
       if (createTourPackage) { await createTourPackage.mutateAsync({ ...form, preferences }); }
       onClose();
@@ -438,9 +323,38 @@ function AddPackageModal({ isOpen, onClose }) {
                                 </div>
                               </div>
                             ))}
-                            {searchError && (
-                              <div className="p-4 text-center text-[#D4AF37]/70 text-[10px] uppercase tracking-widest">
-                                {searchError}
+                            {query.trim().length > 2 && !results.some(r => r.title.toLowerCase() === query.trim().toLowerCase()) && (
+                              <div
+                                onClick={() => {
+                                  const fq = query.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                                  handleSelectDest({
+                                    title: fq,
+                                    src: `https://loremflickr.com/800/450/${encodeURIComponent(query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')) || 'city'},landscape/all`,
+                                    dynamic: true
+                                  });
+                                }}
+                                className="group relative h-24 hover:h-28 cursor-pointer flex border-t border-[#D4AF37]/20 transition-all duration-300 overflow-hidden bg-[#050505]"
+                              >
+                                <img
+                                  src={`https://loremflickr.com/800/450/${encodeURIComponent(query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')) || 'city'},landscape/all`}
+                                  alt="Global Match"
+                                  className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-90 group-hover:scale-105 transition-all duration-700"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent" />
+
+                                <div className="relative z-10 px-5 flex items-center gap-4 h-full w-full">
+                                  <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 flex items-center justify-center border border-[#D4AF37]/30 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(212,175,55,0.2)] backdrop-blur-md">
+                                    <Globe className="w-5 h-5 text-[#D4AF37]" />
+                                  </div>
+                                  <div className="flex flex-col justify-center">
+                                    <h4 className="text-white font-black text-lg group-hover:text-[#D4AF37] transition-colors line-clamp-1">
+                                      {query.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                                    </h4>
+                                    <p className="text-[10px] uppercase tracking-widest text-[#D4AF37]/70 mt-1 flex items-center gap-1.5 font-bold">
+                                      <Search className="w-3 h-3" /> Global Database Match
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
                             )}
                             {results.length === 0 && query.trim().length <= 2 && (
@@ -541,7 +455,7 @@ function AddPackageModal({ isOpen, onClose }) {
             {/* Footer Base Strip */}
             <div className="shrink-0 px-6 py-3 border-t border-[#D4AF37]/10 flex justify-end gap-3 bg-black/20 relative z-20">
               <button type="button" onClick={onClose} className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#D4AF37]/40 hover:text-[#D4AF37] transition-colors hover:bg-[#D4AF37]/5 rounded-xl">CANCEL</button>
-              <button type="button" onClick={handleCreate} disabled={createTourPackage?.isPending || !form.destination || !form.src} className="bg-gradient-to-r from-[#D4AF37] to-amber-500 hover:from-amber-400 text-black font-black uppercase tracking-widest py-2 px-5 rounded-xl text-[10px] flex items-center gap-1.5 shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100">
+              <button type="button" onClick={handleCreate} disabled={createTourPackage?.isPending} className="bg-gradient-to-r from-[#D4AF37] to-amber-500 hover:from-amber-400 text-black font-black uppercase tracking-widest py-2 px-5 rounded-xl text-[10px] flex items-center gap-1.5 shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:scale-105 transition-all">
                 {createTourPackage?.isPending ? <Loader2 className="w-3 h-3 animate-spin text-black" /> : <Sparkles className="w-3 h-3" />}
                 {createTourPackage?.isPending ? "CONNECTING..." : "FINALIZE"}
               </button>
@@ -684,21 +598,6 @@ export default function Admin() {
       refetch();
     } catch (err) {
       toast({ title: "Error", description: err.message || "Failed to cancel trip", variant: "destructive" });
-    }
-  };
-
-  const handleDeleteTourPackage = async (packageId) => {
-    if (!packageId) {
-      toast({ title: "Error", description: "Package id is missing.", variant: "destructive" });
-      return;
-    }
-
-    try {
-      await deleteTourPackage.mutateAsync(packageId);
-      toast({ title: "Deleted", description: "Tour package removed successfully.", variant: "success" });
-      refetchPackages();
-    } catch (err) {
-      toast({ title: "Error", description: err.message || "Failed to delete tour package", variant: "destructive" });
     }
   };
 
@@ -1063,28 +962,20 @@ export default function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {tourPackages.length > 0 ? tourPackages.map(p => {
-                    const safeDestination = sanitizeVisibleText(p.destination, "Untitled package");
-                    const safeTravelStyle = sanitizeVisibleText(p.travelStyle, "curated");
-                    return (
-                    <tr key={p._id || p.id} className="admin-row" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  {tourPackages.length > 0 ? tourPackages.map(p => (
+                    <tr key={p._id} className="admin-row" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                       <td className="px-5 py-3.5 text-xs text-[var(--admin-text-main)] font-black">Admin</td>
-                      <td className="px-5 py-3.5 font-bold">{safeDestination} - {safeTravelStyle}</td>
-                      <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs">{formatDateSafe(p.startDate)}</td>
-                      <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs">{formatDateSafe(p.endDate)}</td>
-                      <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs font-bold">{safeDestination}</td>
+                      <td className="px-5 py-3.5 font-bold">{p.destination} - {p.travelStyle}</td>
+                      <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs">{new Date(p.startDate).toLocaleDateString()}</td>
+                      <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs">{new Date(p.endDate).toLocaleDateString()}</td>
+                      <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs font-bold">{p.destination}</td>
                       <td className="px-5 py-3.5 flex items-center gap-2">
-                        <button
-                          onClick={() => handleDeleteTourPackage(p._id || p.id)}
-                          disabled={deleteTourPackage.isPending}
-                          title="Delete Package"
-                          className="p-1.5 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {deleteTourPackage.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                        <button onClick={() => deleteTourPackage.mutate(p._id)} className="p-1.5 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-400/10 transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </td>
                     </tr>
-                  )}) : (
+                  )) : (
                     <tr><td colSpan={6} className="px-5 py-12 text-center text-[var(--admin-text-muted)]">No active tour packages.</td></tr>
                   )}
                 </tbody>

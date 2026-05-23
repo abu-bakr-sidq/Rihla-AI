@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { sendOTPEmail } from "./email";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import session from "express-session";
@@ -69,7 +70,7 @@ async function generateItinerary(destination: string, days: number, budget: stri
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-5.1",
+      model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
     });
@@ -88,6 +89,20 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Middleware to check authentication
+  const requireAuth = (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    next();
+  };
+
+  const requireAdmin = (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(401).json({ message: "Unauthorized - Admin only" });
+    }
+    next();
+  };
   
   // Set up authentication (express-session & passport)
   app.use(
@@ -106,11 +121,11 @@ export async function registerRoutes(
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy(async (username, password, done) => {
+    new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
       try {
-        const user = await storage.getUserByUsername(username);
+        const user = await storage.getUserByEmail(email);
         if (!user || !(await comparePasswords(password, user.password))) {
-          return done(null, false, { message: "Invalid username or password" });
+          return done(null, false, { message: "Invalid email or password" });
         }
         return done(null, user);
       } catch (err) {
@@ -136,10 +151,15 @@ export async function registerRoutes(
   app.post(api.auth.register.path, async (req, res, next) => {
     try {
       const parsed = api.auth.register.input.parse(req.body);
-      const existingUser = await storage.getUserByUsername(parsed.username);
       
+      const existingUser = await storage.getUserByUsername(parsed.username);
       if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
+        return res.status(400).json({ message: "Username already exists", field: "username" });
+      }
+
+      const existingEmail = await storage.getUserByEmail(parsed.email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already registered", field: "email" });
       }
 
       const hashedPassword = await hashPassword(parsed.password);
@@ -150,6 +170,7 @@ export async function registerRoutes(
 
       const user = await storage.createUser({
         username: parsed.username,
+        email: parsed.email,
         password: hashedPassword,
         role
       });
@@ -166,6 +187,67 @@ export async function registerRoutes(
         });
       }
       next(err);
+    }
+  });
+
+  app.post(api.auth.forgotPassword.path, async (req, res) => {
+    try {
+      const { email } = api.auth.forgotPassword.input.parse(req.body);
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        return res.status(404).json({ message: "No account found with this email" });
+      }
+
+      // Generate 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // Send Real Email
+      const emailResult = await sendOTPEmail(email, otp);
+      
+      if (!emailResult.success) {
+        return res.status(500).json({ message: "Failed to deliver verification code. Please try again." });
+      }
+
+      // Attach to storage for verification
+      await storage.createOTP(email, otp);
+
+      res.json({ 
+        message: "Verification code has been dispatched to your email.",
+        previewUrl: emailResult.previewUrl // Include previewUrl if available
+      });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post(api.auth.resetPassword.path, async (req, res) => {
+    try {
+      const { email, otp, newPassword } = api.auth.resetPassword.input.parse(req.body);
+      
+      const isValid = await storage.getOTP(email, otp);
+      if (!isValid) {
+        return res.status(400).json({ message: "Invalid or expired OTP" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const hashedPassword = await hashPassword(newPassword);
+      await storage.updateUserPassword(user.id, hashedPassword);
+      await storage.deleteOTP(email);
+
+      res.json({ message: "Password reset successful" });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Failed to reset password" });
     }
   });
 
@@ -194,20 +276,46 @@ export async function registerRoutes(
     res.json(req.user);
   });
 
-  // Middleware to check authentication
-  const requireAuth = (req: any, res: any, next: any) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    next();
-  };
+  app.post(api.auth.updatePassword.path, requireAuth, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = api.auth.updatePassword.input.parse(req.body);
+      const user = req.user as any;
 
-  const requireAdmin = (req: any, res: any, next: any) => {
-    if (!req.isAuthenticated() || req.user.role !== "admin") {
-      return res.status(401).json({ message: "Unauthorized - Admin only" });
+      const isMatch = await comparePasswords(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: "Incorrect current password", field: "currentPassword" });
+      }
+
+      const hashedPassword = await hashPassword(newPassword);
+      await storage.updateUserPassword(user.id, hashedPassword);
+
+      res.json({ message: "Password updated successfully" });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      res.status(500).json({ message: "Internal server error" });
     }
-    next();
-  };
+  });
+
+  app.patch(api.auth.updateProfile.path, requireAuth, async (req, res) => {
+    try {
+      const parsed = api.auth.updateProfile.input.parse(req.body);
+      const user = req.user as any;
+
+      const updated = await storage.updateUser(user.id, parsed);
+      res.json(updated);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
 
   // Trips Routes
   app.get(api.trips.list.path, requireAuth, async (req, res) => {
@@ -336,6 +444,39 @@ export async function registerRoutes(
       recentUsers: users.slice(0, 5),
       recentTrips: trips.slice(0, 5)
     });
+  });
+
+  app.patch(api.admin.updateUser.path, requireAdmin, async (req, res) => {
+    try {
+      const userId = Number(req.params.id);
+      const parsed = api.admin.updateUser.input.parse(req.body);
+      
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      const updated = await storage.updateUser(userId, parsed);
+      res.json(updated);
+    } catch (err) {
+       res.status(400).json({ message: "Invalid update data" });
+    }
+  });
+
+  app.delete(api.admin.deleteUser.path, requireAdmin, async (req, res) => {
+    try {
+      const userId = Number(req.params.id);
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      await storage.deleteUser(userId);
+      res.status(204).send();
+    } catch (err) {
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  app.get(api.admin.allTrips.path, requireAdmin, async (req, res) => {
+    const trips = await storage.getAllTrips();
+    res.json(trips);
   });
 
   return httpServer;

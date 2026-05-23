@@ -162,7 +162,7 @@ export default function ChatPage() {
     historyRef.current = [...historyRef.current, { role: "user", content: t }].slice(-10);
 
     try {
-      const { reply, itinerary } = await sendChatMessage(t, historyRef.current, "planner");
+      const { reply, itinerary } = await sendChatMessage(t, historyRef.current);
       const aiMsg = { id: Date.now() + "a", role: "assistant", content: reply, itinerary: itinerary || null };
       setMsgs(prev => [...prev, aiMsg]);
       historyRef.current = [...historyRef.current, { role: "assistant", content: reply }].slice(-10);

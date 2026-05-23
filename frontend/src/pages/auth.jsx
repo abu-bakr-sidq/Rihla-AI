@@ -4,14 +4,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, Link } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
 import { Lock, Mail, User, ArrowRight, Loader2, Eye, EyeOff, PlaneTakeoff } from "lucide-react";
 import { useUser, useLogin, useRegister } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import BrandLogo from "@/components/BrandLogo";
-import { api } from "@/lib/api-contract";
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
-const BACKEND_BASE_URL = API_BASE_URL.endsWith("/api") ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
 /* ── Travel background images for auth page ── */
 const AUTH_TRAVEL_IMAGES = [
@@ -145,10 +141,8 @@ export default function Auth() {
   const [resetEmail, setResetEmail] = useState("");
   const [resetOTP, setResetOTP] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
-  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
   const [, setLocation] = useLocation();
   const { data: user } = useUser();
-  const queryClient = useQueryClient();
   const loginMutation = useLogin();
   const registerMutation = useRegister();
   const { toast } = useToast();
@@ -193,14 +187,12 @@ export default function Auth() {
     const token = params.get("token");
     if (token) {
       localStorage.setItem("auth_token", token);
-      setIsGoogleSigningIn(true);
       // Clean up the URL
       window.history.replaceState({}, document.title, window.location.pathname);
-      queryClient.removeQueries({ queryKey: [api.auth.me.path] });
-      queryClient.invalidateQueries({ queryKey: [api.auth.me.path] });
+      // Refresh the user state
       toast({ title: "Welcome!", description: "Successfully authenticated with Google." });
     }
-  }, [toast, queryClient]);
+  }, [toast]);
 
   const onSubmit = async (data) => {
     try {
@@ -225,30 +217,6 @@ export default function Auth() {
     <div className="min-h-screen w-full flex relative overflow-hidden bg-black">
       {/* Full-page travel photo background */}
       <TravelAuthBackground />
-      {isGoogleSigningIn && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="relative overflow-hidden rounded-[28px] border border-[#D4AF37]/20 bg-[linear-gradient(135deg,rgba(8,12,20,0.96),rgba(18,28,40,0.94))] px-6 py-5 text-[#D4AF37] shadow-2xl">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(212,175,55,0.12),transparent_50%)]" />
-            <div className="relative flex items-center gap-4">
-              <div className="relative flex h-11 w-11 items-center justify-center">
-                <div className="absolute inset-0 rounded-full border border-[#D4AF37]/20" />
-                <div className="absolute inset-0 rounded-full border-t-2 border-[#D4AF37] animate-spin" />
-                <motion.div
-                  animate={{ x: [-10, 10, -10], y: [4, -4, 4], rotate: [-8, 8, -8] }}
-                  transition={{ duration: 2.1, repeat: Infinity, ease: "easeInOut" }}
-                  className="relative"
-                >
-                  <PlaneTakeoff className="h-4 w-4" />
-                </motion.div>
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-[#D4AF37]/70">Boarding Pass</p>
-                <span className="mt-1 block text-sm font-bold tracking-wide text-white">Signing you in...</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Left Panel: Cinematic Quote Carousel over travel background ── */}
       <div
@@ -371,7 +339,7 @@ export default function Auth() {
                   e.preventDefault();
                   const email = e.target.email.value;
                   try {
-                    const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+                    const res = await fetch("/api/auth/forgot-password", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ email }),
@@ -434,7 +402,7 @@ export default function Auth() {
                     return;
                   }
                   try {
-                    const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+                    const res = await fetch("/api/auth/reset-password", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ email: resetEmail, otp: resetOTP, newPassword }),
@@ -638,7 +606,7 @@ export default function Auth() {
               <div className="mt-6">
                 <button
                   type="button"
-                  onClick={() => (window.location.href = `${BACKEND_BASE_URL}/api/auth/google`)}
+                  onClick={() => (window.location.href = "/api/auth/google")}
                   className="w-full h-14 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 flex items-center justify-center gap-3 font-semibold text-sm text-foreground hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-[0.98]"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -688,7 +656,7 @@ function VerifyOTPStep({ email, previewUrl, setPreviewUrl, onVerify, onBack, toa
   const handleResend = async () => {
     setIsResending(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+      const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

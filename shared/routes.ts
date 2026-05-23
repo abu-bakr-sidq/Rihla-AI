@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertUserSchema, users, insertTripSchema, trips, insertPlaceSchema, places } from './schema';
+import { insertUserSchema, users, insertTripSchema, trips, insertPlaceSchema, places, userSchema } from './schema';
 
 // ============================================
 // SHARED ERROR SCHEMAS
@@ -26,35 +26,97 @@ export const errorSchemas = {
 export const api = {
   auth: {
     login: {
-      method: 'POST' as const,
-      path: '/api/login' as const,
-      input: insertUserSchema.pick({ username: true, password: true }),
+      method: "POST" as const,
+      path: "/api/auth/login" as const,
+      input: z.object({ email: z.string().email(), password: z.string() }),
       responses: {
-        200: z.custom<typeof users.$inferSelect>(),
+        200: z.object({
+          user: z.custom<typeof users.$inferSelect>(),
+          token: z.string().optional()
+        }),
         401: errorSchemas.unauthorized,
       },
     },
     register: {
-      method: 'POST' as const,
-      path: '/api/register' as const,
-      input: insertUserSchema.pick({ username: true, password: true }),
+      method: "POST" as const,
+      path: "/api/auth/register" as const,
+      input: insertUserSchema.pick({ username: true, password: true, email: true }),
       responses: {
         201: z.custom<typeof users.$inferSelect>(),
         400: errorSchemas.validation,
       },
     },
+    forgotPassword: {
+      method: 'POST' as const,
+      path: '/api/auth/forgot-password' as const,
+      input: z.object({ email: z.string().email() }),
+      responses: {
+        200: z.object({ message: z.string() }),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+    resetPassword: {
+      method: 'POST' as const,
+      path: '/api/auth/reset-password' as const,
+      input: z.object({
+        email: z.string().email(),
+        otp: z.string().length(6),
+        newPassword: z.string().min(6),
+      }),
+      responses: {
+        200: z.object({ message: z.string() }),
+        400: errorSchemas.validation,
+      },
+    },
     logout: {
       method: 'POST' as const,
-      path: '/api/logout' as const,
+      path: '/api/auth/logout' as const,
       responses: {
         200: z.object({ success: z.boolean() }),
       },
     },
     me: {
       method: 'GET' as const,
-      path: '/api/user' as const,
+      path: '/api/auth/me' as const,
       responses: {
-        200: z.custom<typeof users.$inferSelect>(),
+        200: userSchema,
+        401: errorSchemas.unauthorized,
+      },
+    },
+    updatePassword: {
+      method: 'POST' as const,
+      path: '/api/auth/change-password' as const,
+      input: z.object({
+        currentPassword: z.string(),
+        newPassword: z.string().min(6, "Password must be at least 6 characters"),
+      }),
+      responses: {
+        200: z.object({ message: z.string() }),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+      },
+    },
+    updateProfile: {
+      method: 'PUT' as const,
+      path: '/api/auth/profile' as const,
+      input: z.object({
+        username: z.string().min(3).optional(),
+        email: z.string().email().optional(),
+        profilePicture: z.string().optional(),
+        preferences: z.record(z.any()).optional(),
+      }),
+      responses: {
+        200: userSchema,
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+      },
+    },
+    revokeSessions: {
+      method: 'POST' as const,
+      path: '/api/auth/revoke-sessions' as const,
+      responses: {
+        200: z.object({ message: z.string() }),
         401: errorSchemas.unauthorized,
       },
     },
@@ -159,6 +221,36 @@ export const api = {
       path: '/api/admin/stats' as const,
       responses: {
         200: z.any(),
+        401: errorSchemas.unauthorized,
+      },
+    },
+    updateUser: {
+      method: 'PATCH' as const,
+      path: '/api/admin/users/:id' as const,
+      input: z.object({
+        role: z.enum(['user', 'admin']).optional(),
+        status: z.enum(['active', 'suspended']).optional(),
+      }),
+      responses: {
+        200: z.custom<typeof users.$inferSelect>(),
+        401: errorSchemas.unauthorized,
+        404: errorSchemas.notFound,
+      },
+    },
+    deleteUser: {
+      method: 'DELETE' as const,
+      path: '/api/admin/users/:id' as const,
+      responses: {
+        204: z.void(),
+        401: errorSchemas.unauthorized,
+        404: errorSchemas.notFound,
+      },
+    },
+    allTrips: {
+      method: 'GET' as const,
+      path: '/api/admin/trips' as const,
+      responses: {
+        200: z.array(z.custom<typeof trips.$inferSelect>()),
         401: errorSchemas.unauthorized,
       },
     },
