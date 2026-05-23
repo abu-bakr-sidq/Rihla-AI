@@ -1,0 +1,22 @@
+{
+  "name": "rihla-ai-backend-mongodb",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "latest",
+    "cors": "latest",
+    "dotenv": "latest",
+    "express": "latest",
+    "express-session": "latest",
+    "jsonwebtoken": "latest",
+    "mongoose": "latest",
+    "nodemailer": "latest",
+    "passport": "latest",
+    "passport-google-oauth20": "latest",
+    "passport-local": "latest"
+  }
+}
