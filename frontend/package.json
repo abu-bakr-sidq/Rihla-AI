@@ -8,6 +8,7 @@
     "preview": "vite preview --config vite.config.ts --host --port 4173"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.10",
     "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-slot": "^1.2.4",
     "@react-three/drei": "^9.105.4",
