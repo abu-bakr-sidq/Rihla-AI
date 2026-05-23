@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import { TourPackage } from "../models/TourPackage.js";
 import { ensureAdmin } from "../middleware/auth.js";
 
@@ -311,11 +312,22 @@ router.put("/:id", ensureAdmin, async (req, res) => {
 
 router.delete("/:id", ensureAdmin, async (req, res) => {
   try {
-    const deletedPackage = await TourPackage.findByIdAndDelete(req.params.id);
+    const packageId = String(req.params.id || "").trim();
+
+    if (!packageId) {
+      return res.status(400).json({ message: "Package id is required" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(packageId)) {
+      return res.status(400).json({ message: "Invalid package id" });
+    }
+
+    const deletedPackage = await TourPackage.findOneAndDelete({ _id: packageId });
     if (!deletedPackage) return res.status(404).json({ message: "Package not found" });
     res.json({ message: "Package deleted successfully" });
-  } catch {
-    res.status(500).json({ message: "Failed to delete package" });
+  } catch (err) {
+    console.error(`DELETE /tour-packages/${req.params.id} error:`, err);
+    res.status(500).json({ message: err.message || "Failed to delete package" });
   }
 });
 

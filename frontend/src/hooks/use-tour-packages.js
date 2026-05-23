@@ -73,7 +73,14 @@ export function useDeleteTourPackage() {
         headers: getAuthHeaders(),
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to delete package");
+      if (!res.ok) {
+        let msg = "Failed to delete package";
+        try {
+          const err = await res.json();
+          msg = err.message || msg;
+        } catch {}
+        throw new Error(msg);
+      }
       return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/tour-packages"] }),
