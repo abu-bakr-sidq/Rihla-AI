@@ -76,6 +76,39 @@ function isPlausibleGoogleMatch(query = "", candidate = "") {
   return ratio >= 0.6;
 }
 
+function buildGoogleQueryVariants(query = "") {
+  const clean = String(query || "").trim();
+  if (!clean) return [];
+
+  const variants = [];
+  const seen = new Set();
+  const compact = clean.split(",")[0].trim();
+
+  const pushVariant = (requestQuery, matchQuery = clean) => {
+    const normalizedRequest = String(requestQuery || "").trim();
+    const normalizedMatch = String(matchQuery || clean).trim();
+    if (!normalizedRequest) return;
+    const key = `${normalizedRequest.toLowerCase()}__${normalizedMatch.toLowerCase()}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    variants.push({ requestQuery: normalizedRequest, matchQuery: normalizedMatch });
+  };
+
+  pushVariant(clean, clean);
+  if (compact && compact.toLowerCase() !== clean.toLowerCase()) {
+    pushVariant(compact, compact);
+  }
+
+  for (const seed of [compact || clean, clean]) {
+    pushVariant(`${seed} travel`, compact || clean);
+    pushVariant(`${seed} tourism`, compact || clean);
+    pushVariant(`${seed} landmark`, compact || clean);
+    pushVariant(`${seed} skyline`, compact || clean);
+  }
+
+  return variants;
+}
+
 function buildGoogleCandidateText(place = {}) {
   return [place?.name, place?.formatted_address, place?.vicinity]
     .filter(Boolean)
@@ -106,64 +139,89 @@ async function getGooglePhotoRef(query, photoIndex = 0) {
   const GOOGLE_KEY = getKey();
   if (!GOOGLE_KEY) return null;
 
-  // Strategy 1: Find Place From Text returns up to 10 photos per place.
-  try {
-    const fpUrl =
-      `https://maps.googleapis.com/maps/api/place/findplacefromtext/json` +
-      `?input=${encodeURIComponent(query)}` +
-      `&inputtype=textquery` +
-      `&fields=place_id,photos,name,formatted_address` +
-      `&key=${GOOGLE_KEY}`;
+  const variants = buildGoogleQueryVariants(query);
 
-    const res = await fetch(fpUrl, { signal: AbortSignal.timeout(7000) });
-    if (res.ok) {
-      const data = await res.json();
-      const place = data?.candidates?.[0];
-      const photos = place?.photos || [];
-      if (photos.length > 0) {
-        // Use photoIndex modulo total available photos to rotate uniquely.
-        const pick = photos[photoIndex % photos.length];
-        const photoRef = pick?.photo_reference;
-        if (photoRef) {
+  for (const { requestQuery, matchQuery } of variants) {
+    // Strategy 1: Find Place From Text returns up to 10 photos per place.
+    try {
+      const fpUrl =
+        `https://maps.googleapis.com/maps/api/place/findplacefromtext/json` +
+        `?input=${encodeURIComponent(requestQuery)}` +
+        `&inputtype=textquery` +
+        `&fields=place_id,photos,name,formatted_address` +
+        `&key=${GOOGLE_KEY}`;
+
+      const res = await fetch(fpUrl, { signal: AbortSignal.timeout(7000) });
+      if (res.ok) {
+        const data = await res.json();
+        const candidates = Array.isArray(data?.candidates) ? data.candidates : [];
+        for (const place of candidates) {
+          const photos = place?.photos || [];
+          if (!photos.length) continue;
+          const pick = photos[photoIndex % photos.length];
+          const photoRef = pick?.photo_reference;
+          if (!photoRef) continue;
           const candidateText = buildGoogleCandidateText(place);
-          console.log(`[Places] findplace: "${query}" -> ${candidateText || place.name} (photo ${photoIndex % photos.length}/${photos.length})`);
-          if (isPlausibleGoogleMatch(query, candidateText)) {
+          console.log(`[Places] findplace: "${requestQuery}" -> ${candidateText || place.name} (photo ${photoIndex % photos.length}/${photos.length})`);
+          if (isPlausibleGoogleMatch(matchQuery, candidateText)) {
             return { photoRef, name: place.name };
           }
         }
       }
-    }
-  } catch (e) { console.warn("[Places] findplace error:", e.message); }
+    } catch (e) { console.warn("[Places] findplace error:", e.message); }
 
-  // Strategy 2: Text Search is broader and can still return photos.
-  try {
-    const tsUrl =
-      `https://maps.googleapis.com/maps/api/place/textsearch/json` +
-      `?query=${encodeURIComponent(query)}` +
-      `&key=${GOOGLE_KEY}`;
+    // Strategy 2: Text Search is broader and can still return photos.
+    try {
+      const tsUrl =
+        `https://maps.googleapis.com/maps/api/place/textsearch/json` +
+        `?query=${encodeURIComponent(requestQuery)}` +
+        `&key=${GOOGLE_KEY}`;
 
-    const res = await fetch(tsUrl, { signal: AbortSignal.timeout(7000) });
-    if (res.ok) {
-      const data = await res.json();
-      const results = data?.results || [];
-      if (results.length > 0) {
-        // Rotate across different result places and their photos for better uniqueness.
-        const resultIdx = Math.floor(photoIndex / 5) % results.length;
-        const place = results[resultIdx];
-        const photos = place?.photos || [];
-        if (photos.length > 0) {
+      const res = await fetch(tsUrl, { signal: AbortSignal.timeout(7000) });
+      if (res.ok) {
+        const data = await res.json();
+        const results = Array.isArray(data?.results) ? data.results : [];
+        const orderedResults = results.length
+          ? [...results.slice(photoIndex % results.length), ...results.slice(0, photoIndex % results.length)]
+          : [];
+
+        for (const place of orderedResults) {
+          const photos = place?.photos || [];
+          if (!photos.length) continue;
           const photoRef = photos[photoIndex % photos.length]?.photo_reference;
-          if (photoRef) {
-            const candidateText = buildGoogleCandidateText(place);
-            console.log(`[Places] textsearch: "${query}" -> ${candidateText || place.name} (result ${resultIdx}, photo ${photoIndex % photos.length})`);
-            if (isPlausibleGoogleMatch(query, candidateText)) {
+          if (!photoRef) continue;
+          const candidateText = buildGoogleCandidateText(place);
+          console.log(`[Places] textsearch: "${requestQuery}" -> ${candidateText || place.name} (photo ${photoIndex % photos.length})`);
+          if (isPlausibleGoogleMatch(matchQuery, candidateText)) {
+            return { photoRef, name: place.name };
+          }
+        }
+      }
+    } catch (e) { console.warn("[Places] textsearch error:", e.message); }
+
+    if (compactPlaceText(matchQuery) !== compactPlaceText(requestQuery)) {
+      try {
+        const relaxedUrl =
+          `https://maps.googleapis.com/maps/api/place/textsearch/json` +
+          `?query=${encodeURIComponent(requestQuery)}` +
+          `&key=${GOOGLE_KEY}`;
+
+        const res = await fetch(relaxedUrl, { signal: AbortSignal.timeout(7000) });
+        if (res.ok) {
+          const data = await res.json();
+          const results = Array.isArray(data?.results) ? data.results : [];
+          for (const place of results) {
+            const photos = place?.photos || [];
+            const photoRef = photos[photoIndex % Math.max(photos.length, 1)]?.photo_reference;
+            if (photoRef) {
+              console.log(`[Places] relaxed textsearch: "${requestQuery}" -> ${place.name}`);
               return { photoRef, name: place.name };
             }
           }
         }
+      } catch (e) { console.warn("[Places] relaxed textsearch error:", e.message); }
       }
-    }
-  } catch (e) { console.warn("[Places] textsearch error:", e.message); }
+  }
 
   return null;
 }
