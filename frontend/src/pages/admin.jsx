@@ -272,25 +272,64 @@ function AddPackageModal({ isOpen, onClose }) {
         if (!searchRes.ok) throw new Error("search_failed");
         const rows = await searchRes.json();
 
+        const buildCandidateQueries = (row) => {
+          const rawParts = [
+            row?.address?.city,
+            row?.address?.town,
+            row?.address?.state,
+            row?.address?.country,
+            row?.name,
+          ]
+            .map((part) => sanitizeVisibleText(part || "", ""))
+            .filter(Boolean);
+
+          const uniqueParts = rawParts.filter((part, index, arr) =>
+            arr.findIndex((cand) => cand.toLowerCase() === part.toLowerCase()) === index
+          );
+
+          const primaryTitle = uniqueParts.slice(0, 2).join(", ")
+            || sanitizeVisibleText(row?.display_name || "", cleanQuery)
+            || cleanQuery;
+
+          const candidates = [
+            primaryTitle,
+            uniqueParts.join(", "),
+            uniqueParts[0] || "",
+            sanitizeVisibleText(row?.display_name || "", ""),
+            cleanQuery,
+          ]
+            .map((value) => sanitizeVisibleText(value || "", ""))
+            .filter(Boolean)
+            .filter((value, index, arr) => arr.findIndex((cand) => cand.toLowerCase() === value.toLowerCase()) === index);
+
+          return {
+            title: primaryTitle,
+            candidates,
+          };
+        };
+
         const verified = await Promise.all(
           (Array.isArray(rows) ? rows : []).map(async (row) => {
-            const city = row?.address?.city || row?.address?.town || row?.address?.state || row?.address?.country || row?.name;
-            const country = row?.address?.country || "";
-            const title = [city, country].filter(Boolean).join(", ") || row?.display_name || cleanQuery;
-            try {
-              const verifyRes = await fetch(`${API_BASE_URL}/place-image/validate?query=${encodeURIComponent(title)}`, {
-                signal: ctrl.signal,
-              });
-              if (!verifyRes.ok) return null;
-              const verify = await verifyRes.json();
-              if (!verify?.ok || !verify?.imageUrl) return null;
-              return {
-                title: sanitizeVisibleText(title, cleanQuery),
-                src: verify.imageUrl,
-              };
-            } catch {
-              return null;
+            const { title, candidates } = buildCandidateQueries(row);
+
+            for (const candidate of candidates) {
+              try {
+                const verifyRes = await fetch(`${API_BASE_URL}/place-image/validate?query=${encodeURIComponent(candidate)}`, {
+                  signal: ctrl.signal,
+                });
+                if (!verifyRes.ok) continue;
+                const verify = await verifyRes.json();
+                if (!verify?.ok || !verify?.imageUrl) continue;
+                return {
+                  title: sanitizeVisibleText(title, cleanQuery),
+                  src: verify.imageUrl,
+                };
+              } catch {
+                return null;
+              }
             }
+
+            return null;
           })
         );
 
