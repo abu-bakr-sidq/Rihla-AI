@@ -2,9 +2,9 @@ import bcrypt from "bcryptjs";
 import { User } from "../models/User.js";
 
 export const ADMIN_ACCOUNT = {
-    username: "Rihla Admin",
-    email: "Rihla.AI.Travel@gmail.com",
-    password: "Rihla867",
+    username: process.env.ADMIN_USERNAME || "Rihla Admin",
+    email: process.env.ADMIN_EMAIL || "jabubackersiddiq@gmail.com",
+    password: process.env.ADMIN_PASSWORD || "Rihla867",
     role: "admin",
 };
 

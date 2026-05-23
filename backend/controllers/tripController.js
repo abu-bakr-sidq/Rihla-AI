@@ -13,6 +13,7 @@
 import { Trip } from "../models/Trip.js";
 import { TripCache, buildCacheKey } from "../models/TripCache.js";
 import { User } from "../models/User.js";
+import mongoose from "mongoose";
 import { createCityItinerary } from "../services/locationEnhancedPlanner.js";
 import { generateEnrichedItinerary, generateItinerary, buildPlannerPrompt } from "../services/aiPlannerService.js";
 import { getWeatherForDestination, geocodeCity } from "../services/weatherService.js";
@@ -25,12 +26,47 @@ function getDayCount(startDate, endDate) {
   return Math.max(1, Math.ceil((new Date(endDate) - new Date(startDate)) / 86400000));
 }
 
+function pickScalar(raw, fallback = "") {
+  if (typeof raw === "string") return raw;
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  if (Array.isArray(raw)) {
+    return pickScalar(raw.find((item) => typeof item === "string" || typeof item === "number"), fallback);
+  }
+  if (raw && typeof raw === "object") {
+    for (const key of ["category", "label", "budget", "value", "total"]) {
+      if (raw[key] !== undefined && raw[key] !== null) return pickScalar(raw[key], fallback);
+    }
+  }
+  return fallback;
+}
+
 function normalizeBudget(raw) {
-  return (raw || "moderate").toLowerCase()
+  const scalar = pickScalar(raw, "moderate");
+  if (typeof scalar === "number") {
+    if (scalar <= 1500) return "budget";
+    if (scalar <= 4500) return "moderate";
+    if (scalar <= 9000) return "premium";
+    return "luxury";
+  }
+  return String(scalar || "moderate").toLowerCase()
     .replace(/budget.*/, "budget")
     .replace(/moderate.*/, "moderate")
+    .replace(/premium.*/, "premium")
     .replace(/luxury.*/, "luxury")
     .trim() || "moderate";
+}
+
+function normalizeTravelStyle(raw) {
+  return String(pickScalar(raw, "balanced") || "balanced").trim().toLowerCase() || "balanced";
+}
+
+async function findTripByIdentifier(identifier, { lean = false } = {}) {
+  if (!identifier) return null;
+  const query = mongoose.Types.ObjectId.isValid(identifier)
+    ? { $or: [{ _id: identifier }, { tripId: identifier }] }
+    : { tripId: identifier };
+  const finder = Trip.findOne(query);
+  return lean ? finder.lean() : finder;
 }
 
 function toTripResponse(doc) {
@@ -88,6 +124,7 @@ export const createTrip = async (req, res) => {
     if (!destination) return res.status(400).json({ message: "Destination is required" });
 
     const normBudget = normalizeBudget(budget);
+    const normTravelStyle = normalizeTravelStyle(travelStyle);
     const normDays = Number(days) || getDayCount(startDate, endDate) || 7;
     const normTravelers = Number(travelers) || 1;
     const normInterests = Array.isArray(interests) ? interests : [];
@@ -102,7 +139,7 @@ export const createTrip = async (req, res) => {
     }
 
     // ── 2. Check cache ────────────────────────────────────────────────────────
-    const cacheKey = buildCacheKey(destination, normDays, normBudget, travelStyle);
+    const cacheKey = buildCacheKey(destination, normDays, normBudget, normTravelStyle);
     const cached = await TripCache.findOne({ cacheKey }).lean();
 
     if (cached) {
@@ -122,7 +159,7 @@ export const createTrip = async (req, res) => {
         days: normDays,
         budget: normBudget,
         currency,
-        travelStyle,
+        travelStyle: normTravelStyle,
         interests: normInterests,
         travelers: normTravelers,
         status,
@@ -131,7 +168,7 @@ export const createTrip = async (req, res) => {
         itinerary: cached.data.itinerary || [],
         costBreakdown: cached.data.costBreakdown || {},
         routeCoordinates: cached.data.routeCoordinates || [],
-        preferences: { travelStyle, interests: normInterests, travelers: normTravelers, currency, specialRequests: preferences?.specialRequests || req.body.specialRequirements || "" },
+        preferences: { travelStyle: normTravelStyle, interests: normInterests, travelers: normTravelers, currency, specialRequests: preferences?.specialRequests || req.body.specialRequirements || "" },
         servedFromCache: true,
       });
 
@@ -164,7 +201,7 @@ export const createTrip = async (req, res) => {
           destination,
           days: normDays,
           budget: normBudget,
-          travelStyle,
+          travelStyle: normTravelStyle,
           interests: normInterests,
           preferences,
           weather,
@@ -177,7 +214,7 @@ export const createTrip = async (req, res) => {
         try {
           // Fallback 1: locationEnhancedPlanner (Wikipedia + curated data)
           generatedPayload = await createCityItinerary(
-            destination, normDays, normBudget, travelStyle, normInterests
+            destination, normDays, normBudget, normTravelStyle, normInterests
           );
         } catch (_) { }
       }
@@ -186,7 +223,7 @@ export const createTrip = async (req, res) => {
       if (!generatedPayload) {
         console.warn("[AI Architect] Using fallback synthetic itinerary");
         generatedPayload = buildFallbackItinerary({
-          destination, days: normDays, budget: normBudget, travelStyle, interests: normInterests,
+          destination, days: normDays, budget: normBudget, travelStyle: normTravelStyle, interests: normInterests,
         });
       }
     }
@@ -202,7 +239,7 @@ export const createTrip = async (req, res) => {
 
     TripCache.create({
       cacheKey, destination,
-      days: normDays, budget: normBudget, travelStyle,
+      days: normDays, budget: normBudget, travelStyle: normTravelStyle,
       data: cacheData,
     }).catch(err => {
       if (err.code !== 11000) console.error("[TripCache] Write error:", err.message);
@@ -222,7 +259,7 @@ export const createTrip = async (req, res) => {
       days: normDays,
       budget: normBudget,
       currency,
-      travelStyle,
+      travelStyle: normTravelStyle,
       interests: normInterests,
       travelers: normTravelers,
       status,
@@ -232,7 +269,7 @@ export const createTrip = async (req, res) => {
       costBreakdown: costBreakdown || generatedPayload?.costBreakdown || {},
       routeCoordinates: generatedPayload?.routeCoordinates || [],
       preferences: {
-        travelStyle,
+        travelStyle: normTravelStyle,
         interests: normInterests,
         travelers: normTravelers,
         currency,
@@ -266,7 +303,7 @@ export const getUserTrips = async (req, res) => {
 // ─── getTripById ──────────────────────────────────────────────────────────────
 export const getTripById = async (req, res) => {
   try {
-    const trip = await Trip.findById(req.params.id).lean();
+    const trip = await findTripByIdentifier(req.params.id, { lean: true });
     if (!trip) return res.status(404).json({ message: "Trip not found" });
     if (String(trip.userId) !== String(req.user._id || req.user.id) && req.user.role !== "admin") {
       return res.status(403).json({ message: "Forbidden" });
@@ -280,7 +317,7 @@ export const getTripById = async (req, res) => {
 // ─── deleteTrip ──────────────────────────────────────────────────────────────
 export const deleteTrip = async (req, res) => {
   try {
-    const trip = await Trip.findById(req.params.id);
+    const trip = await findTripByIdentifier(req.params.id);
     if (!trip) return res.status(404).json({ message: "Trip not found" });
     if (String(trip.userId) !== String(req.user._id || req.user.id) && req.user.role !== "admin") {
       return res.status(403).json({ message: "Forbidden" });
@@ -308,7 +345,7 @@ export const deleteAllTrips = async (req, res) => {
 // ─── updateTrip ──────────────────────────────────────────────────────────────
 export const updateTrip = async (req, res) => {
   try {
-    const trip = await Trip.findById(req.params.id);
+    const trip = await findTripByIdentifier(req.params.id);
     if (!trip) return res.status(404).json({ message: "Trip not found" });
     if (String(trip.userId) !== String(req.user._id || req.user.id) && req.user.role !== "admin") {
       return res.status(403).json({ message: "Forbidden" });

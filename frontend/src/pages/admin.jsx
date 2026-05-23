@@ -614,7 +614,7 @@ export default function Admin() {
       });
       toast({ title: "Success", description: "Tour Package Created!", variant: "success" });
       setPackageModalOpen(false);
-      setPackageForm({ destination: "", startDate: "", endDate: "", budget: "moderate", travelStyle: "relaxed", preferences: "" });
+      setPackageForm({ destination: "", days: 7, budget: 3000, travelStyle: "cultural", preferences: "" });
     } catch (err) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
@@ -643,7 +643,7 @@ export default function Admin() {
           <h1 className="text-3xl font-black mb-3">Access Restricted</h1>
           <p className="text-[var(--admin-text-muted)] text-sm mb-2">Admin privileges required to view this panel.</p>
           <p className="text-xs text-[var(--admin-text-muted)] mb-8 p-3 rounded-xl" style={{ background: "rgba(124,58,237,0.05)", border: "1px solid rgba(124,58,237,0.15)" }}>
-            Admin: <span className="font-bold text-foreground">jabubackersiddiq@gmail.com</span>
+            Admin: <span className="font-bold text-foreground">{import.meta.env.VITE_ADMIN_EMAIL || "jabubackersiddiq@gmail.com"}</span>
           </p>
           <Link href="/auth">
             <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}

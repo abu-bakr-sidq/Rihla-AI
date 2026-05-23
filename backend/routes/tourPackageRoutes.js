@@ -4,6 +4,50 @@ import { requireAuth, ensureAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
+function getPackageCurrencyMeta(destination = "") {
+  const text = String(destination || "").toLowerCase();
+  const presets = [
+    { keys: ["chennai", "pondicherry", "kanyakumari", "india"], code: "INR", rate: 83, dailyUsd: 55 },
+    { keys: ["tokyo", "kyoto", "japan"], code: "JPY", rate: 149, dailyUsd: 130 },
+    { keys: ["dubai", "uae"], code: "AED", rate: 3.67, dailyUsd: 180 },
+    { keys: ["paris", "rome", "venice", "amalfi", "barcelona", "france", "italy", "spain"], code: "EUR", rate: 0.93, dailyUsd: 175 },
+    { keys: ["london", "uk"], code: "GBP", rate: 0.79, dailyUsd: 190 },
+    { keys: ["new york", "usa"], code: "USD", rate: 1, dailyUsd: 220 },
+  ];
+  return presets.find((preset) => preset.keys.some((key) => text.includes(key))) || { code: "USD", rate: 1, dailyUsd: 140 };
+}
+
+function parseBudgetNumber(value) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(/[^\d.]/g, ""));
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  if (value && typeof value === "object") {
+    return parseBudgetNumber(value.total ?? value.amount ?? value.value ?? value.budget);
+  }
+  return null;
+}
+
+function normalizePackageBudgetUsd(pkg, days) {
+  const safeDays = Math.max(1, Number(days) || 1);
+  const meta = getPackageCurrencyMeta(pkg.destination);
+  const style = String(pkg.travelStyle || "").toLowerCase();
+  const styleMultiplier =
+    style === "luxury" ? 1.8 :
+    style === "adventure" ? 1.25 :
+    style === "relaxation" ? 1.15 :
+    style === "budget" ? 0.72 : 1;
+  const estimatedTotalUsd = Math.round(meta.dailyUsd * styleMultiplier * safeDays);
+  const parsedBudget = parseBudgetNumber(pkg.budget);
+  if (!Number.isFinite(parsedBudget) || parsedBudget <= 0) return estimatedTotalUsd;
+  const parsedPerDay = parsedBudget / safeDays;
+  if (parsedPerDay < meta.dailyUsd * 0.5 || parsedPerDay > meta.dailyUsd * 2.2) {
+    return estimatedTotalUsd;
+  }
+  return Math.round(parsedBudget);
+}
+
 // GET all active tour packages (Public or logged-in users)
 router.get("/", async (req, res) => {
   try {
@@ -35,6 +79,7 @@ router.get("/:id/preview", async (req, res) => {
     const days = Math.max(1, Math.round((new Date(pkg.endDate) - new Date(pkg.startDate)) / 86400000));
     const prefs = (pkg.preferences || []).join(", ") || "local attractions";
     const places = (pkg.description || "").split(",").map(p => p.trim()).filter(Boolean);
+    const budgetUsd = normalizePackageBudgetUsd(pkg, days);
 
     // Try Grok AI first
     try {
@@ -42,7 +87,7 @@ router.get("/:id/preview", async (req, res) => {
       const ai = getGrokClient();
 
       const prompt = `You are a professional travel planner. Create a detailed ${days}-day itinerary for ${pkg.destination} in ${pkg.travelStyle} travel style.
-Total budget: $${pkg.budget} USD. Key places: ${places.join(", ") || prefs}.
+Total budget: $${budgetUsd} USD. Key places: ${places.join(", ") || prefs}.
 
 Return ONLY a JSON object with this exact schema (no extra text):
 {
@@ -91,7 +136,7 @@ Return ONLY a JSON object with this exact schema (no extra text):
       const currency = currKey ? CURR_MAP[currKey] : "USD";
       const sym = SYMS[currency] || "$";
       const rate = RATES[currency] || 1;
-      const localBudget = Math.round(pkg.budget * rate);
+      const localBudget = Math.round(budgetUsd * rate);
       const perDay = Math.round(localBudget / days);
       const fmtN = n => n >= 100000 ? `${sym}${(n/100000).toFixed(1)}L` : n >= 1000 ? `${sym}${(n/1000).toFixed(1)}K` : `${sym}${n}`;
 

@@ -6,6 +6,7 @@ import { Loader2, Globe, Star, Wallet, Calendar, Clock, Sparkles, X, Zap, Sun, S
 import AppInnerLayout from "@/components/AppInnerLayout";
 import DashboardSlideshow from "@/components/ui/DashboardSlideshow";
 import { usePlaceImage } from "@/hooks/use-place-image";
+import { resolveApiUrl } from "@/lib/api-contract";
 
 /* ─── Injected animation CSS ──────────────────────────────────── */
 const ANIM_CSS = `
@@ -93,6 +94,44 @@ function getCurrency(dest) {
   const d = dest.toLowerCase();
   return Object.keys(CURRENCY_MAP).find(k => d.includes(k)) ? CURRENCY_MAP[Object.keys(CURRENCY_MAP).find(k => d.includes(k))] : { sym: "$", code: "USD", rate: 1 };
 }
+function estimateDailyUsd(dest, style = "") {
+  const d = String(dest || "").toLowerCase();
+  let base =
+    d.includes("india") || d.includes("chennai") || d.includes("pondicherry") || d.includes("kanyakumari") ? 55 :
+    d.includes("japan") || d.includes("tokyo") || d.includes("kyoto") ? 130 :
+    d.includes("uae") || d.includes("dubai") ? 180 :
+    d.includes("france") || d.includes("paris") || d.includes("italy") || d.includes("rome") || d.includes("venice") || d.includes("amalfi") || d.includes("spain") || d.includes("barcelona") ? 175 :
+    d.includes("uk") || d.includes("london") ? 190 :
+    d.includes("usa") || d.includes("new york") || d.includes("san francisco") ? 220 :
+    140;
+  const s = String(style || "").toLowerCase();
+  if (s === "luxury") base *= 1.8;
+  else if (s === "adventure") base *= 1.25;
+  else if (s === "relaxation") base *= 1.15;
+  else if (s === "budget") base *= 0.72;
+  return Math.round(base);
+}
+function parsePackageBudget(value) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const n = Number(value.replace(/[^\d.]/g, ""));
+    return Number.isFinite(n) ? n : null;
+  }
+  if (value && typeof value === "object") {
+    return parsePackageBudget(value.total ?? value.amount ?? value.value ?? value.budget);
+  }
+  return null;
+}
+function getNormalizedPackageBudgetUsd(pkg, days) {
+  const safeDays = Math.max(1, Number(days) || 1);
+  const estimated = estimateDailyUsd(pkg?.destination, pkg?.travelStyle) * safeDays;
+  const parsed = parsePackageBudget(pkg?.budget);
+  if (!Number.isFinite(parsed) || parsed <= 0) return estimated;
+  const expected = estimateDailyUsd(pkg?.destination, pkg?.travelStyle);
+  const parsedPerDay = parsed / safeDays;
+  if (parsedPerDay < expected * 0.5 || parsedPerDay > expected * 2.2) return estimated;
+  return Math.round(parsed);
+}
 function fmtBudget(usd, cur, days) {
   const local = Math.round(usd * cur.rate);
   const fmtN = n => n >= 100000 ? `${(n/100000).toFixed(1)}L` : n >= 1000 ? `${(n/1000).toFixed(1)}K` : n.toString();
@@ -120,16 +159,16 @@ function PlanModal({ pkg, onClose }) {
   const [tab, setTab] = useState("itinerary");
   const currency = getCurrency(pkg.destination);
   const days = pkg.days || Math.max(1, Math.round((new Date(pkg.endDate || Date.now()) - new Date(pkg.startDate || Date.now())) / 86400000));
-  const budget = fmtBudget(pkg.budget, currency, days);
+  const budget = fmtBudget(getNormalizedPackageBudgetUsd(pkg, days), currency, days);
 
   useEffect(() => {
-    fetch(`/api/tour-packages/${pkg._id}/preview`)
+    fetch(resolveApiUrl(`/api/tour-packages/${pkg._id}/preview`))
       .then(r => r.json())
       .then(d => { setPlan(d); setLoading(false); })
       .catch(() => {
         // Robust local fallback when API fails
         const places = (pkg.description || "").split(",").map(p => p.trim()).filter(Boolean);
-        const localBudget = Math.round(pkg.budget * currency.rate);
+        const localBudget = Math.round(getNormalizedPackageBudgetUsd(pkg, days) * currency.rate);
         const perDay = Math.round(localBudget / days);
         const fmtN = n => n >= 100000 ? `${currency.sym}${(n/100000).toFixed(1)}L` : n >= 1000 ? `${currency.sym}${(n/1000).toFixed(1)}K` : `${currency.sym}${n}`;
         setPlan({
@@ -376,7 +415,9 @@ export default function TourPackages() {
     const d = pkg.days || Math.max(1, Math.round((new Date(pkg.endDate || Date.now()) - new Date(pkg.startDate || Date.now())) / 86400000));
     const start = new Date();
     const end = new Date(); end.setDate(end.getDate() + d);
-    const p = new URLSearchParams({ autoGenerate: "true", destination: pkg.destination, startDate: start.toISOString().split("T")[0], endDate: end.toISOString().split("T")[0], budget: pkg.budget, travelStyle: pkg.travelStyle, preferences: (pkg.preferences||[]).join(", ") });
+    const currency = getCurrency(pkg.destination);
+    const budgetUsd = getNormalizedPackageBudgetUsd(pkg, d);
+    const p = new URLSearchParams({ autoGenerate: "true", destination: pkg.destination, startDate: start.toISOString().split("T")[0], endDate: end.toISOString().split("T")[0], budget: String(budgetUsd), currency: currency.code, travelStyle: pkg.travelStyle, preferences: (pkg.preferences||[]).join(", ") });
     setLocation(`/planner?${p.toString()}`);
   };
 
@@ -410,7 +451,7 @@ export default function TourPackages() {
               {packages.map((pkg, i) => {
                 const currency = getCurrency(pkg.destination);
                 const days = pkg.days || Math.max(1, Math.round((new Date(pkg.endDate || Date.now()) - new Date(pkg.startDate || Date.now())) / 86400000));
-                const budget = fmtBudget(pkg.budget, currency, days);
+                const budget = fmtBudget(getNormalizedPackageBudgetUsd(pkg, days), currency, days);
 
                 return (
                   <motion.div key={pkg._id}

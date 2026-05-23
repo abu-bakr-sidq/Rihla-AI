@@ -17,6 +17,19 @@ function getAuthHeaders() {
   return headers;
 }
 
+async function readJsonOrThrow(res, fallbackMessage) {
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    const text = await res.text();
+    throw new Error(
+      text && text.trim().startsWith("<")
+        ? "Server returned HTML instead of JSON. Check the live API URL or backend auth route."
+        : fallbackMessage
+    );
+  }
+  return res.json();
+}
+
 export function useUser(options = {}) {
   const { enabled = true, allowAnonymousCheck = false } = options;
   const hasToken =
@@ -33,7 +46,7 @@ export function useUser(options = {}) {
         return null;
       }
       if (!res.ok) throw new Error("Failed to fetch user");
-      const raw = await res.json();
+      const raw = await readJsonOrThrow(res, "Login failed");
       return parseWithLogging(api.auth.me.responses[200], raw, "auth.me");
     },
     retry: false,
@@ -52,7 +65,7 @@ export function useLogin() {
         body: JSON.stringify(validated),
         credentials: "include"
       });
-      const raw = await res.json();
+      const raw = await readJsonOrThrow(res, "Registration failed");
       if (!res.ok) {
         throw new Error(raw.message || "Login failed");
       }
