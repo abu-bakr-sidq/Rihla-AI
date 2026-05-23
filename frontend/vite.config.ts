@@ -9,21 +9,10 @@ export default defineConfig({
   envDir: path.resolve(import.meta.dirname, ".."),
   plugins: [react()],
   resolve: {
-    dedupe: ["react", "react-dom"],
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
       "@shared": path.resolve(import.meta.dirname, "../shared"),
       "@assets": path.resolve(import.meta.dirname, "../attached_assets"),
-      react: path.resolve(import.meta.dirname, "node_modules/react"),
-      "react-dom": path.resolve(import.meta.dirname, "node_modules/react-dom"),
-      "react/jsx-runtime": path.resolve(
-        import.meta.dirname,
-        "node_modules/react/jsx-runtime.js",
-      ),
-      "react/jsx-dev-runtime": path.resolve(
-        import.meta.dirname,
-        "node_modules/react/jsx-dev-runtime.js",
-      ),
     },
   },
   root: path.resolve(import.meta.dirname),

@@ -1,4 +1,4 @@
-﻿const REPLACEMENTS = new Map([
+const REPLACEMENTS = new Map([
   ["\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00b7", "\u00b7"],
   ["\u00c3\u201a\u00c2\u00b7", "\u00b7"],
   ["\u00c2\u00b7", "\u00b7"],

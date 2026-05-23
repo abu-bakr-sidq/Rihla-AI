@@ -2,6 +2,9 @@
   "name": "asset-attachment-frontend",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "vite --config vite.config.ts --host --port 5173",
     "build": "vite build --config vite.config.ts",
