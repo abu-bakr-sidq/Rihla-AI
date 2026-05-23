@@ -51,6 +51,21 @@ function setPendingTrips(trips) {
   } catch {}
 }
 
+function queuePendingTrip(trip) {
+  if (!trip?.destination) return;
+
+  const pending = getPendingTrips();
+  const fingerprint = buildTripFingerprint(trip);
+  const alreadyQueued = pending.some((item) => buildTripFingerprint(item) === fingerprint);
+  if (alreadyQueued) return;
+
+  pending.push({
+    ...trip,
+    status: trip?.status || "planned",
+  });
+  setPendingTrips(pending);
+}
+
 function buildTripFingerprint(trip) {
   return [
     String(trip?.destination || "").trim().toLowerCase(),
@@ -93,9 +108,6 @@ function removePendingTripById(id) {
 }
 
 async function syncPendingTrips() {
-  const token = localStorage.getItem("auth_token");
-  if (!token) return;
-
   const pending = getPendingTrips();
   if (!pending.length) return;
 
@@ -111,6 +123,10 @@ async function syncPendingTrips() {
       });
 
       if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          remaining.push(trip);
+          continue;
+        }
         remaining.push(trip);
       }
     } catch {
@@ -125,14 +141,14 @@ function useTrips() {
   return useQuery({
     queryKey: [api.trips.list.path],
     queryFn: async () => {
-      const token = localStorage.getItem("auth_token");
-      if (!token) return [];
-
       await syncPendingTrips();
       const res = await fetch(apiUrl(api.trips.list.path), {
         headers: getAuthHeaders(),
         credentials: "include",
       });
+      if (res.status === 401 || res.status === 403) {
+        return [];
+      }
       if (!res.ok) throw new Error("Failed to fetch trips");
       const parsed = parseWithLogging(api.trips.list.responses[200], await res.json(), "trips.list");
       return mergeTripsWithPending(parsed);
@@ -182,22 +198,34 @@ function useCreateTrip() {
     mutationFn: async (data) => {
       const parseResult = api.trips.create.input.safeParse(data);
       const payload = parseResult.success ? parseResult.data : data;
-      const res = await fetch(apiUrl(api.trips.create.path), {
-        method: api.trips.create.method,
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
-        credentials: "include",
-      });
-      if (!res.ok) {
-        let errMsg = "Failed to save trip";
-        try {
-          const errBody = await res.json();
-          errMsg = errBody.message || errBody.error || errMsg;
-          console.error("[Trip Create Error]", errBody);
-        } catch {}
-        throw new Error(errMsg);
+      try {
+        const res = await fetch(apiUrl(api.trips.create.path), {
+          method: api.trips.create.method,
+          headers: getAuthHeaders(),
+          body: JSON.stringify(payload),
+          credentials: "include",
+        });
+        if (!res.ok) {
+          let errMsg = "Failed to save trip";
+          try {
+            const errBody = await res.json();
+            errMsg = errBody.message || errBody.error || errMsg;
+            console.error("[Trip Create Error]", errBody);
+          } catch {}
+
+          if (res.status >= 500) {
+            queuePendingTrip(payload);
+          }
+
+          throw new Error(errMsg);
+        }
+        return await res.json();
+      } catch (err) {
+        if (err instanceof TypeError) {
+          queuePendingTrip(payload);
+        }
+        throw err;
       }
-      return await res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.trips.list.path] }),
   });
