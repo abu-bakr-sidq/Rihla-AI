@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser, useLogout, useUpdateProfile, useUpdatePassword, useRevokeSessions } from "@/hooks/use-auth";
 import { useAdmin, useUpdateUserStatus, useDeleteUser } from "@/hooks/use-admin";
@@ -27,6 +27,7 @@ import DashboardSlideshow from "@/components/ui/DashboardSlideshow";
 import { format } from "date-fns";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { CalendarGrid, isDisabled } from "./planner";
+import { resolveApiUrl } from "@/lib/api-contract";
 
 /* ── Mini Planner Calendar Wrapper ── */
 function MiniPlannerCalendar({ selectedDate, onSelect, dateLabel = "Departure" }) {
@@ -193,6 +194,44 @@ const stylePreferencesMap = {
   relaxation: ["Spa & Wellness", "Beachfront", "Luxury Dining", "Private Tours", "Resort Stay", "Slow Pace"]
 };
 
+const normalizeSearchValue = (value = "") =>
+  String(value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s'-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const hasSearchSignal = (value = "") => {
+  const compact = normalizeSearchValue(value).replace(/[\s'-]/g, "");
+  if (compact.length < 3) return false;
+  if (/^(.)\1+$/.test(compact)) return false;
+  return new Set(compact.split("")).size >= 3;
+};
+
+const isValidPlaceLabel = (name = "") => {
+  const compact = normalizeSearchValue(name).replace(/[\s'-]/g, "");
+  if (compact.length < 3) return false;
+  if (/^(.)\1+$/.test(compact)) return false;
+  return new Set(compact.split("")).size >= 3;
+};
+
+const TRUSTED_DESTINATION_TYPES = new Set([
+  "city",
+  "town",
+  "village",
+  "municipality",
+  "county",
+  "state",
+  "province",
+  "region",
+  "country",
+  "island",
+  "archipelago",
+  "hamlet",
+]);
+
 // ── Currency Intelligence Engine ──
 const getCurrencySymbol = (dest) => {
   if (!dest) return "$";
@@ -227,7 +266,9 @@ function AddPackageModal({ isOpen, onClose }) {
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState(() =>
+    AI_SUGGESTIONS.slice(0, 6).map((d) => ({ title: d.title, location: d.country || "", src: d.src }))
+  );
 
   const [form, setForm] = useState({
     destination: "", src: "", days: 7, budget: 3000, travelStyle: "cultural"
@@ -237,17 +278,129 @@ function AddPackageModal({ isOpen, onClose }) {
   const createTourPackage = useCreateTourPackage();
 
   useEffect(() => {
-    if (query.length > 1) {
-      setIsSearching(true);
-      const timer = setTimeout(() => {
-        setResults(AI_SUGGESTIONS.filter(d => d.title.toLowerCase().includes(query.toLowerCase())));
-        setIsSearching(false);
-      }, 400);
-      return () => clearTimeout(timer);
-    } else {
+    if (!query || query.trim().length < 2) {
+      setResults(AI_SUGGESTIONS.slice(0, 6).map((d) => ({ title: d.title, location: d.country || "", src: d.src })));
+      setIsSearching(false);
+      if (!query) {
+        setForm((f) => ({ ...f, destination: "", src: "" }));
+      }
+      return;
+    }
+
+    if (!hasSearchSignal(query)) {
       setResults([]);
       setIsSearching(false);
+      return;
     }
+
+    setIsSearching(true);
+    const controller = new AbortController();
+
+    const doSearch = async () => {
+      try {
+        const nomRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=10&addressdetails=1&accept-language=en`,
+          { signal: controller.signal }
+        );
+        const places = await nomRes.json();
+        const normalizedQuery = normalizeSearchValue(query);
+
+        const mappedPlaces = Array.isArray(places) ? places
+          .map((place) => {
+            const rawName = String(place.display_name?.split(",")[0] || "").trim();
+            const country = String(
+              place.address?.country || place.display_name?.split(",").slice(-1)[0] || ""
+            ).trim();
+
+            return {
+              rawName,
+              country,
+              normalizedName: normalizeSearchValue(rawName),
+              importance: Number(place.importance) || 0,
+              destinationType: String(place.addresstype || place.type || "").toLowerCase(),
+              destinationClass: String(place.class || "").toLowerCase(),
+            };
+          })
+          .filter(({ rawName, country, normalizedName, destinationType, destinationClass }) =>
+            rawName &&
+            country &&
+            isValidPlaceLabel(rawName) &&
+            normalizedName.includes(normalizedQuery) &&
+            (TRUSTED_DESTINATION_TYPES.has(destinationType) || destinationClass === "place" || destinationClass === "boundary")
+          ) : [];
+
+        const exactMatches = mappedPlaces.filter(({ normalizedName }) => normalizedName === normalizedQuery);
+        const prioritizedPlaces = (exactMatches.length ? exactMatches : mappedPlaces)
+          .sort((a, b) => b.importance - a.importance);
+
+        const trustedSeen = new Set();
+        const trustedUnique = prioritizedPlaces.filter(({ rawName, country }) => {
+          const key = `${normalizeSearchValue(rawName)}|${normalizeSearchValue(country)}`;
+          if (trustedSeen.has(key)) return false;
+          trustedSeen.add(key);
+          return true;
+        });
+
+        if (trustedUnique.length > 0) {
+          const trustedCards = await Promise.all(
+            trustedUnique.slice(0, 6).map(async ({ rawName, country }, idx) => {
+              let src = null;
+              try {
+                const gRes = await fetch(
+                  resolveApiUrl(`/api/place-image?query=${encodeURIComponent(`${rawName} ${country}`)}&photoIndex=${idx}&onlyGoogle=1`),
+                  { signal: controller.signal }
+                );
+                if (gRes.ok) {
+                  const gData = await gRes.json();
+                  if (gData?.url) src = gData.url;
+                }
+              } catch { }
+              return {
+                title: rawName,
+                location: country,
+                src: src || AI_SUGGESTIONS.find((item) => normalizeSearchValue(item.title) === normalizeSearchValue(rawName))?.src || null,
+                query: `${rawName} ${country}`.trim(),
+              };
+            })
+          );
+
+          const cardSeen = new Set();
+          const dedupedTrustedCards = trustedCards.filter((card) => {
+            const key = `${normalizeSearchValue(card.title)}|${normalizeSearchValue(card.location)}`;
+            if (cardSeen.has(key)) return false;
+            cardSeen.add(key);
+            return true;
+          });
+
+          if (!controller.signal.aborted) {
+            setResults(dedupedTrustedCards);
+            setIsSearching(false);
+          }
+          return;
+        }
+
+        if (!controller.signal.aborted) {
+          setResults([]);
+          setIsSearching(false);
+        }
+      } catch {
+        if (!controller.signal.aborted) {
+          setResults(
+            AI_SUGGESTIONS
+              .filter((d) => normalizeSearchValue(d.title).includes(normalizeSearchValue(query)))
+              .slice(0, 6)
+              .map((d) => ({ title: d.title, location: d.country || "", src: d.src }))
+          );
+          setIsSearching(false);
+        }
+      }
+    };
+
+    const timer = setTimeout(doSearch, 500);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [query]);
 
   const handleSelectDest = (r) => {
@@ -306,7 +459,7 @@ function AddPackageModal({ isOpen, onClose }) {
                     />
                   </div>
                   <AnimatePresence>
-                    {showDropdown && query.length > 1 && (
+                    {showDropdown && (
                       <motion.div className="absolute top-full left-0 right-0 mt-2 bg-[#0f0f0f]/95 backdrop-blur-2xl border border-[#D4AF37]/30 rounded-2xl overflow-hidden shadow-2xl max-h-80 overflow-y-auto z-[100] custom-scrollbar">
                         {isSearching && results.length === 0 ? (
                           <div className="p-4 flex items-center justify-center gap-2 text-center text-[#D4AF37]/50 text-xs uppercase tracking-widest">
@@ -316,10 +469,11 @@ function AddPackageModal({ isOpen, onClose }) {
                           <>
                             {results.map((r, i) => (
                               <div key={i} onClick={() => handleSelectDest(r)} className="group relative h-24 hover:h-28 cursor-pointer flex border-b border-[#D4AF37]/10 last:border-0 transition-all duration-300 overflow-hidden">
-                                <img src={r.src} alt={r.title} className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-90 group-hover:scale-105 transition-all duration-700" />
+                                {r.src ? <img src={r.src} alt={r.title} className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-90 group-hover:scale-105 transition-all duration-700" /> : <div className="absolute inset-0 bg-gradient-to-br from-[#2a2412] via-[#161616] to-[#0b0b0b]" />}
                                 <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent" />
                                 <div className="relative z-10 p-4 flex flex-col justify-end h-full">
                                   <h4 className="text-white font-black text-lg group-hover:text-[#D4AF37] transition-colors">{r.title}</h4>
+                                  {!!r.location && <p className="text-[10px] uppercase tracking-widest text-[#D4AF37]/70 mt-1 font-bold">{r.location}</p>}
                                 </div>
                               </div>
                             ))}
@@ -357,8 +511,10 @@ function AddPackageModal({ isOpen, onClose }) {
                                 </div>
                               </div>
                             )}
-                            {results.length === 0 && query.trim().length <= 2 && (
-                              <div className="p-4 text-center text-[#D4AF37]/40 text-xs uppercase tracking-widest">Type to search...</div>
+                            {results.length === 0 && !isSearching && (
+                              <div className="p-4 text-center text-[#D4AF37]/40 text-xs uppercase tracking-widest">
+                                {query.trim().length <= 2 ? "Type at least 3 strong letters..." : `No trusted destination found for "${query.trim()}"`}
+                              </div>
                             )}
                           </>
                         )}
