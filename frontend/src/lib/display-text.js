@@ -1,51 +1,44 @@
-const REPLACEMENTS = new Map([
-  ['Ã‚Â·', '�'],
-  ['Â·', '�'],
-  ['·', '�'],
-  ['Ã¢â‚¬Â¢', '\u2022'],
-  ['â€¢', '\u2022'],
-  ['•', '\u2022'],
-  ['Ã¢â‚¬â€œ', '-'],
-  ['Ã¢â‚¬â€�\u009d', '-'],
-  ['â€“', '-'],
-  ['â€�\u009d', '-'],
-  ['–', '-'],
-  ['—', '-'],
-  ['Ã¢â‚¬Â¦', '...'],
-  ['â€¦', '...'],
-  ['…', '...'],
-  ['Ã¢â€� â€™', '->'],
-  ['â� �’', '->'],
-  ['Ã¢Å“â€œ', '\u2713'],
-  ['âœ“', '\u2713'],
-  ['✓', '\u2713'],
-  ['â‚¬', '\u20AC'],
-  ['€', '\u20AC'],
-  ['â‚¹', '\u20B9'],
-  ['₹', '\u20B9'],
-  ['Â£', '\u00A3'],
-  ['£', '\u00A3'],
-  ['Â¥', '\u00A5'],
-  ['¥', '\u00A5'],
-  ['Ø¯.Ø¥', 'AED'],
-  ['Ø±.Ø³', 'SAR'],
-  ['�', ' '],
-]);
-
-const normalizedReplacements = new Map(
-  Array.from(REPLACEMENTS.entries()).map(([broken, fixed]) => [
-    broken,
-    fixed.replace(/\\u([0-9A-Fa-f]{4})/g, (_, code) => String.fromCharCode(parseInt(code, 16))),
-  ])
-);
+const REPLACEMENTS = [
+  ['\u00C3\u0192\u00E2\u20AC\u0161\u00C3\u201A\u00C2\u00B7', '\u00B7'],
+  ['\u00C3\u201A\u00C2\u00B7', '\u00B7'],
+  ['\u00C2\u00B7', '\u00B7'],
+  ['\u00C3\u0192\u00C2\u00A2\u00C3\u00A2\u20AC\u0161\u00C2\u00AC\u00C3\u201A\u00C2\u00A2', '\u2022'],
+  ['\u00C3\u00A2\u201A\u00AC\u00C2\u00A2', '\u2022'],
+  ['\u00E2\u20AC\u00A2', '\u2022'],
+  ['\u00C3\u0192\u00C2\u00A2\u00C3\u00A2\u20AC\u0161\u00C2\u00AC\u00C3\u00A2\u20AC\u015C', '-'],
+  ['\u00C3\u0192\u00C2\u00A2\u00C3\u00A2\u20AC\u0161\u00C2\u00AC\u00C3\u00A2\u20AC\u009D', '-'],
+  ['\u00C3\u00A2\u201A\u00AC\u201C', '-'],
+  ['\u00C3\u00A2\u201A\u00AC\u201D', '-'],
+  ['\u00E2\u20AC\u201C', '-'],
+  ['\u00E2\u20AC\u201D', '-'],
+  ['\u00C3\u0192\u00C2\u00A2\u00C3\u00A2\u201A\u00AC\u00C2\u00A6', '...'],
+  ['\u00C3\u00A2\u201A\u00AC\u00C2\u00A6', '...'],
+  ['\u00E2\u20AC\u00A6', '...'],
+  ['\u00C3\u0192\u00C2\u00A2\u00C3\u00A2\u201A\u00AC\u00C2\u00A0 \u00C3\u00A2\u201A\u00AC\u2122', '->'],
+  ['\u00C3\u00A2\u20AC \u00C3\u00A2\u20AC\u2122', '->'],
+  ['\u00C3\u0192\u00C2\u00A2\u00C3\u2026\u0153\u00C3\u00A2\u201A\u00AC\u015C', '\u2713'],
+  ['\u00C3\u00A2\u00C5\u201C\u00E2\u20AC\u015C', '\u2713'],
+  ['\u00E2\u0153\u201C', '\u2713'],
+  ['\u00C3\u00A2\u201A\u00AC', '\u20AC'],
+  ['\u00E2\u201A\u00AC', '\u20AC'],
+  ['\u00C3\u00A2\u201A\u00B9', '\u20B9'],
+  ['\u00E2\u201A\u00B9', '\u20B9'],
+  ['\u00C3\u201A\u00C2\u00A3', '\u00A3'],
+  ['\u00C2\u00A3', '\u00A3'],
+  ['\u00C3\u201A\u00C2\u00A5', '\u00A5'],
+  ['\u00C2\u00A5', '\u00A5'],
+  ['\u00C3\u02DC\u00C2\u00AF.\u00C3\u02DC\u00C2\u00A5', 'AED'],
+  ['\u00C3\u02DC\u00C2\u00B1.\u00C3\u02DC\u00C2\u00B3', 'SAR'],
+  ['\u00C2', ' '],
+];
 
 function looksCorrupted(text) {
   if (!text) return false;
 
-  const suspiciousChunks = ['�', '�', '�', '“', '�\u009d', '’', '–', '—', '•', '?'];
+  const suspiciousChunks = ['\u00C3', '\u00C2', '\u00E2\u20AC', '\u00E2\u20AC\u0153', '\u00E2\u20AC\u009D', '\u00E2\u20AC\u2122', '\u00E2\u20AC\u201C', '\u00E2\u20AC\u201D', '\u00E2\u20AC\u00A2'];
   const hitCount = suspiciousChunks.reduce((count, chunk) => count + (text.includes(chunk) ? 1 : 0), 0);
 
-  return hitCount >= 2 || /[���][A-Za-z0-9]/.test(text);
+  return hitCount >= 2 || /[\u00C3\u00C2\u00E2][A-Za-z0-9]/.test(text);
 }
 
 export function sanitizeVisibleText(value, fallback = '') {
@@ -53,14 +46,14 @@ export function sanitizeVisibleText(value, fallback = '') {
 
   let text = String(value);
 
-  for (const [broken, fixed] of normalizedReplacements.entries()) {
+  for (const [broken, fixed] of REPLACEMENTS) {
     text = text.split(broken).join(fixed);
   }
 
   text = text
-    .replace(/[\uFFFD]/g, ' ')
+    .replace(/\uFFFD/g, ' ')
     .replace(/[\u200B-\u200D\uFEFF]/g, '')
-    .replace(/(?:�|�|�|“|�\u009d|’|–|—|•){2,}/g, ' ')
+    .replace(/(?:\u00C3|\u00C2|\u00E2\u20AC|\u00E2\u20AC\u0153|\u00E2\u20AC\u009D|\u00E2\u20AC\u2122|\u00E2\u20AC\u201C|\u00E2\u20AC\u201D|\u00E2\u20AC\u00A2){2,}/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -94,10 +87,10 @@ export function formatCurrencySafe(amount, currency = 'USD', locale = 'en-US') {
   } catch {
     const symbolMap = {
       USD: '$',
-      EUR: String.fromCharCode(0x20AC),
-      GBP: String.fromCharCode(0x00A3),
-      INR: String.fromCharCode(0x20B9),
-      JPY: String.fromCharCode(0x00A5),
+      EUR: '\u20AC',
+      GBP: '\u00A3',
+      INR: '\u20B9',
+      JPY: '\u00A5',
       AED: 'AED ',
       SAR: 'SAR ',
     };
