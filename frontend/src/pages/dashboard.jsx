@@ -263,7 +263,7 @@ export default function Dashboard() {
                     {trips.slice(0, 6).map((trip, i) => (
                       <motion.div key={trip.id || trip._id || `${trip.destination}-${i}`} variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.3 + i * 0.05 }} className="h-full">
                         <Link href={`/trips/${trip.id || trip._id}`}>
-                          <div className="group relative h-[320px] overflow-hidden rounded-[26px] cursor-pointer transition-all duration-300 hover:shadow-[0_24px_60px_rgba(0,0,0,0.7)] hover:-translate-y-1 border border-white/[0.08]">
+                          <div className="group relative h-[300px] sm:h-[320px] overflow-hidden rounded-[22px] sm:rounded-[26px] cursor-pointer transition-all duration-300 hover:shadow-[0_24px_60px_rgba(0,0,0,0.7)] hover:-translate-y-1 border border-white/[0.08]">
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(212,175,55,0.18),transparent_42%),linear-gradient(180deg,#162233_0%,#0a111d_100%)]" />
                             <div className="absolute inset-0 w-full h-full transition-transform duration-700 group-hover:scale-110">
                               <PlaceImage
@@ -299,7 +299,7 @@ export default function Dashboard() {
                                     )}
                                   </div>
 
-                                  <div className="absolute inset-x-0 bottom-0 p-5 md:p-6 z-10 transition-transform duration-500 ease-out group-hover:-translate-y-10">
+                                  <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 md:p-6 z-10 transition-transform duration-500 ease-out md:group-hover:-translate-y-10">
                                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#D4AF37]/88 mb-2">
                                       <MapPin className="w-3 h-3" />
                                       <span className="truncate">{trip.destination}</span>
@@ -323,15 +323,15 @@ export default function Dashboard() {
                                     </div>
                                   </div>
 
-                                  <div className="absolute left-0 right-0 -bottom-16 px-5 md:px-6 pb-5 z-10 transition-all duration-500 ease-out group-hover:bottom-0 opacity-0 group-hover:opacity-100">
-                                    <div className="flex items-end justify-between rounded-2xl border border-white/10 bg-black/45 backdrop-blur-xl px-4 py-3">
+                                  <div className="absolute left-0 right-0 bottom-0 md:-bottom-16 px-4 sm:px-5 md:px-6 pb-4 sm:pb-5 z-10 transition-all duration-500 ease-out opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-hover:bottom-0">
+                                    <div className="flex items-end justify-between rounded-2xl border border-white/10 bg-black/55 backdrop-blur-xl px-4 py-3">
                                       <div>
                                         <p className="text-[8px] text-white/30 font-black uppercase tracking-[0.24em]">Planned Budget</p>
                                         <p className="text-base font-black text-[#D4AF37] mt-1">
                                           {formatCurrency(budget, currency)}
                                         </p>
                                       </div>
-                                      <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#D4AF37] text-black text-[10px] font-black uppercase tracking-[0.16em]">
+                                      <span className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-[#D4AF37] text-black text-[9px] sm:text-[10px] font-black uppercase tracking-[0.14em] sm:tracking-[0.16em]">
                                         Open Trip
                                         <ArrowRight className="w-3.5 h-3.5" />
                                       </span>

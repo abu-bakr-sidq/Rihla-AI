@@ -336,30 +336,30 @@ function PlanModal({ pkg, onClose }) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-end justify-center md:items-center bg-black/85 backdrop-blur-xl"
-      style={{ paddingTop: 68, paddingBottom: 16, paddingLeft: 16, paddingRight: 16 }}
+      className="fixed inset-0 z-[200] flex items-end justify-center sm:items-center bg-black/85 backdrop-blur-xl"
+      style={{ paddingTop: 68, paddingBottom: 12, paddingLeft: 10, paddingRight: 10 }}
       onClick={onClose}>
       <motion.div
         initial={{ scale: 0.93, y: 40 }} animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.93, y: 40 }}
         transition={{ type: "spring", damping: 24, stiffness: 280 }}
         onClick={e => e.stopPropagation()}
-        className="w-full flex flex-col rounded-2xl overflow-hidden"
+        className="w-full flex flex-col rounded-[1.35rem] sm:rounded-2xl overflow-hidden"
         style={{ maxWidth: 520, maxHeight: "calc(100vh - 84px)", background: "#080808", border: "1px solid rgba(212,175,55,0.22)", boxShadow: "0 0 80px rgba(212,175,55,0.2)" }}
       >
         {/* ── Header image (fixed) ── */}
-        <div className="relative shrink-0 overflow-hidden" style={{ height: 160 }}>
+        <div className="relative shrink-0 overflow-hidden h-36 sm:h-40">
           <DestImage destination={pkg.destination} />
           <div className="absolute inset-0 z-[2]" style={{ background: "linear-gradient(to top, #080808 5%, rgba(0,0,0,0.3) 60%, transparent)" }} />
           <button onClick={onClose} className="absolute top-3 right-3 z-[6] p-1.5 rounded-full" style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.15)" }}>
             <X className="w-4 h-4 text-white/70" />
           </button>
-          <div className="absolute bottom-3 left-4 z-[5]">
+          <div className="absolute bottom-3 left-4 z-[5] max-w-[52%] sm:max-w-none">
             <h2 className="text-base font-black text-white leading-tight">{pkg.destination}</h2>
             <p className="text-[10px] capitalize" style={{ color: "#D4AF37" }}>{pkg.travelStyle} · {days} Days</p>
           </div>
           {plan?.overview && (
-            <div className="absolute bottom-3 right-4 z-[5] max-w-[55%]">
+            <div className="absolute bottom-3 right-4 z-[5] max-w-[42%] sm:max-w-[55%]">
               <p className="text-[8px] text-white/50 text-right line-clamp-2">{plan.overview}</p>
             </div>
           )}
@@ -397,9 +397,10 @@ function PlanModal({ pkg, onClose }) {
 
         {/* ── Scrollable body ── */}
         <div
-          className="flex-1 overflow-y-auto px-4 pb-4 pt-2"
+          className="flex-1 overflow-y-auto px-3 sm:px-4 pb-4 pt-2"
           style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(212,175,55,0.3) transparent", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}
           onWheel={e => e.stopPropagation()}
+          onTouchMove={e => e.stopPropagation()}
         >
           {loading ? (
             <div className="space-y-3 py-2">
@@ -559,7 +560,7 @@ export default function TourPackages() {
           <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.68)" }} />
         </div>
 
-        <div className="relative z-10 w-full px-3 md:px-6 pt-20 pb-24 page-enter" style={{ maxWidth: 1500, margin: "0 auto" }}>
+        <div className="relative z-10 w-full px-3 sm:px-4 md:px-6 pt-20 md:pt-24 pb-20 md:pb-24 page-enter" style={{ maxWidth: 1500, margin: "0 auto" }}>
 
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" style={{ border: "1px solid rgba(212,175,55,0.3)", background: "rgba(212,175,55,0.05)" }}>
@@ -577,7 +578,7 @@ export default function TourPackages() {
           {isLoading ? (
             <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 text-[#D4AF37] animate-spin" /></div>
           ) : (
-            <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 680px), 1fr))" }}>
+            <div className="grid gap-4 md:gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 680px), 1fr))" }}>
               {packages.map((pkg, i) => {
                 const currency = getCurrency(pkg.destination);
                 const days = pkg.days || Math.max(1, Math.round((new Date(pkg.endDate || Date.now()) - new Date(pkg.startDate || Date.now())) / 86400000));
@@ -587,13 +588,13 @@ export default function TourPackages() {
                   <motion.div key={pkg._id}
                     initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04, duration: 0.44 }}
-                    className="group flex flex-row rounded-2xl overflow-hidden"
-                    style={{ height: 196, background: "rgba(10,10,12,0.78)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)", transition: "box-shadow 0.3s, border-color 0.3s" }}
+                    className="group flex flex-col sm:flex-row rounded-2xl overflow-hidden"
+                    style={{ background: "rgba(10,10,12,0.78)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)", transition: "box-shadow 0.3s, border-color 0.3s" }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(212,175,55,0.28)"; e.currentTarget.style.boxShadow = "0 0 32px rgba(212,175,55,0.14)"; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,0.4)"; }}
                   >
                     {/* Image */}
-                    <div className="relative shrink-0 overflow-hidden" style={{ width: 165 }}>
+                    <div className="relative shrink-0 overflow-hidden w-full h-40 sm:h-auto sm:w-[165px]">
                       <DestImage destination={pkg.destination} />
                       <div className="absolute top-2.5 left-2.5 z-[4] flex items-center gap-1 px-2.5 py-1 rounded-full" style={{ background: "rgba(0,0,0,0.72)", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}>
                         <Star className="w-2.5 h-2.5 text-[#D4AF37]" fill="currentColor" />
@@ -635,8 +636,10 @@ export default function TourPackages() {
                     </div>
 
                     {/* Actions */}
-                    <div className="shrink-0 flex flex-col items-center justify-center gap-3 px-3 py-4"
-                      style={{ width: 160, borderLeft: "1px solid rgba(255,255,255,0.07)", background: "rgba(0,0,0,0.25)" }}>
+                    <div
+                      className="shrink-0 flex flex-col items-center justify-center gap-3 px-3 py-4 w-full sm:w-[160px] border-t sm:border-t-0 sm:border-l"
+                      style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(0,0,0,0.25)" }}
+                    >
 
                       {/* Generate a Preview — animated */}
                       <div className="relative w-full">

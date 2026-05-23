@@ -34,6 +34,20 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
     return () => window.removeEventListener("scroll", h);
   }, []);
 
+  useEffect(() => {
+    setMobileOpen(false);
+    setUserMenuOpen(false);
+  }, [location]);
+
+  useEffect(() => {
+    const shouldLock = mobileOpen || userMenuOpen;
+    const prev = document.body.style.overflow;
+    if (shouldLock) document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen, userMenuOpen]);
+
   const handleLogout = async () => {
     try { await logoutMutation.mutateAsync(); } catch { /* ignore */ }
     setUserMenuOpen(false);
@@ -58,7 +72,7 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
             : "bg-transparent backdrop-blur-md"
         }`}>
         {/* COMMAND BAR */}
-        <div className="flex items-center justify-between px-10 h-16 relative z-50">
+        <div className="flex items-center justify-between px-4 sm:px-6 md:px-8 xl:px-10 h-16 relative z-50">
             
             {/* Left: Brand Branding - flex-1 to balance center nav */}
             <div className="flex items-center flex-1">
@@ -70,7 +84,7 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
             </div>
 
             {/* Center: Desktop Nav - Absolute Center Group */}
-            <nav className="hidden lg:flex items-center justify-center gap-16 flex-shrink-0">
+            <nav className="hidden lg:flex items-center justify-center gap-8 xl:gap-12 2xl:gap-16 flex-shrink-0 px-4">
               {NAV_ITEMS.map((item) => (
                 <Link key={item.path} href={item.path}>
                   <span className={`nav-link cursor-pointer flex items-center gap-1.5 text-xs font-black tracking-widest uppercase transition-all ${
@@ -84,7 +98,7 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
             </nav>
 
             {/* Right side: Tools & Profile - flex-1 to balance center nav */}
-            <div className="flex items-center gap-6 flex-1 justify-end">
+            <div className="flex items-center gap-3 sm:gap-4 lg:gap-6 flex-1 justify-end">
               
               {user ? (
                 <div className="relative">
@@ -115,9 +129,9 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
                     </div>
 
                     {/* Minimalist Name Plate */}
-                    <div className="hidden lg:flex flex-col items-start gap-0">
+                    <div className="hidden xl:flex flex-col items-start gap-0 min-w-0">
                       <span className="text-[9px] font-black tracking-[0.2em] text-[#D4AF37] opacity-60 uppercase leading-none mb-1">Account</span>
-                      <span className="text-[15px] font-black text-white group-hover:text-[#D4AF37] transition-colors duration-300 leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
+                      <span className="text-[15px] font-black text-white group-hover:text-[#D4AF37] transition-colors duration-300 leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] max-w-[10rem] truncate">
                         {user?.username || "Traveler"}
                       </span>
                     </div>
@@ -197,7 +211,7 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                    className="hidden sm:flex items-center gap-2 px-6 py-2.5 bg-foreground text-background font-semibold text-sm rounded-full relative overflow-hidden group"
+                    className="hidden md:flex items-center gap-2 px-5 lg:px-6 py-2.5 bg-foreground text-background font-semibold text-sm rounded-full relative overflow-hidden group"
                   >
                     {/* Shimmer effect on button */}
                     <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
@@ -210,7 +224,7 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
               {/* Mobile toggle */}
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
-                className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl bg-white/[0.05] border border-white/10 text-zinc-400 hover:text-white transition-all"
+                className="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl bg-white/[0.05] border border-white/10 text-zinc-400 hover:text-white transition-all"
               >
                 {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </button>
@@ -220,7 +234,7 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
 
         {/* Mobile nav */}
         {mobileOpen && (
-          <div className="md:hidden bg-black/95 border-t border-white/[0.06] px-4 py-4 space-y-1">
+          <div className="lg:hidden max-h-[calc(100vh-4rem)] overflow-y-auto overscroll-contain bg-black/95 border-t border-white/[0.06] px-4 py-4 space-y-1 shadow-[0_22px_60px_rgba(0,0,0,0.5)]">
             {NAV_ITEMS.map((item) => (
               <Link key={item.path} href={item.path}>
                 <div
@@ -241,6 +255,44 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
                 <Sparkles className="w-4 h-4" /> Plan a New Trip
               </div>
             </Link>
+            {user && (
+              <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <div className="flex items-center gap-3 px-2 pb-3 border-b border-white/8">
+                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/15 bg-zinc-900 flex items-center justify-center shrink-0">
+                    {user?.profilePicture ? (
+                      <img
+                        src={user.profilePicture}
+                        alt={user.username}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                      />
+                    ) : (
+                      <span className="text-white text-xs font-black uppercase">{initial}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[9px] font-black uppercase tracking-[0.22em] text-[#D4AF37]/70">Account</div>
+                    <div className="text-sm font-black text-white truncate">{user?.username || "Traveler"}</div>
+                  </div>
+                </div>
+                <div className="grid gap-2 pt-3">
+                  <Link href="/settings">
+                    <div onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-white/85 hover:bg-white/5 border border-white/8 cursor-pointer">
+                      <Plane className="w-4 h-4 text-[#D4AF37]" />
+                      Profile
+                    </div>
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-300 hover:bg-red-500/10 border border-red-500/15"
+                  >
+                    <Wind className="w-4 h-4" />
+                    Logout
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </header>
@@ -252,7 +304,7 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
 
       {/* Page Content */}
       <main 
-        className={cn("relative z-10 min-h-screen", !transparent && "bg-background", !noPadding && "pt-16")}
+        className={cn("relative z-10 min-h-screen overflow-x-hidden", !transparent && "bg-background", !noPadding && "pt-16")}
         style={{ background: transparent ? 'transparent' : undefined }}
       >
         {children}
