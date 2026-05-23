@@ -29,6 +29,8 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { CalendarGrid, isDisabled } from "./planner";
 import { sanitizeVisibleText } from "@/lib/display-text";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
+
 /* ── Mini Planner Calendar Wrapper ── */
 function MiniPlannerCalendar({ selectedDate, onSelect, dateLabel = "Departure" }) {
   const initDate = selectedDate ? new Date(selectedDate) : new Date();
@@ -314,15 +316,20 @@ function AddPackageModal({ isOpen, onClose }) {
 
             for (const candidate of candidates) {
               try {
-                const verifyRes = await fetch(`${API_BASE_URL}/place-image/validate?query=${encodeURIComponent(candidate)}`, {
+                const params = new URLSearchParams({
+                  query: candidate,
+                  photoIndex: "0",
+                  onlyGoogle: "1",
+                });
+                const verifyRes = await fetch(`${API_BASE_URL}/place-image?${params.toString()}`, {
                   signal: ctrl.signal,
                 });
                 if (!verifyRes.ok) continue;
                 const verify = await verifyRes.json();
-                if (!verify?.ok || !verify?.imageUrl) continue;
+                if (!verify?.url) continue;
                 return {
                   title: sanitizeVisibleText(title, cleanQuery),
-                  src: verify.imageUrl,
+                  src: verify.url,
                 };
               } catch {
                 return null;
