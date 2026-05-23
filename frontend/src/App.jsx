@@ -7,8 +7,6 @@ import { ThemeProvider } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
 import { TripProvider } from "@/context/TripContext";
 import { useUser } from "@/hooks/use-auth";
-import { useEffect } from "react";
-import Lenis from "lenis";
 import FloatingBackground from "@/components/FloatingBackground";
 import { DottedSurface } from "@/components/ui/dotted-surface";
 import { ChatButton } from "@/components/ChatBot/ChatButton";
@@ -140,29 +138,6 @@ function GlobalBackground() {
 
 /* ── Main App ── */
 export default function App() {
-  useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      direction: 'vertical',
-      gestureDirection: 'vertical',
-      smooth: true,
-      mouseMultiplier: 1,
-      smoothTouch: false,
-      touchMultiplier: 2,
-      infinite: false,
-    });
-
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-
-    requestAnimationFrame(raf);
-
-    return () => { lenis.destroy(); };
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" forcedTheme="dark" defaultTheme="dark" enableSystem={false}>
