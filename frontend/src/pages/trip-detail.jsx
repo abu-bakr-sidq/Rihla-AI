@@ -776,7 +776,7 @@ export default function TripDetail() {
     const token = localStorage.getItem('auth_token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    fetch(`/api/trips/${id}`, { headers, credentials: 'include' })
+    fetch(`${API_BASE_URL}/trips/${id}`, { headers, credentials: 'include' })
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();

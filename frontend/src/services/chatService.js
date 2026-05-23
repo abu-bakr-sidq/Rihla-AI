@@ -7,8 +7,10 @@
  * @param {Array}  history - Previous messages [{role, content}]
  * @returns {Promise<{ reply: string, itinerary: object|null }>}
  */
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
+
 export async function sendChatMessage(message, history = []) {
-  const res = await fetch("/api/chat", {
+  const res = await fetch(`${API_BASE_URL}/chat`, {
     method:  "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",

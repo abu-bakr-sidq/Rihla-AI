@@ -7,6 +7,8 @@ import AppInnerLayout from "@/components/AppInnerLayout";
 import DashboardSlideshow from "@/components/ui/DashboardSlideshow";
 import { usePlaceImage } from "@/hooks/use-place-image";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
+
 /* ─── Injected animation CSS ──────────────────────────────────── */
 const ANIM_CSS = `
 @keyframes shimmer-sweep {
@@ -123,7 +125,7 @@ function PlanModal({ pkg, onClose }) {
   const budget = fmtBudget(pkg.budget, currency, days);
 
   useEffect(() => {
-    fetch(`/api/tour-packages/${pkg._id}/preview`)
+    fetch(`${API_BASE_URL}/tour-packages/${pkg._id}/preview`)
       .then(r => r.json())
       .then(d => { setPlan(d); setLoading(false); })
       .catch(() => {
