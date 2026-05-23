@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { useCreateTrip, useGenerateTrip, useUpdateTrip } from "@/hooks/use-trips";
+import { saveLocalTripSnapshot, useCreateTrip, useGenerateTrip, useUpdateTrip } from "@/hooks/use-trips";
 import { useUser } from "@/hooks/use-auth";
 import AppInnerLayout from "@/components/AppInnerLayout";
 import {
@@ -2863,18 +2863,8 @@ export default function Planner() {
         });
         tripId = savedResult?.id || savedResult?._id || null;
       } catch (saveErr) {
-        try {
-          const existing = JSON.parse(localStorage.getItem("pending_trips_sync") || "[]");
-          const next = Array.isArray(existing) ? existing : [];
-          const dedupeKey = `${formData.destination}|${formData.startDate}|${formData.endDate}|${formData.travelStyle}`;
-          const alreadyQueued = next.some(
-            (trip) => `${trip.destination}|${trip.startDate}|${trip.endDate}|${trip.travelStyle}` === dedupeKey
-          );
-          if (!alreadyQueued) {
-            next.push(pendingTripPayload);
-            localStorage.setItem("pending_trips_sync", JSON.stringify(next));
-          }
-        } catch {}
+        const localTrip = saveLocalTripSnapshot(pendingTripPayload, { queuePending: true });
+        tripId = localTrip?.id || localTrip?._id || null;
         console.warn("Auto-save failed. Trip queued for sync after login:", saveErr.message);
       }
     }
@@ -2914,8 +2904,16 @@ export default function Planner() {
             const createdTrip = await createTripMutation.mutateAsync(syncTripPayload);
             tripId = createdTrip?.id || createdTrip?._id || tripId;
           } catch (createFallbackErr) {
+            const localTrip = saveLocalTripSnapshot(syncTripPayload, { queuePending: true });
+            tripId = localTrip?.id || localTrip?._id || tripId;
             console.warn("Trip create fallback failed:", createFallbackErr.message);
           }
+        } else {
+          const localTrip = saveLocalTripSnapshot(
+            { ...syncTripPayload, id: tripId, _id: tripId },
+            { queuePending: true, preserveId: true }
+          );
+          tripId = localTrip?.id || localTrip?._id || tripId;
         }
       }
 
@@ -4238,6 +4236,24 @@ export default function Planner() {
               });
               setGeneratedTripId(savedTrip?.id || savedTrip?._id || null);
             } catch (err) {
+              const localTrip = saveLocalTripSnapshot({
+                destination,
+                startDate: formData.startDate,
+                endDate: formData.endDate,
+                days: merged?.trip_overview?.total_days || numDays(),
+                travelers: formData.travelers,
+                budget: budgetCategory,
+                currency: formData.currency,
+                travelStyle: formData.travelStyle,
+                preferences: [],
+                interests: [],
+                specialRequirements: formData.specialRequirements,
+                status: "planned",
+                itinerary: merged,
+                costBreakdown: merged?.total_budget || budgetBreakdown,
+                title: `${formData.travelStyle} trip to ${destination}`,
+              }, { queuePending: true });
+              setGeneratedTripId(localTrip?.id || localTrip?._id || null);
               console.warn("Chat itinerary save failed:", err?.message || err);
             }
           }

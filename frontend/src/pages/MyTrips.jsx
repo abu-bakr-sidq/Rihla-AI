@@ -203,7 +203,7 @@ function TripCard({ trip, onDelete, i }) {
   const cfg = STATUS_CFG[status] || STATUS_CFG.draft;
   const tripImageQuery = getTripCardImageQuery(trip);
   const fallbackImage = getTripPhoto(trip.destination);
-  const tripLink = trip.pendingSync ? "/planner" : `/trips/${trip.id || trip._id}`;
+  const tripLink = `/trips/${trip.id || trip._id}`;
 
   return (
     <motion.div
@@ -270,7 +270,7 @@ function TripCard({ trip, onDelete, i }) {
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all"
                 style={{ background: "#D4AF37", color: "#000" }}
               >
-                <ExternalLink className="w-3 h-3" /> {trip.pendingSync ? "Resume" : "View"}
+                <ExternalLink className="w-3 h-3" /> {trip.pendingSync ? "View Draft" : "View"}
               </Link>
               <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(trip); }}
                 className="w-8 h-8 rounded-xl flex items-center justify-center text-white/25 hover:text-red-400 hover:bg-red-500/10 transition-all border border-white/[0.06]">

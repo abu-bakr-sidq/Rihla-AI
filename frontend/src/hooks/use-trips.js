@@ -4,6 +4,7 @@ import { api, buildUrl } from "@/lib/api-contract";
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 const PENDING_TRIPS_KEY = "pending_trips_sync";
 const PENDING_ID_PREFIX = "__pending__:";
+const LOCAL_TRIP_PREFIX = "__local__:";
 const SAVED_TRIPS_CACHE_KEY = "saved_trips_cache";
 
 function apiUrl(path) {
@@ -52,6 +53,8 @@ function normalizeTripRecord(raw = {}) {
     travelers: Number(raw?.travelers) || raw?.preferences?.travelers || 1,
     preferences: raw?.preferences && typeof raw.preferences === "object" ? raw.preferences : {},
     createdAt: raw?.createdAt ? String(raw.createdAt) : undefined,
+    pendingSync: Boolean(raw?.pendingSync),
+    localOnly: Boolean(raw?.localOnly),
   };
 }
 
@@ -102,6 +105,10 @@ function setSavedTripsCache(trips) {
     }
     localStorage.setItem(SAVED_TRIPS_CACHE_KEY, JSON.stringify(trips));
   } catch {}
+}
+
+function createLocalTripId() {
+  return `${LOCAL_TRIP_PREFIX}${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function queuePendingTrip(trip) {
@@ -191,6 +198,72 @@ function removeSavedTripById(id) {
   const existing = getSavedTripsCache();
   const next = existing.filter((item) => String(item?.id || item?._id) !== String(id));
   setSavedTripsCache(next);
+}
+
+function saveLocalTripSnapshot(trip, options = {}) {
+  const { queuePending = false, preserveId = false } = options;
+  const fallbackId = preserveId && (trip?.id || trip?._id)
+    ? String(trip.id || trip._id)
+    : String(trip?.id || trip?._id || createLocalTripId());
+  const normalized = normalizeTripRecord({
+    ...trip,
+    id: fallbackId,
+    _id: fallbackId,
+    pendingSync: true,
+    localOnly: true,
+    status: trip?.status || "planned",
+  });
+
+  if (!normalized.id) {
+    const generatedId = createLocalTripId();
+    normalized.id = generatedId;
+    normalized._id = generatedId;
+  }
+
+  upsertSavedTripCache(normalized);
+
+  if (queuePending) {
+    queuePendingTrip({
+      ...trip,
+      destination: normalized.destination,
+      startDate: normalized.startDate,
+      endDate: normalized.endDate,
+      days: normalized.days,
+      budget: normalized.budget,
+      currency: normalized.currency,
+      travelStyle: normalized.travelStyle,
+      travelers: normalized.travelers,
+      interests: normalized.interests,
+      itinerary: normalized.itinerary,
+      costBreakdown: normalized.costBreakdown,
+      preferences: normalized.preferences,
+      status: normalized.status,
+    });
+  }
+
+  return normalized;
+}
+
+function getLocalTripById(id) {
+  if (!id) return null;
+  const lookupId = String(id);
+
+  const savedTrip = getSavedTripsCache().find(
+    (trip) => String(trip?.id || trip?._id) === lookupId
+  );
+  if (savedTrip) {
+    return normalizeTripRecord(savedTrip);
+  }
+
+  if (lookupId.startsWith(PENDING_ID_PREFIX)) {
+    const index = Number(lookupId.slice(PENDING_ID_PREFIX.length));
+    const pending = getPendingTrips();
+    if (Number.isInteger(index) && index >= 0 && index < pending.length) {
+      return normalizeTripRecord(decoratePendingTrip(pending[index], index));
+    }
+  }
+
+  return null;
 }
 
 async function syncPendingTrips() {
@@ -336,6 +409,10 @@ function useDeleteTrip() {
         removeSavedTripById(id);
         return;
       }
+      if (String(id).startsWith(LOCAL_TRIP_PREFIX)) {
+        removeSavedTripById(id);
+        return;
+      }
       const url = apiUrl(buildUrl(api.trips.delete.path, { id: id.toString() }));
       const res = await fetch(url, {
         method: api.trips.delete.method,
@@ -406,6 +483,8 @@ function useDeleteAllTrips() {
 }
 
 export {
+  getLocalTripById,
+  saveLocalTripSnapshot,
   useCreateTrip,
   useDeleteTrip,
   useDeleteAllTrips,
