@@ -76,6 +76,23 @@ function isPlausibleGoogleMatch(query = "", candidate = "") {
   return ratio >= 0.6;
 }
 
+function buildGoogleCandidateText(place = {}) {
+  return [place?.name, place?.formatted_address, place?.vicinity]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function getBackendBaseUrl(req) {
+  const configuredBase = String(process.env.BACKEND_URL || "").trim().replace(/\/$/, "");
+  if (configuredBase) return configuredBase;
+
+  const forwardedProto = String(req?.headers?.["x-forwarded-proto"] || "").split(",")[0].trim();
+  const forwardedHost = String(req?.headers?.["x-forwarded-host"] || "").split(",")[0].trim();
+  const protocol = forwardedProto || req?.protocol || "http";
+  const host = forwardedHost || req?.get?.("host");
+  return host ? `${protocol}://${host}` : "http://localhost:5000";
+}
+
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Helpers
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -95,7 +112,7 @@ async function getGooglePhotoRef(query, photoIndex = 0) {
       `https://maps.googleapis.com/maps/api/place/findplacefromtext/json` +
       `?input=${encodeURIComponent(query)}` +
       `&inputtype=textquery` +
-      `&fields=place_id,photos,name` +
+      `&fields=place_id,photos,name,formatted_address` +
       `&key=${GOOGLE_KEY}`;
 
     const res = await fetch(fpUrl, { signal: AbortSignal.timeout(7000) });
@@ -108,8 +125,9 @@ async function getGooglePhotoRef(query, photoIndex = 0) {
         const pick = photos[photoIndex % photos.length];
         const photoRef = pick?.photo_reference;
         if (photoRef) {
-          console.log(`[Places] findplace: "${query}" -> ${place.name} (photo ${photoIndex % photos.length}/${photos.length})`);
-          if (isPlausibleGoogleMatch(query, place.name)) {
+          const candidateText = buildGoogleCandidateText(place);
+          console.log(`[Places] findplace: "${query}" -> ${candidateText || place.name} (photo ${photoIndex % photos.length}/${photos.length})`);
+          if (isPlausibleGoogleMatch(query, candidateText)) {
             return { photoRef, name: place.name };
           }
         }
@@ -136,8 +154,9 @@ async function getGooglePhotoRef(query, photoIndex = 0) {
         if (photos.length > 0) {
           const photoRef = photos[photoIndex % photos.length]?.photo_reference;
           if (photoRef) {
-            console.log(`[Places] textsearch: "${query}" -> ${place.name} (result ${resultIdx}, photo ${photoIndex % photos.length})`);
-            if (isPlausibleGoogleMatch(query, place.name)) {
+            const candidateText = buildGoogleCandidateText(place);
+            console.log(`[Places] textsearch: "${query}" -> ${candidateText || place.name} (result ${resultIdx}, photo ${photoIndex % photos.length})`);
+            if (isPlausibleGoogleMatch(query, candidateText)) {
               return { photoRef, name: place.name };
             }
           }
@@ -150,8 +169,8 @@ async function getGooglePhotoRef(query, photoIndex = 0) {
 }
 
 /** Proxy URL for photo binary â€” keeps API key server-side */
-function buildProxiedPhotoUrl(photoRef, maxwidth = 800) {
-  const backendBase = (process.env.BACKEND_URL || "http://localhost:5000").replace(/\/$/, "");
+function buildProxiedPhotoUrl(req, photoRef, maxwidth = 800) {
+  const backendBase = getBackendBaseUrl(req);
   return `${backendBase}/api/place-image/photo?ref=${encodeURIComponent(photoRef)}&w=${maxwidth}`;
 }
 
@@ -176,7 +195,7 @@ router.get("/validate", async (req, res) => {
     return res.json({
       ok: true,
       title: result.name || clean,
-      imageUrl: buildProxiedPhotoUrl(result.photoRef, 800),
+      imageUrl: buildProxiedPhotoUrl(req, result.photoRef, 800),
       source: "google_places",
     });
   } catch (err) {
@@ -264,7 +283,7 @@ router.get("/", async (req, res) => {
   if (GOOGLE_KEY) {
     const result = await getGooglePhotoRef(clean, photoIndex);
     if (result?.photoRef) {
-      const proxyUrl = buildProxiedPhotoUrl(result.photoRef, 800);
+      const proxyUrl = buildProxiedPhotoUrl(req, result.photoRef, 800);
       setCache(cacheKey, proxyUrl);
       return res.json({ url: proxyUrl, source: "google_places", place: result.name });
     }

@@ -22,7 +22,7 @@ import { FocusCards } from "@/components/ui/focus-cards";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { ChatButton } from "@/components/ChatBot/ChatButton";
 import { exportTripPDF, downloadTripPDF } from "@/services/exportTripPDF";
-import { buildActivityDisplayContent, buildStreetFindChips, extractPlaceImageQuery, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from "@/lib/trip-itinerary";
+import { buildActivityDisplayContent, buildPlaceImageQueries, buildStreetFindChips, extractPlaceImageQuery, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from "@/lib/trip-itinerary";
 import { sanitizeVisibleText } from "@/lib/display-text";
 import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerTimesCard, TripPreviewCard } from "@/components/trip/EnhancedPanels";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -1126,7 +1126,7 @@ function buildItinerary(fd) {
         place: act.name,
         activity: act.desc,
         image: act.id || act.name,
-        imageQuery: _extractLocationQuery(act.name, fd.destination),
+        imageQuery: buildPlaceImageQueries(act.name, fd.destination, act.desc || "", ""),
         knownId,
         cost: slotCosts[si] || 0,
         travel: `${15 + Math.floor(Math.random() * 20)}m ${Math.random() > 0.5 ? 'Cab' : 'Metro'}`,
@@ -1758,23 +1758,26 @@ const _hashQuery = (str) => {
 // Smart location extractor: "Sunrise Yoga at Marina Beach" -> "Marina Beach Chennai"
 const _extractLocationQuery = extractPlaceImageQuery;
 
-const _fetchActivityImage = async (query, cardIndex) => {
-  const cacheKey = `${query}__ci${cardIndex || 0}`;
+const _fetchActivityImage = async (queryOrQueries, cardIndex) => {
+  const queries = Array.isArray(queryOrQueries) ? queryOrQueries.filter(Boolean) : [queryOrQueries].filter(Boolean);
+  const cacheKey = `${queries.join("||")}__ci${cardIndex || 0}`;
   if (_imgCache[cacheKey]) return _imgCache[cacheKey];
 
-  try {
-    const r = await fetch(
-      `${API_BASE_URL}/place-image?query=${encodeURIComponent(query)}&photoIndex=${cardIndex || 0}&onlyGoogle=1`,
-      { signal: AbortSignal.timeout(8000) }
-    );
-    if (r.ok) {
-      const d = await r.json();
-      if (d?.url) {
-        _imgCache[cacheKey] = d.url;
-        return d.url;
+  for (const query of queries) {
+    try {
+      const r = await fetch(
+        `${API_BASE_URL}/place-image?query=${encodeURIComponent(query)}&photoIndex=${cardIndex || 0}&onlyGoogle=1`,
+        { signal: AbortSignal.timeout(8000) }
+      );
+      if (r.ok) {
+        const d = await r.json();
+        if (d?.url) {
+          _imgCache[cacheKey] = d.url;
+          return d.url;
+        }
       }
-    }
-  } catch (_) {}
+    } catch (_) {}
+  }
 
   return null;
 };
@@ -2000,7 +2003,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
   const safeActivity = sanitizeVisibleText(activity, "Curated activity");
 
   // Extract real location from activity name ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ precise Google Places query
-  const query = _extractLocationQuery(safePlace, destination);
+  const query = buildPlaceImageQueries(safePlace, destination, safeActivity, details?.title || "");
   const accentColor = PLAN_SLOT_COLORS[slotKey] || slotColor || '#D4AF37';
   const fallbackContent = generatePlaceCardFallbackContent(safePlace, safeActivity, destination, slotKey);
   const { schedule, streetFinds, ideas } = buildActivityDisplayContent(details, fallbackContent);
@@ -2348,16 +2351,16 @@ export default function Planner() {
       // Tier 1 - Google Places API backend proxy with unique photoIndex per slot
       // photoIndex = global sequential index across ALL days & slots ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â guarantees unique photos
       const rawPlace = act?.place || act?.activity || '';
-      const exactPlaceQuery = _extractLocationQuery(rawPlace, DEST);
+      const exactPlaceQueries = buildPlaceImageQueries(rawPlace, DEST, act?.activity || "", act?.title || "");
       try {
-        const finalQuery = exactPlaceQuery || DEST || query;
-        // Pass photoIndex so backend rotates through different Google Place photos
-        const r = await fetch(`${API_BASE_URL}/place-image?query=${encodeURIComponent(finalQuery)}&photoIndex=${idx}&onlyGoogle=1`);
-        if (r.ok) {
-          const d = await r.json();
-          if (d?.url) {
-            sessionStorage.setItem(storageKey, d.url);
-            return { cacheKey: storageKey, url: d.url };
+        for (const finalQuery of exactPlaceQueries.length ? exactPlaceQueries : [DEST || query]) {
+          const r = await fetch(`${API_BASE_URL}/place-image?query=${encodeURIComponent(finalQuery)}&photoIndex=${idx}&onlyGoogle=1`);
+          if (r.ok) {
+            const d = await r.json();
+            if (d?.url) {
+              sessionStorage.setItem(storageKey, d.url);
+              return { cacheKey: storageKey, url: d.url };
+            }
           }
         }
       } catch (_) { /* Fallthrough */ }

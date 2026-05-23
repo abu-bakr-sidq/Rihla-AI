@@ -241,6 +241,7 @@ function AddPackageModal({ isOpen, onClose }) {
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [results, setResults] = useState([]);
+  const [searchError, setSearchError] = useState("");
 
   const [form, setForm] = useState({
     destination: "", src: "", days: 7, budget: 3000, travelStyle: "cultural"
@@ -250,22 +251,77 @@ function AddPackageModal({ isOpen, onClose }) {
   const createTourPackage = useCreateTourPackage();
 
   useEffect(() => {
-    if (query.length > 1) {
-      setIsSearching(true);
-      const timer = setTimeout(() => {
-        setResults(AI_SUGGESTIONS.filter(d => d.title.toLowerCase().includes(query.toLowerCase())));
-        setIsSearching(false);
-      }, 400);
-      return () => clearTimeout(timer);
-    } else {
+    const cleanQuery = query.trim();
+    if (cleanQuery.length <= 1) {
       setResults([]);
       setIsSearching(false);
+      setSearchError("");
+      return;
     }
+
+    const ctrl = new AbortController();
+    setIsSearching(true);
+    setSearchError("");
+
+    const timer = setTimeout(async () => {
+      try {
+        const searchRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleanQuery)}&format=json&limit=6&addressdetails=1&accept-language=en`,
+          { signal: ctrl.signal, headers: { Accept: "application/json" } }
+        );
+        if (!searchRes.ok) throw new Error("search_failed");
+        const rows = await searchRes.json();
+
+        const verified = await Promise.all(
+          (Array.isArray(rows) ? rows : []).map(async (row) => {
+            const city = row?.address?.city || row?.address?.town || row?.address?.state || row?.address?.country || row?.name;
+            const country = row?.address?.country || "";
+            const title = [city, country].filter(Boolean).join(", ") || row?.display_name || cleanQuery;
+            try {
+              const verifyRes = await fetch(`${API_BASE_URL}/place-image/validate?query=${encodeURIComponent(title)}`, {
+                signal: ctrl.signal,
+              });
+              if (!verifyRes.ok) return null;
+              const verify = await verifyRes.json();
+              if (!verify?.ok || !verify?.imageUrl) return null;
+              return {
+                title: sanitizeVisibleText(title, cleanQuery),
+                src: verify.imageUrl,
+              };
+            } catch {
+              return null;
+            }
+          })
+        );
+
+        const deduped = verified.filter(Boolean).filter((item, idx, arr) =>
+          arr.findIndex((cand) => cand.title.toLowerCase() === item.title.toLowerCase()) === idx
+        );
+
+        setResults(deduped);
+        if (!deduped.length) {
+          setSearchError("No verified destination found. Please search a real city, state, or country.");
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setResults([]);
+          setSearchError("Destination search is temporarily unavailable.");
+        }
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
+
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+    };
   }, [query]);
 
   const handleSelectDest = (r) => {
     setQuery(r.title);
     setForm(f => ({ ...f, destination: r.title, src: r.src }));
+    setSearchError("");
     setShowDropdown(false);
   };
 
@@ -275,7 +331,7 @@ function AddPackageModal({ isOpen, onClose }) {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!form.destination) return;
+    if (!form.destination || !form.src) return;
     try {
       if (createTourPackage) { await createTourPackage.mutateAsync({ ...form, preferences }); }
       onClose();
@@ -336,38 +392,9 @@ function AddPackageModal({ isOpen, onClose }) {
                                 </div>
                               </div>
                             ))}
-                            {query.trim().length > 2 && !results.some(r => r.title.toLowerCase() === query.trim().toLowerCase()) && (
-                              <div
-                                onClick={() => {
-                                  const fq = query.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                                  handleSelectDest({
-                                    title: fq,
-                                    src: `https://loremflickr.com/800/450/${encodeURIComponent(query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')) || 'city'},landscape/all`,
-                                    dynamic: true
-                                  });
-                                }}
-                                className="group relative h-24 hover:h-28 cursor-pointer flex border-t border-[#D4AF37]/20 transition-all duration-300 overflow-hidden bg-[#050505]"
-                              >
-                                <img
-                                  src={`https://loremflickr.com/800/450/${encodeURIComponent(query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')) || 'city'},landscape/all`}
-                                  alt="Global Match"
-                                  className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-90 group-hover:scale-105 transition-all duration-700"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent" />
-
-                                <div className="relative z-10 px-5 flex items-center gap-4 h-full w-full">
-                                  <div className="w-10 h-10 rounded-full bg-[#D4AF37]/10 flex items-center justify-center border border-[#D4AF37]/30 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(212,175,55,0.2)] backdrop-blur-md">
-                                    <Globe className="w-5 h-5 text-[#D4AF37]" />
-                                  </div>
-                                  <div className="flex flex-col justify-center">
-                                    <h4 className="text-white font-black text-lg group-hover:text-[#D4AF37] transition-colors line-clamp-1">
-                                      {query.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-                                    </h4>
-                                    <p className="text-[10px] uppercase tracking-widest text-[#D4AF37]/70 mt-1 flex items-center gap-1.5 font-bold">
-                                      <Search className="w-3 h-3" /> Global Database Match
-                                    </p>
-                                  </div>
-                                </div>
+                            {searchError && (
+                              <div className="p-4 text-center text-[#D4AF37]/70 text-[10px] uppercase tracking-widest">
+                                {searchError}
                               </div>
                             )}
                             {results.length === 0 && query.trim().length <= 2 && (
@@ -468,7 +495,7 @@ function AddPackageModal({ isOpen, onClose }) {
             {/* Footer Base Strip */}
             <div className="shrink-0 px-6 py-3 border-t border-[#D4AF37]/10 flex justify-end gap-3 bg-black/20 relative z-20">
               <button type="button" onClick={onClose} className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#D4AF37]/40 hover:text-[#D4AF37] transition-colors hover:bg-[#D4AF37]/5 rounded-xl">CANCEL</button>
-              <button type="button" onClick={handleCreate} disabled={createTourPackage?.isPending} className="bg-gradient-to-r from-[#D4AF37] to-amber-500 hover:from-amber-400 text-black font-black uppercase tracking-widest py-2 px-5 rounded-xl text-[10px] flex items-center gap-1.5 shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:scale-105 transition-all">
+              <button type="button" onClick={handleCreate} disabled={createTourPackage?.isPending || !form.destination || !form.src} className="bg-gradient-to-r from-[#D4AF37] to-amber-500 hover:from-amber-400 text-black font-black uppercase tracking-widest py-2 px-5 rounded-xl text-[10px] flex items-center gap-1.5 shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100">
                 {createTourPackage?.isPending ? <Loader2 className="w-3 h-3 animate-spin text-black" /> : <Sparkles className="w-3 h-3" />}
                 {createTourPackage?.isPending ? "CONNECTING..." : "FINALIZE"}
               </button>
@@ -611,6 +638,21 @@ export default function Admin() {
       refetch();
     } catch (err) {
       toast({ title: "Error", description: err.message || "Failed to cancel trip", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteTourPackage = async (packageId) => {
+    if (!packageId) {
+      toast({ title: "Error", description: "Package id is missing.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      await deleteTourPackage.mutateAsync(packageId);
+      toast({ title: "Deleted", description: "Tour package removed successfully.", variant: "success" });
+      refetchPackages();
+    } catch (err) {
+      toast({ title: "Error", description: err.message || "Failed to delete tour package", variant: "destructive" });
     }
   };
 
@@ -979,15 +1021,20 @@ export default function Admin() {
                     const safeDestination = sanitizeVisibleText(p.destination, "Untitled package");
                     const safeTravelStyle = sanitizeVisibleText(p.travelStyle, "curated");
                     return (
-                    <tr key={p._id} className="admin-row" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <tr key={p._id || p.id} className="admin-row" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                       <td className="px-5 py-3.5 text-xs text-[var(--admin-text-main)] font-black">Admin</td>
                       <td className="px-5 py-3.5 font-bold">{safeDestination} - {safeTravelStyle}</td>
                       <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs">{formatDateSafe(p.startDate)}</td>
                       <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs">{formatDateSafe(p.endDate)}</td>
                       <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs font-bold">{safeDestination}</td>
                       <td className="px-5 py-3.5 flex items-center gap-2">
-                        <button onClick={() => deleteTourPackage.mutate(p._id)} className="p-1.5 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-400/10 transition-colors">
-                          <Trash2 className="w-3.5 h-3.5" />
+                        <button
+                          onClick={() => handleDeleteTourPackage(p._id || p.id)}
+                          disabled={deleteTourPackage.isPending}
+                          title="Delete Package"
+                          className="p-1.5 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {deleteTourPackage.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                         </button>
                       </td>
                     </tr>

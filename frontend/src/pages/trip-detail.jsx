@@ -8,7 +8,7 @@ import { usePrayerTimes } from '@/hooks/usePrayerTimes';
 import { exportTripPDF, downloadTripPDF } from '@/services/exportTripPDF';
 import { useDeleteTrip } from '@/hooks/use-trips';
 import { useToast } from '@/hooks/use-toast';
-import { buildActivityDisplayContent, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from '@/lib/trip-itinerary';
+import { buildActivityDisplayContent, buildPlaceImageQueries, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from '@/lib/trip-itinerary';
 import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerTimesCard, TripPreviewCard } from '@/components/trip/EnhancedPanels';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -89,7 +89,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
   const [expanded, setExpanded] = useState(false);
   const displayPlace = sanitizeVisibleText(resolvePlannedPlaceName(place, destination, slotKey, cardIndex), 'Planned stop');
   const safeActivity = sanitizeVisibleText(activity, 'Curated activity');
-  const query = extractLocationQuery(displayPlace, destination);
+  const query = extractLocationQuery(displayPlace, destination, safeActivity, details?.title || "");
   const accentColor = PLAN_SLOT_COLORS[slotKey] || slotColor || '#D4AF37';
   const fallbackContent = generatePlaceCardFallbackContent(displayPlace, safeActivity, destination, slotKey);
   const { schedule, ideas } = buildActivityDisplayContent(details, fallbackContent);
@@ -211,43 +211,29 @@ const _hashQuery = (str) => {
   return h;
 };
 
-const extractLocationQuery = (placeName, destination) => {
-  if (!placeName) return destination || '';
-  const dest = destination || '';
-  const atMatch = placeName.match(/\bat\s+(.+)$/i);
-  if (atMatch) return `${atMatch[1].trim()} ${dest}`.trim();
-  const inMatch = placeName.match(/\bin\s+(.+)$/i);
-  if (inMatch) return `${inMatch[1].trim()} ${dest}`.trim();
+const extractLocationQuery = (placeName, destination, activity = "", title = "") =>
+  buildPlaceImageQueries(placeName, destination, activity, title);
 
-  let cleaned = placeName
-    .replace(/\b(sunrise|sunset|morning|evening|afternoon|night|guided|premium|luxury|classic|curated|traditional|live|private|exclusive)\b/gi, '')
-    .replace(/\b(tour|walk|visit|stroll|trek|hike|excursion|ride|cruise|session|class|workshop|retreat|show|performance|ceremony|experience|adventure|exploration|discovery|immersion|journey|tasting|sampling|dining|lunch|dinner|breakfast)\b/gi, '')
-    .replace(/\b(yoga|meditation|massage|spa|wellness|relaxation|fitness|workout)\b/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  if (cleaned.length > 3) return `${cleaned} ${dest}`.trim();
-  const shortName = placeName.split(' ').slice(0, 4).join(' ');
-  return `${shortName} ${dest}`.trim();
-};
-
-const _fetchActivityImage = async (query, globalIndex) => {
-  const cacheKey = query + '__gi' + (globalIndex || 0);
+const _fetchActivityImage = async (queryOrQueries, globalIndex) => {
+  const queries = Array.isArray(queryOrQueries) ? queryOrQueries.filter(Boolean) : [queryOrQueries].filter(Boolean);
+  const cacheKey = queries.join("||") + '__gi' + (globalIndex || 0);
   if (_imgCache[cacheKey]) return _imgCache[cacheKey];
 
-  try {
-    const r = await fetch(
-      `${API_BASE_URL}/place-image?query=${encodeURIComponent(query)}&photoIndex=${globalIndex || 0}&onlyGoogle=1`,
-      { signal: AbortSignal.timeout(8000) }
-    );
-    if (r.ok) {
-      const d = await r.json();
-      if (d?.url) {
-        _imgCache[cacheKey] = d.url;
-        return d.url;
+  for (const query of queries) {
+    try {
+      const r = await fetch(
+        `${API_BASE_URL}/place-image?query=${encodeURIComponent(query)}&photoIndex=${globalIndex || 0}&onlyGoogle=1`,
+        { signal: AbortSignal.timeout(8000) }
+      );
+      if (r.ok) {
+        const d = await r.json();
+        if (d?.url) {
+          _imgCache[cacheKey] = d.url;
+          return d.url;
+        }
       }
-    }
-  } catch (_) {}
+    } catch (_) {}
+  }
 
   return null;
 };
@@ -466,8 +452,9 @@ function ActivityVerticalCard({ place, activity, slotLabel, slotIcon: SlotIcon, 
   const [imgSrc, setImgSrc] = useState('');
   const [expanded, setExpanded] = useState(false);
   const displayPlace = resolvePlannedPlaceName(place, destination, slotKey, globalIndex);
-  const query = extractLocationQuery(displayPlace, destination);
-  const fallbackContent = generatePlaceCardFallbackContent(displayPlace, activity, destination, slotKey);
+  const safeActivity = sanitizeVisibleText(activity, 'Curated activity');
+  const query = extractLocationQuery(displayPlace, destination, safeActivity, details?.title || "");
+  const fallbackContent = generatePlaceCardFallbackContent(displayPlace, safeActivity, destination, slotKey);
   const { schedule, ideas } = buildActivityDisplayContent(details, fallbackContent);
   const streetFinds = buildStreetFindChips(details, fallbackContent, { placeName: displayPlace, destination, slotKey, fallbackIndex: globalIndex });
 
@@ -799,7 +786,7 @@ export default function TripDetail() {
   useEffect(() => {
     if (!trip?.destination) return;
     let alive = true;
-    const heroQuery = trip.destination.split(',')[0].trim();
+    const heroQuery = buildPlaceImageQueries(trip.destination, trip.destination, "", "");
     _fetchActivityImage(heroQuery, 0).then(url => {
       if (alive && url) setHeroImage(url);
     });
@@ -813,7 +800,7 @@ export default function TripDetail() {
     }
 
     let alive = true;
-    const query = extractLocationQuery(planFocusAct.place, trip?.destination || '');
+    const query = extractLocationQuery(planFocusAct.place, trip?.destination || '', planFocusAct.activity || '', planFocusAct.title || '');
     _fetchActivityImage(query, selectedDay * 100 + (planFocusAct?.sk?.length || 0)).then(url => {
       if (alive && url) setFocusImage(url);
     });
