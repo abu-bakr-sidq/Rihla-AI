@@ -175,14 +175,33 @@ export const forgotPassword = async (req, res) => {
 
         // Generate 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        await User.updateOne(
-            { _id: user._id },
-            { $set: { resetOTP: otp, resetOTPExpires: new Date(Date.now() + 15 * 60 * 1000) } }
-        );
+        try {
+            await User.updateOne(
+                { _id: user._id },
+                { $set: { resetOTP: otp, resetOTPExpires: new Date(Date.now() + 15 * 60 * 1000) } }
+            );
 
-        const emailResult = await sendOTPEmail(email, otp);
+            const emailResult = await sendOTPEmail(email, otp);
 
-        if (!emailResult.success) {
+            if (!emailResult.success) {
+                return res.json({
+                    success: true,
+                    message: "Email delivery is unavailable right now. Use the recovery code shown below.",
+                    previewUrl: null,
+                    recoveryCode: otp,
+                    delivery: "onscreen",
+                });
+            }
+
+            return res.json({
+                success: true,
+                message: "Verification code dispatched.",
+                previewUrl: emailResult.previewUrl || null,
+                recoveryCode: null,
+                delivery: emailResult.previewUrl ? "preview" : "email",
+            });
+        } catch (err) {
+            console.error("Forgot password delivery error:", err);
             return res.json({
                 success: true,
                 message: "Email delivery is unavailable right now. Use the recovery code shown below.",
@@ -191,16 +210,9 @@ export const forgotPassword = async (req, res) => {
                 delivery: "onscreen",
             });
         }
-
-        return res.json({
-            success: true,
-            message: "Verification code dispatched.",
-            previewUrl: emailResult.previewUrl || null,
-            recoveryCode: null,
-            delivery: emailResult.previewUrl ? "preview" : "email",
-        });
     } catch (err) {
-        return res.status(500).json({ message: "Unable to start password reset" });
+        console.error("Forgot password setup error:", err);
+        return res.status(500).json({ message: "Unable to start password reset", error: err.message });
     }
 };
 
