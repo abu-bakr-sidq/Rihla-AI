@@ -138,6 +138,102 @@ function fmtBudget(usd, cur, days) {
   return { local: `${cur.sym}${fmtN(local)}`, usd: `$${usd.toLocaleString()}`, perDay: `${cur.sym}${fmtN(Math.round(local/days))}/day` };
 }
 
+const DESTINATION_PRESETS_V2 = [
+  { keys: ["kerala", "kochi", "munnar", "alleppey", "kovalam", "thiruvananthapuram", "india", "chennai", "pondicherry", "kanyakumari", "mumbai", "delhi", "jaipur", "goa", "hyderabad", "bangalore", "bengaluru", "kolkata"], sym: "₹", code: "INR", rate: 83, dailyUsd: 52 },
+  { keys: ["tokyo", "kyoto", "osaka", "nara", "hakone", "sapporo", "japan"], sym: "¥", code: "JPY", rate: 149, dailyUsd: 128 },
+  { keys: ["seoul", "busan", "jeju", "korea"], sym: "₩", code: "KRW", rate: 1320, dailyUsd: 118 },
+  { keys: ["bali", "jakarta", "ubud", "indonesia"], sym: "Rp", code: "IDR", rate: 15800, dailyUsd: 82 },
+  { keys: ["bangkok", "phuket", "chiang mai", "thailand"], sym: "฿", code: "THB", rate: 35, dailyUsd: 90 },
+  { keys: ["kuala lumpur", "langkawi", "malaysia"], sym: "RM ", code: "MYR", rate: 4.7, dailyUsd: 88 },
+  { keys: ["singapore"], sym: "S$", code: "SGD", rate: 1.35, dailyUsd: 150 },
+  { keys: ["dubai", "abu dhabi", "uae"], sym: "AED ", code: "AED", rate: 3.67, dailyUsd: 180 },
+  { keys: ["doha", "qatar"], sym: "QAR ", code: "QAR", rate: 3.64, dailyUsd: 175 },
+  { keys: ["riyadh", "jeddah", "saudi", "madinah", "medina", "makkah", "mecca"], sym: "SAR ", code: "SAR", rate: 3.75, dailyUsd: 110 },
+  { keys: ["muscat", "oman"], sym: "OMR ", code: "OMR", rate: 0.38, dailyUsd: 135 },
+  { keys: ["kuwait"], sym: "KWD ", code: "KWD", rate: 0.31, dailyUsd: 170 },
+  { keys: ["bahrain"], sym: "BHD ", code: "BHD", rate: 0.38, dailyUsd: 165 },
+  { keys: ["istanbul", "cappadocia", "antalya", "turkey"], sym: "₺", code: "TRY", rate: 32, dailyUsd: 85 },
+  { keys: ["cairo", "luxor", "sharm", "egypt"], sym: "EGP ", code: "EGP", rate: 49, dailyUsd: 78 },
+  { keys: ["marrakech", "casablanca", "morocco"], sym: "MAD ", code: "MAD", rate: 10, dailyUsd: 82 },
+  { keys: ["petra", "amman", "jordan"], sym: "JOD ", code: "JOD", rate: 0.71, dailyUsd: 105 },
+  { keys: ["paris", "nice", "lyon", "france", "rome", "venice", "milan", "amalfi", "florence", "italy", "barcelona", "madrid", "seville", "spain", "amsterdam", "netherlands", "athens", "santorini", "greece", "berlin", "munich", "germany", "lisbon", "porto", "portugal", "vienna", "austria"], sym: "€", code: "EUR", rate: 0.93, dailyUsd: 165 },
+  { keys: ["zurich", "lucerne", "interlaken", "switzerland"], sym: "CHF ", code: "CHF", rate: 0.88, dailyUsd: 210 },
+  { keys: ["london", "manchester", "edinburgh", "uk", "united kingdom"], sym: "£", code: "GBP", rate: 0.79, dailyUsd: 185 },
+  { keys: ["new york", "san francisco", "los angeles", "chicago", "miami", "usa", "united states"], sym: "$", code: "USD", rate: 1, dailyUsd: 220 },
+  { keys: ["toronto", "vancouver", "canada"], sym: "C$", code: "CAD", rate: 1.37, dailyUsd: 175 },
+  { keys: ["sydney", "melbourne", "australia"], sym: "A$", code: "AUD", rate: 1.52, dailyUsd: 180 },
+  { keys: ["auckland", "queenstown", "new zealand"], sym: "NZ$", code: "NZD", rate: 1.66, dailyUsd: 175 },
+  { keys: ["hong kong"], sym: "HK$", code: "HKD", rate: 7.81, dailyUsd: 170 },
+  { keys: ["beijing", "shanghai", "china"], sym: "¥", code: "CNY", rate: 7.24, dailyUsd: 105 },
+  { keys: ["machu", "cusco", "peru"], sym: "PEN ", code: "PEN", rate: 3.7, dailyUsd: 88 },
+  { keys: ["rio", "sao paulo", "brazil"], sym: "R$", code: "BRL", rate: 4.98, dailyUsd: 92 },
+  { keys: ["cape town", "johannesburg", "south africa"], sym: "R", code: "ZAR", rate: 18.8, dailyUsd: 95 },
+  { keys: ["bora bora", "polynesia"], sym: "XPF ", code: "XPF", rate: 110, dailyUsd: 240 },
+];
+
+getCurrency = function getCurrencyV2(dest = "") {
+  const d = String(dest || "").toLowerCase();
+  return DESTINATION_PRESETS_V2.find((entry) => entry.keys.some((key) => d.includes(key))) || { sym: "$", code: "USD", rate: 1, dailyUsd: 125 };
+};
+
+estimateDailyUsd = function estimateDailyUsdV2(dest, style = "") {
+  let base = getCurrency(dest).dailyUsd || 125;
+  const s = String(style || "").toLowerCase();
+  if (s === "luxury") base *= 1.8;
+  else if (s === "adventure") base *= 1.25;
+  else if (s === "relaxation") base *= 1.15;
+  else if (s === "budget") base *= 0.72;
+  return Math.round(base);
+};
+
+function formatLocalMoney(value, currency) {
+  const amount = Math.max(0, Math.round(Number(value) || 0));
+  const locale = currency.code === "INR" ? "en-IN" : "en";
+  const compact = amount >= 1000
+    ? new Intl.NumberFormat(locale, {
+        notation: "compact",
+        compactDisplay: "short",
+        maximumFractionDigits: amount >= 100000 ? 1 : 0,
+      }).format(amount)
+    : new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(amount);
+  return `${currency.sym}${compact}`.replace(/\s+/g, " ").trim();
+}
+
+function buildBudgetBreakdown(totalLocal, travelStyle, currency) {
+  const style = String(travelStyle || "").toLowerCase();
+  const ratios =
+    style === "luxury"
+      ? { accommodation: 0.4, food: 0.22, transport: 0.12, activities: 0.18, misc: 0.08 }
+      : style === "adventure"
+        ? { accommodation: 0.28, food: 0.2, transport: 0.18, activities: 0.24, misc: 0.1 }
+        : style === "relaxation"
+          ? { accommodation: 0.36, food: 0.22, transport: 0.14, activities: 0.16, misc: 0.12 }
+          : { accommodation: 0.32, food: 0.22, transport: 0.16, activities: 0.2, misc: 0.1 };
+  const accommodation = Math.round(totalLocal * ratios.accommodation);
+  const food = Math.round(totalLocal * ratios.food);
+  const transport = Math.round(totalLocal * ratios.transport);
+  const activities = Math.round(totalLocal * ratios.activities);
+  const misc = Math.max(0, totalLocal - accommodation - food - transport - activities);
+  return {
+    accommodation: formatLocalMoney(accommodation, currency),
+    food: formatLocalMoney(food, currency),
+    transport: formatLocalMoney(transport, currency),
+    activities: formatLocalMoney(activities, currency),
+    misc: formatLocalMoney(misc, currency),
+    total: formatLocalMoney(totalLocal, currency),
+  };
+}
+
+fmtBudget = function fmtBudgetV2(usd, cur, days) {
+  const local = Math.round(usd * cur.rate);
+  return {
+    local: formatLocalMoney(local, cur),
+    usd: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(usd),
+    perDay: `${formatLocalMoney(Math.round(local / days), cur)}/day`,
+    localRaw: local,
+  };
+};
+
 
 /* ─── AI Plan Modal ────────────────────────────────────────────── */
 
@@ -147,10 +243,11 @@ const SESSION_CONFIG = {
   evening:   { Icon: Moon,    color: "#8B5CF6", label: "Evening" },
 };
 const BUDGET_CATS = [
-  { key: "accommodation", label: "Accommodation", pct: 35, color: "#D4AF37" },
-  { key: "food",          label: "Food & Dining",  pct: 20, color: "#F59E0B" },
-  { key: "transport",     label: "Transport",       pct: 15, color: "#3B82F6" },
-  { key: "activities",    label: "Activities",      pct: 20, color: "#8B5CF6" },
+  { key: "accommodation", label: "Accommodation", pct: 32, color: "#D4AF37" },
+  { key: "food",          label: "Food & Dining", pct: 22, color: "#F59E0B" },
+  { key: "transport",     label: "Transport", pct: 16, color: "#3B82F6" },
+  { key: "activities",    label: "Activities", pct: 20, color: "#8B5CF6" },
+  { key: "misc",          label: "Miscellaneous", pct: 10, color: "#14B8A6" },
 ];
 
 function PlanModal({ pkg, onClose }) {
@@ -170,7 +267,8 @@ function PlanModal({ pkg, onClose }) {
         const places = (pkg.description || "").split(",").map(p => p.trim()).filter(Boolean);
         const localBudget = Math.round(getNormalizedPackageBudgetUsd(pkg, days) * currency.rate);
         const perDay = Math.round(localBudget / days);
-        const fmtN = n => n >= 100000 ? `${currency.sym}${(n/100000).toFixed(1)}L` : n >= 1000 ? `${currency.sym}${(n/1000).toFixed(1)}K` : `${currency.sym}${n}`;
+        const fmtN = (n) => formatLocalMoney(n, currency);
+        const breakdown = buildBudgetBreakdown(localBudget, pkg.travelStyle, currency);
         setPlan({
           overview: `A ${pkg.travelStyle} trip to ${pkg.destination} over ${days} days.`,
           bestTime: "October – March",
@@ -185,13 +283,7 @@ function PlanModal({ pkg, onClose }) {
             dayTotal: fmtN(perDay),
             tip: `Pre-book ${places[i] || "attractions"} for better rates.`
           })),
-          budgetBreakdown: {
-            accommodation: fmtN(Math.round(localBudget * 0.35)),
-            food:          fmtN(Math.round(localBudget * 0.20)),
-            transport:     fmtN(Math.round(localBudget * 0.15)),
-            activities:    fmtN(Math.round(localBudget * 0.20)),
-            total:         fmtN(localBudget)
-          },
+          budgetBreakdown: breakdown,
           tips: [
             `Carry ${currency.sym} cash for local markets.`,
             "Book accommodations 2–3 weeks in advance.",

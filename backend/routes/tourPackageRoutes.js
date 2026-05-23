@@ -4,17 +4,80 @@ import { requireAuth, ensureAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
+const CURRENCY_SYMBOLS = {
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  JPY: "¥",
+  INR: "₹",
+  KRW: "₩",
+  THB: "฿",
+  AED: "AED ",
+  IDR: "Rp",
+  TRY: "₺",
+  MAD: "MAD ",
+  JOD: "JOD ",
+  EGP: "EGP ",
+  PEN: "PEN ",
+  BRL: "R$",
+  ZAR: "R",
+  XPF: "XPF ",
+  CHF: "CHF ",
+  SGD: "S$",
+  MYR: "RM ",
+  VND: "₫",
+  SAR: "SAR ",
+  QAR: "QAR ",
+  OMR: "OMR ",
+  KWD: "KWD ",
+  BHD: "BHD ",
+  CNY: "¥",
+  HKD: "HK$",
+  AUD: "A$",
+  NZD: "NZ$",
+  CAD: "C$",
+};
+
+const DESTINATION_PRESETS = [
+  { keys: ["kerala", "kochi", "munnar", "alleppey", "kovalam", "thiruvananthapuram", "india", "chennai", "pondicherry", "kanyakumari", "mumbai", "delhi", "jaipur", "goa", "hyderabad", "bangalore", "bengaluru", "kolkata"], code: "INR", rate: 83, dailyUsd: 52 },
+  { keys: ["tokyo", "kyoto", "osaka", "nara", "hakone", "sapporo", "japan"], code: "JPY", rate: 149, dailyUsd: 128 },
+  { keys: ["seoul", "busan", "jeju", "korea"], code: "KRW", rate: 1320, dailyUsd: 118 },
+  { keys: ["bali", "jakarta", "ubud", "indonesia"], code: "IDR", rate: 15800, dailyUsd: 82 },
+  { keys: ["bangkok", "phuket", "chiang mai", "thailand"], code: "THB", rate: 35, dailyUsd: 90 },
+  { keys: ["kuala lumpur", "langkawi", "malaysia"], code: "MYR", rate: 4.7, dailyUsd: 88 },
+  { keys: ["singapore"], code: "SGD", rate: 1.35, dailyUsd: 150 },
+  { keys: ["dubai", "abu dhabi", "uae"], code: "AED", rate: 3.67, dailyUsd: 180 },
+  { keys: ["doha", "qatar"], code: "QAR", rate: 3.64, dailyUsd: 175 },
+  { keys: ["riyadh", "jeddah", "saudi", "madinah", "medina", "makkah", "mecca"], code: "SAR", rate: 3.75, dailyUsd: 110 },
+  { keys: ["muscat", "oman"], code: "OMR", rate: 0.38, dailyUsd: 135 },
+  { keys: ["kuwait"], code: "KWD", rate: 0.31, dailyUsd: 170 },
+  { keys: ["bahrain"], code: "BHD", rate: 0.38, dailyUsd: 165 },
+  { keys: ["istanbul", "cappadocia", "antalya", "turkey"], code: "TRY", rate: 32, dailyUsd: 85 },
+  { keys: ["cairo", "luxor", "sharm", "egypt"], code: "EGP", rate: 49, dailyUsd: 78 },
+  { keys: ["marrakech", "casablanca", "morocco"], code: "MAD", rate: 10, dailyUsd: 82 },
+  { keys: ["petra", "amman", "jordan"], code: "JOD", rate: 0.71, dailyUsd: 105 },
+  { keys: ["paris", "nice", "lyon", "france", "rome", "venice", "milan", "amalfi", "florence", "italy", "barcelona", "madrid", "seville", "spain", "amsterdam", "netherlands", "athens", "santorini", "greece", "berlin", "munich", "germany", "lisbon", "porto", "portugal", "vienna", "austria"], code: "EUR", rate: 0.93, dailyUsd: 165 },
+  { keys: ["zurich", "lucerne", "interlaken", "switzerland"], code: "CHF", rate: 0.88, dailyUsd: 210 },
+  { keys: ["london", "manchester", "edinburgh", "uk", "united kingdom"], code: "GBP", rate: 0.79, dailyUsd: 185 },
+  { keys: ["new york", "san francisco", "los angeles", "chicago", "miami", "usa", "united states"], code: "USD", rate: 1, dailyUsd: 220 },
+  { keys: ["toronto", "vancouver", "canada"], code: "CAD", rate: 1.37, dailyUsd: 175 },
+  { keys: ["sydney", "melbourne", "australia"], code: "AUD", rate: 1.52, dailyUsd: 180 },
+  { keys: ["auckland", "queenstown", "new zealand"], code: "NZD", rate: 1.66, dailyUsd: 175 },
+  { keys: ["hong kong"], code: "HKD", rate: 7.81, dailyUsd: 170 },
+  { keys: ["beijing", "shanghai", "china"], code: "CNY", rate: 7.24, dailyUsd: 105 },
+  { keys: ["machu", "cusco", "peru"], code: "PEN", rate: 3.7, dailyUsd: 88 },
+  { keys: ["rio", "sao paulo", "brazil"], code: "BRL", rate: 4.98, dailyUsd: 92 },
+  { keys: ["cape town", "johannesburg", "south africa"], code: "ZAR", rate: 18.8, dailyUsd: 95 },
+  { keys: ["bora bora", "polynesia"], code: "XPF", rate: 110, dailyUsd: 240 },
+];
+
 function getPackageCurrencyMeta(destination = "") {
   const text = String(destination || "").toLowerCase();
-  const presets = [
-    { keys: ["chennai", "pondicherry", "kanyakumari", "india"], code: "INR", rate: 83, dailyUsd: 55 },
-    { keys: ["tokyo", "kyoto", "japan"], code: "JPY", rate: 149, dailyUsd: 130 },
-    { keys: ["dubai", "uae"], code: "AED", rate: 3.67, dailyUsd: 180 },
-    { keys: ["paris", "rome", "venice", "amalfi", "barcelona", "france", "italy", "spain"], code: "EUR", rate: 0.93, dailyUsd: 175 },
-    { keys: ["london", "uk"], code: "GBP", rate: 0.79, dailyUsd: 190 },
-    { keys: ["new york", "usa"], code: "USD", rate: 1, dailyUsd: 220 },
-  ];
-  return presets.find((preset) => preset.keys.some((key) => text.includes(key))) || { code: "USD", rate: 1, dailyUsd: 140 };
+  const preset = DESTINATION_PRESETS.find((entry) => entry.keys.some((key) => text.includes(key)));
+  if (preset) {
+    return { ...preset, symbol: CURRENCY_SYMBOLS[preset.code] || preset.code };
+  }
+  return { code: "USD", rate: 1, dailyUsd: 125, symbol: "$" };
 }
 
 function parseBudgetNumber(value) {
@@ -40,12 +103,55 @@ function normalizePackageBudgetUsd(pkg, days) {
     style === "budget" ? 0.72 : 1;
   const estimatedTotalUsd = Math.round(meta.dailyUsd * styleMultiplier * safeDays);
   const parsedBudget = parseBudgetNumber(pkg.budget);
+
   if (!Number.isFinite(parsedBudget) || parsedBudget <= 0) return estimatedTotalUsd;
+
   const parsedPerDay = parsedBudget / safeDays;
   if (parsedPerDay < meta.dailyUsd * 0.5 || parsedPerDay > meta.dailyUsd * 2.2) {
     return estimatedTotalUsd;
   }
   return Math.round(parsedBudget);
+}
+
+function formatLocalMoney(amount, currencyCode) {
+  const safeAmount = Math.max(0, Math.round(Number(amount) || 0));
+  const locale = currencyCode === "INR" ? "en-IN" : "en";
+  const compact = safeAmount >= 1000
+    ? new Intl.NumberFormat(locale, {
+        notation: "compact",
+        compactDisplay: "short",
+        maximumFractionDigits: safeAmount >= 100000 ? 1 : 0,
+      }).format(safeAmount)
+    : new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(safeAmount);
+  const symbol = CURRENCY_SYMBOLS[currencyCode] || currencyCode;
+  return `${symbol}${compact}`.replace(/\s+/g, " ").trim();
+}
+
+function buildBudgetBreakdown(localBudget, travelStyle, currencyCode) {
+  const style = String(travelStyle || "").toLowerCase();
+  const ratios =
+    style === "luxury"
+      ? { accommodation: 0.4, food: 0.22, transport: 0.12, activities: 0.18, misc: 0.08 }
+      : style === "adventure"
+        ? { accommodation: 0.28, food: 0.2, transport: 0.18, activities: 0.24, misc: 0.1 }
+        : style === "relaxation"
+          ? { accommodation: 0.36, food: 0.22, transport: 0.14, activities: 0.16, misc: 0.12 }
+          : { accommodation: 0.32, food: 0.22, transport: 0.16, activities: 0.2, misc: 0.1 };
+
+  const accommodation = Math.round(localBudget * ratios.accommodation);
+  const food = Math.round(localBudget * ratios.food);
+  const transport = Math.round(localBudget * ratios.transport);
+  const activities = Math.round(localBudget * ratios.activities);
+  const misc = Math.max(0, localBudget - accommodation - food - transport - activities);
+
+  return {
+    accommodation: formatLocalMoney(accommodation, currencyCode),
+    food: formatLocalMoney(food, currencyCode),
+    transport: formatLocalMoney(transport, currencyCode),
+    activities: formatLocalMoney(activities, currencyCode),
+    misc: formatLocalMoney(misc, currencyCode),
+    total: formatLocalMoney(localBudget, currencyCode),
+  };
 }
 
 // GET all active tour packages (Public or logged-in users)
@@ -112,6 +218,7 @@ Return ONLY a JSON object with this exact schema (no extra text):
     "food": "amount in local currency",
     "transport": "amount in local currency",
     "activities": "amount in local currency",
+    "misc": "amount in local currency",
     "total": "total in local currency"
   },
   "tips": ["tip 1", "tip 2", "tip 3"]
@@ -138,7 +245,8 @@ Return ONLY a JSON object with this exact schema (no extra text):
       const rate = RATES[currency] || 1;
       const localBudget = Math.round(budgetUsd * rate);
       const perDay = Math.round(localBudget / days);
-      const fmtN = n => n >= 100000 ? `${sym}${(n/100000).toFixed(1)}L` : n >= 1000 ? `${sym}${(n/1000).toFixed(1)}K` : `${sym}${n}`;
+      const fmtN = (n) => formatLocalMoney(n, currency);
+      const breakdown = buildBudgetBreakdown(localBudget, pkg.travelStyle, currency);
 
       const sessions = ["morning", "afternoon", "evening"];
       const acts = ["Sightseeing & Exploration", "Cultural Experience & Local Cuisine", "Sunset & Evening Leisure"];
@@ -158,13 +266,7 @@ Return ONLY a JSON object with this exact schema (no extra text):
           dayTotal: fmtN(perDay),
           tip: `Book your ${places[i] || "entry tickets"} in advance for best rates.`
         })),
-        budgetBreakdown: {
-          accommodation: fmtN(Math.round(localBudget * 0.35)),
-          food:          fmtN(Math.round(localBudget * 0.20)),
-          transport:     fmtN(Math.round(localBudget * 0.15)),
-          activities:    fmtN(Math.round(localBudget * 0.20)),
-          total:         fmtN(localBudget)
-        },
+        budgetBreakdown: breakdown,
         tips: [
           `Carry ${sym} cash for local markets and small eateries.`,
           `Best local transport: auto-rickshaws or ride-hailing apps.`,
