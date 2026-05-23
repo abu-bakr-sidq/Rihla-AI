@@ -2835,11 +2835,16 @@ export default function Planner() {
     }
 
     // Auto-save to My Trips ONLY if it wasn't already saved by the AI generator
+    const computedDays =
+      finalItin?.trip_overview?.total_days ||
+      Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000));
+
     if (!tripId) {
       const pendingTripPayload = {
         destination: formData.destination,
         startDate: formData.startDate,
         endDate: formData.endDate,
+        days: computedDays,
         travelers: formData.travelers,
         budget: budgetCategory,
         currency: formData.currency,
@@ -2875,33 +2880,43 @@ export default function Planner() {
     }
 
     if (tripId) {
+      const syncTripPayload = {
+        destination: formData.destination,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        days: computedDays,
+        budget: String(budgetCategory || formData.budget || "moderate"),
+        currency: formData.currency,
+        travelStyle: formData.travelStyle,
+        travelers: formData.travelers,
+        interests: [],
+        status: "planned",
+        preferences: {
+          travelStyle: formData.travelStyle,
+          interests: [],
+          travelers: formData.travelers,
+          currency: formData.currency,
+          specialRequests: formData.specialRequirements || "",
+        },
+        itinerary: finalItin,
+        costBreakdown: finalCostInfo || finalItin?.total_budget || plannerBudgetSummary.costBreakdown,
+      };
+
       try {
         await updateTripMutation.mutateAsync({
           id: tripId,
-          data: {
-            destination: formData.destination,
-            startDate: formData.startDate,
-            endDate: formData.endDate,
-            days: finalItin?.trip_overview?.total_days || Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)),
-            budget: String(budgetCategory || formData.budget || "moderate"),
-            currency: formData.currency,
-            travelStyle: formData.travelStyle,
-            travelers: formData.travelers,
-            interests: [],
-            status: "planned",
-            preferences: {
-              travelStyle: formData.travelStyle,
-              interests: [],
-              travelers: formData.travelers,
-              currency: formData.currency,
-              specialRequests: formData.specialRequirements || "",
-            },
-            itinerary: finalItin,
-            costBreakdown: finalCostInfo || finalItin?.total_budget || plannerBudgetSummary.costBreakdown,
-          }
+          data: syncTripPayload
         });
       } catch (syncErr) {
         console.warn("Trip sync failed:", syncErr.message);
+        if (/trip not found/i.test(String(syncErr?.message || ""))) {
+          try {
+            const createdTrip = await createTripMutation.mutateAsync(syncTripPayload);
+            tripId = createdTrip?.id || createdTrip?._id || tripId;
+          } catch (createFallbackErr) {
+            console.warn("Trip create fallback failed:", createFallbackErr.message);
+          }
+        }
       }
 
       setGeneratedTripId(tripId);

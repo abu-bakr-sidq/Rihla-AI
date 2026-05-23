@@ -211,18 +211,28 @@ const _hashQuery = (str) => {
   return h;
 };
 
+const buildPhotoVariantIndex = (queryOrQueries, globalIndex = 0) => {
+  const joined = Array.isArray(queryOrQueries)
+    ? queryOrQueries.filter(Boolean).join("||")
+    : String(queryOrQueries || "");
+  const hashOffset = _hashQuery(joined) % 11;
+  return Math.max(0, Number(globalIndex) || 0) + hashOffset;
+};
+
 const extractLocationQuery = (placeName, destination, activity = "", title = "") =>
   buildPlaceImageQueries(placeName, destination, activity, title);
 
 const _fetchActivityImage = async (queryOrQueries, globalIndex) => {
   const queries = Array.isArray(queryOrQueries) ? queryOrQueries.filter(Boolean) : [queryOrQueries].filter(Boolean);
-  const cacheKey = queries.join("||") + '__gi' + (globalIndex || 0);
+  const photoVariantIndex = buildPhotoVariantIndex(queries, globalIndex);
+  const cacheKey = queries.join("||") + '__gi' + photoVariantIndex;
   if (_imgCache[cacheKey]) return _imgCache[cacheKey];
 
-  for (const query of queries) {
+  for (let index = 0; index < queries.length; index += 1) {
+    const query = queries[index];
     try {
       const r = await fetch(
-        `${API_BASE_URL}/place-image?query=${encodeURIComponent(query)}&photoIndex=${globalIndex || 0}&onlyGoogle=1`,
+        `${API_BASE_URL}/place-image?query=${encodeURIComponent(query)}&photoIndex=${photoVariantIndex + index}&onlyGoogle=1`,
         { signal: AbortSignal.timeout(8000) }
       );
       if (r.ok) {
