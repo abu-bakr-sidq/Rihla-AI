@@ -37,7 +37,13 @@ function toTripResponse(doc) {
   const obj = doc.toObject ? doc.toObject({ virtuals: true }) : { ...doc };
   return {
     ...obj,
+    _id: String(obj._id || obj.id),
     id: String(obj._id || obj.id),
+    userId: obj.userId ? String(obj.userId) : undefined,
+    startDate: obj.startDate ? new Date(obj.startDate).toISOString() : undefined,
+    endDate: obj.endDate ? new Date(obj.endDate).toISOString() : undefined,
+    createdAt: obj.createdAt ? new Date(obj.createdAt).toISOString() : undefined,
+    updatedAt: obj.updatedAt ? new Date(obj.updatedAt).toISOString() : undefined,
   };
 }
 
@@ -256,7 +262,7 @@ export const getUserTrips = async (req, res) => {
     const trips = await Trip.find({ userId: req.user._id || req.user.id })
       .sort({ createdAt: -1 })
       .lean();
-    const mapped = trips.map(t => ({ ...t, id: String(t._id) }));
+    const mapped = trips.map((trip) => toTripResponse(trip));
     res.json(mapped);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch trips", error: err.message });
@@ -271,7 +277,7 @@ export const getTripById = async (req, res) => {
     if (String(trip.userId) !== String(req.user._id || req.user.id) && req.user.role !== "admin") {
       return res.status(403).json({ message: "Forbidden" });
     }
-    res.json({ ...trip, id: String(trip._id) });
+    res.json(toTripResponse(trip));
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch trip", error: err.message });
   }
