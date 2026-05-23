@@ -15,6 +15,7 @@
     "jsonwebtoken": "latest",
     "mongoose": "latest",
     "nodemailer": "latest",
+    "openai": "^6.27.0",
     "passport": "latest",
     "passport-google-oauth20": "latest",
     "passport-local": "latest"
