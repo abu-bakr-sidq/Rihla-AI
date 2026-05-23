@@ -24,6 +24,7 @@ import { ChatButton } from "@/components/ChatBot/ChatButton";
 import { exportTripPDF, downloadTripPDF } from "@/services/exportTripPDF";
 import { buildActivityDisplayContent, buildStreetFindChips, extractPlaceImageQuery, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from "@/lib/trip-itinerary";
 import { sanitizeVisibleText } from "@/lib/display-text";
+import { resolveApiUrl } from "@/lib/api-contract";
 import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerTimesCard, TripPreviewCard } from "@/components/trip/EnhancedPanels";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -1762,7 +1763,7 @@ const _fetchActivityImage = async (query, cardIndex) => {
 
   try {
     const r = await fetch(
-      `/api/place-image?query=${encodeURIComponent(query)}&photoIndex=${cardIndex || 0}&onlyGoogle=1`,
+      resolveApiUrl(`/api/place-image?query=${encodeURIComponent(query)}&photoIndex=${cardIndex || 0}&onlyGoogle=1`),
       { signal: AbortSignal.timeout(8000) }
     );
     if (r.ok) {
@@ -2346,7 +2347,7 @@ export default function Planner() {
       try {
         const finalQuery = exactPlaceQuery || DEST || query;
         // Pass photoIndex so backend rotates through different Google Place photos
-        const r = await fetch(`/api/place-image?query=${encodeURIComponent(finalQuery)}&photoIndex=${idx}&onlyGoogle=1`);
+        const r = await fetch(resolveApiUrl(`/api/place-image?query=${encodeURIComponent(finalQuery)}&photoIndex=${idx}&onlyGoogle=1`));
         if (r.ok) {
           const d = await r.json();
           if (d?.url) {
@@ -2576,7 +2577,7 @@ export default function Planner() {
               let src = null;
               try {
                 const gRes = await fetch(
-                  `/api/place-image?query=${encodeURIComponent(`${rawName} ${country}`)}&photoIndex=${idx}&onlyGoogle=1`,
+                  resolveApiUrl(`/api/place-image?query=${encodeURIComponent(`${rawName} ${country}`)}&photoIndex=${idx}&onlyGoogle=1`),
                   { signal: controller.signal }
                 );
                 if (gRes.ok) {
@@ -2648,7 +2649,7 @@ export default function Planner() {
             let src = null;
             try {
               const gRes = await fetch(
-                `/api/place-image?query=${encodeURIComponent(`${rawName} ${country}`)}&photoIndex=${idx}&onlyGoogle=1`,
+                resolveApiUrl(`/api/place-image?query=${encodeURIComponent(`${rawName} ${country}`)}&photoIndex=${idx}&onlyGoogle=1`),
                 { signal: controller.signal }
               );
               if (gRes.ok) {
