@@ -1083,10 +1083,15 @@ function buildItinerary(fd) {
       ? fd.budget
       : "moderate";
   const budgetSummary = buildBudgetSummary(fd.destination, daysNum, category, travelers, fd.currency || "USD");
-  const dayStay = splitEvenly(budgetSummary.costBreakdown.stay, daysNum);
-  const dayFood = splitEvenly(budgetSummary.costBreakdown.food, daysNum);
-  const dayTransport = splitEvenly(budgetSummary.costBreakdown.transport, daysNum);
-  const dayActivities = splitEvenly(budgetSummary.costBreakdown.activities, daysNum);
+  const baseDayWeights = buildDayBudgetWeights(daysNum, fd.destination, fd.travelStyle);
+  const stayWeights = baseDayWeights.map((weight, index) => Math.max(0.85, 0.96 + (weight - 1) * 0.28 + (index === 0 ? -0.03 : 0)));
+  const foodWeights = baseDayWeights.map((weight, index) => Math.max(0.78, 0.88 + (weight - 1) * 0.72 + (index % 2 === 1 ? 0.03 : 0)));
+  const transportWeights = baseDayWeights.map((weight, index) => Math.max(0.76, 0.84 + (weight - 1) * 0.6 + (index === 0 ? 0.07 : 0) + (index === daysNum - 1 ? 0.04 : 0)));
+  const activityWeights = baseDayWeights.map((weight, index) => Math.max(0.74, 0.8 + (weight - 1) * 1.1 + (index % 3 === 1 ? 0.05 : 0)));
+  const dayStay = splitByWeights(budgetSummary.costBreakdown.stay, stayWeights);
+  const dayFood = splitByWeights(budgetSummary.costBreakdown.food, foodWeights);
+  const dayTransport = splitByWeights(budgetSummary.costBreakdown.transport, transportWeights);
+  const dayActivities = splitByWeights(budgetSummary.costBreakdown.activities, activityWeights);
   const destName = fd.destination || 'Unknown Destination';
 
   const countryCityMap = {
@@ -1640,6 +1645,35 @@ const splitByWeights = (total, weights = []) => {
   }
 
   return values;
+};
+
+const buildDayBudgetWeights = (days, destination = "", travelStyle = "") => {
+  const safeDays = Math.max(1, Number(days) || 1);
+  const destSeed = String(destination || "").length;
+  const style = String(travelStyle || "").toLowerCase();
+
+  return Array.from({ length: safeDays }, (_, index) => {
+    const theme = String(FALLBACK_DAY_THEMES[index % FALLBACK_DAY_THEMES.length] || "").toLowerCase();
+    let weight = 1;
+
+    if (/arrival|first impressions/.test(theme)) weight += 0.06;
+    if (/heritage|culture|monument|gallery/.test(theme)) weight += 0.16;
+    if (/coastal|nature|landscape|waterfront/.test(theme)) weight += 0.12;
+    if (/markets|flavors|street|shopping/.test(theme)) weight += 0.09;
+    if (/sunset|night|after dark|dining/.test(theme)) weight += 0.11;
+    if (/grand finale|farewell|signature/.test(theme)) weight += 0.15;
+
+    if (index === 0) weight -= 0.08;
+    if (index === safeDays - 1) weight -= 0.04;
+
+    if (style === "luxury") weight += index % 2 === 0 ? 0.05 : 0.11;
+    else if (style === "adventure") weight += index % 2 === 0 ? 0.12 : 0.03;
+    else if (style === "nature") weight += /coastal|nature/.test(theme) ? 0.09 : 0.02;
+    else if (style === "relaxation") weight += /night|coastal|sunset/.test(theme) ? 0.08 : 0.01;
+
+    weight += ((destSeed + index * 13) % 7) * 0.015;
+    return Math.max(0.72, Number(weight.toFixed(3)));
+  });
 };
 
 const buildBudgetSummary = (destination, days, category, travelers = 1, currency = "USD") => {
