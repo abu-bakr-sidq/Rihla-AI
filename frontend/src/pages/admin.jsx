@@ -307,16 +307,32 @@ function getDestinationCurrencyMeta(dest = "") {
 function estimatePackageDailyUsd(dest, style = "") {
   let base = getDestinationCurrencyMeta(dest).dailyUsd || 88;
   const s = String(style || "").toLowerCase();
-  if (s === "luxury") base *= 1.55;
-  else if (s === "adventure") base *= 1.18;
+  if (s === "luxury") base *= 1.35;
+  else if (s === "adventure") base *= 1.12;
+  else if (s === "nature") base *= 1.04;
   else if (s === "relaxation") base *= 1.08;
+  else if (s === "cultural") base *= 0.98;
   else if (s === "budget") base *= 0.72;
   return Math.round(base);
 }
 
 function getRecommendedPackageBudgetUsd(dest, days = 7, style = "") {
   const safeDays = Math.max(1, Number(days) || 1);
-  return Math.max(150, Math.round(estimatePackageDailyUsd(dest, style) * safeDays));
+  const dailyUsd = estimatePackageDailyUsd(dest, style);
+  const shortTripOverhead = safeDays === 1
+    ? dailyUsd * 0.15
+    : Math.min(dailyUsd * 0.45, 45);
+  const total = Math.round((dailyUsd * safeDays) + shortTripOverhead);
+  const floor = Math.max(35, Math.round(dailyUsd * Math.min(0.95, 0.65 + safeDays * 0.05)));
+  return Math.max(floor, total);
+}
+
+function getBudgetSliderBounds(dest, days = 7, style = "") {
+  const recommended = getRecommendedPackageBudgetUsd(dest, days, style);
+  const min = Math.max(25, Math.floor(recommended * 0.55 / 25) * 25);
+  const max = Math.max(min + 150, Math.ceil(recommended * 1.85 / 50) * 50);
+  const step = recommended >= 400 ? 50 : 25;
+  return { min, max, step, recommended };
 }
 
 function formatDestinationMoneyFromUsd(usdAmount, dest = "") {
@@ -344,7 +360,9 @@ function AddPackageModal({ isOpen, onClose }) {
   const createTourPackage = useCreateTourPackage();
   const currencyMeta = getDestinationCurrencyMeta(form.destination);
   const displayBudget = formatDestinationMoneyFromUsd(form.budget, form.destination);
-  const recommendedBudgetUsd = getRecommendedPackageBudgetUsd(form.destination, form.days, form.travelStyle);
+  const budgetBounds = getBudgetSliderBounds(form.destination, form.days, form.travelStyle);
+  const recommendedBudgetUsd = budgetBounds.recommended;
+  const approxDailyBudgetUsd = Math.max(1, Math.round(recommendedBudgetUsd / Math.max(1, form.days)));
 
   useEffect(() => {
     if (!form.destination || budgetTouched) return;
@@ -638,10 +656,18 @@ function AddPackageModal({ isOpen, onClose }) {
                       </span>
                     </div>
                   </div>
-                  <input type="range" min="150" max="8000" step="50" value={form.budget} onChange={e => { setBudgetTouched(true); setForm({ ...form, budget: parseInt(e.target.value, 10) }); }} className="w-full h-1 rounded-full bg-[#D4AF37]/20 appearance-none cursor-pointer" />
+                  <input
+                    type="range"
+                    min={budgetBounds.min}
+                    max={budgetBounds.max}
+                    step={budgetBounds.step}
+                    value={form.budget}
+                    onChange={e => { setBudgetTouched(true); setForm({ ...form, budget: parseInt(e.target.value, 10) }); }}
+                    className="w-full h-1 rounded-full bg-[#D4AF37]/20 appearance-none cursor-pointer"
+                  />
                   {!!form.destination && !budgetTouched && (
                     <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-white/35">
-                      Smart baseline for {form.days} days · {form.travelStyle}
+                      Smart baseline for {form.days} {form.days === 1 ? "day" : "days"} · {form.travelStyle} · about {formatDestinationMoneyFromUsd(approxDailyBudgetUsd, form.destination)} per day
                     </p>
                   )}
 
