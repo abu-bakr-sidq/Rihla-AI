@@ -719,7 +719,7 @@ const STYLE_CITY_PROFILES = {
     note: "Use each day to deepen the destination's story instead of flattening it into generic sightseeing.",
   },
   adventure: {
-    aliases: ["adventure", "active", "nature", "outdoors", "wildlife"],
+    aliases: ["adventure", "active"],
     dayThemes: [
       "Arrival & Outdoor Orientation",
       "Active Morning Push",

@@ -976,6 +976,30 @@ const BoutiqueSelect = ({ value, options, onChange, label }) => {
 
 
 
+const getGenericCityData = (dest) => ({
+  morning: [
+    { name: `Morning Exploration in ${dest}`, desc: `Begin your day discovering the iconic landmarks and core heritage nodes that define ${dest}.`, id: null },
+    { name: `Guided City Walk`, desc: `A curated morning walking tour through the heart of ${dest}.`, id: null },
+    { name: `Historic District Tour`, desc: `Witness the architectural continuity of ${dest} in the early morning light.`, id: null }
+  ],
+  afternoon: [
+    { name: `Cultural Deep Dive`, desc: `Delve into the local museums, art galleries, and dynamic street scenes unique to ${dest}.`, id: null },
+    { name: `Local Gastronomy Lunch`, desc: `Experience the authentic flavors of ${dest} at a highly rated local culinary node.`, id: null },
+    { name: `Main Square Discovery`, desc: `Navigate the central hubs and bustling markets of ${dest}.`, id: null }
+  ],
+  evening: [
+    { name: `Sunset Vistas`, desc: `Watch the sunset over the skyline of ${dest} from a premium panoramic viewpoint.`, id: null },
+    { name: `Atmospheric Evening Stroll`, desc: `Wander through the illuminated streets, soaking in the vibrant evening energy of ${dest}.`, id: null },
+    { name: `Riverside / Coastal Walk`, desc: `A relaxing evening immersion adjusting to the local pace of ${dest}.`, id: null }
+  ],
+  night: [
+    { name: `Premium Dining Experience`, desc: `Conclude your day with a luxurious dining experience featuring the finest regional ingredients of ${dest}.`, id: null },
+    { name: `Boutique Hotel Rest`, desc: `Return to your hand-picked luxury accommodation in the center of ${dest}.`, id: null },
+    { name: `City Lights Tour`, desc: `Experience the high-end nightlife and cultural performances of ${dest}.`, id: null }
+  ],
+  insight: `To get the most out of ${dest}, start your days early to avoid the peak crowds at major nodes.`
+});
+
 const FALLBACK_DAY_THEMES = [
   'Arrival & First Impressions',
   'Heritage & Culture',
@@ -1060,32 +1084,9 @@ function buildVariantActivity(category, variantIndex, fd) {
   };
 }
 
-function filterActivitiesForStyle(items = [], travelStyle = "") {
-  if (!Array.isArray(items) || !items.length) return [];
-
-  const styleKey = String(travelStyle || "").toLowerCase();
-  if (styleKey !== "halal") {
-    return items;
-  }
-
-  const blockedReligiousStops = /(temple|church|basilica|cathedral|shrine|mandir|kovil|puja|monastery|idol)/i;
-  const preferredHalalStops = /(mosque|masjid|dargah|halal|family)/i;
-
-  const filtered = items.filter((item) => {
-    const text = `${item?.name || ""} ${item?.desc || ""}`.trim();
-    if (!text) return true;
-    if (preferredHalalStops.test(text)) return true;
-    return !blockedReligiousStops.test(text);
-  });
-
-  return filtered.length ? filtered : [];
-}
-
 function buildExpandedActivityPool(items, category, needed, fd) {
-  const filteredItems = filterActivitiesForStyle(items, fd.travelStyle);
-  const baseItems = Array.isArray(filteredItems) && filteredItems.length
-    ? filteredItems
-    : [];
+  const generic = getGenericCityData(fd.destination || 'Destination');
+  const baseItems = Array.isArray(items) && items.length ? items : (generic[category] || []);
   const pool = [];
 
   for (let index = 0; index < needed; index += 1) {
@@ -1136,7 +1137,7 @@ function buildItinerary(fd) {
     if (countryMatch) {
       cityData = DESTINATION_ACTIVITIES[countryCityMap[countryMatch]];
     } else {
-      cityData = { morning: [], afternoon: [], evening: [], night: [], insight: "" };
+      cityData = getGenericCityData(destName);
     }
   }
 
@@ -2537,38 +2538,18 @@ export default function Planner() {
       const raw = sessionStorage.getItem("rihla_planner_state");
       if (!raw) return;
       const saved = JSON.parse(raw);
-      const requiresFreshGeneration = !!saved?.requiresFreshGeneration;
-      if (requiresFreshGeneration && !user) return;
-
       sessionStorage.removeItem("rihla_planner_state"); // consume once
-
-      const restoredFormData = {
-        ...formData,
-        ...(saved?.formData || {}),
-      };
-
-      setFormData(restoredFormData);
-      setSelectedDay(saved?.selectedDay || 1);
-      setActiveDay(saved?.activeDay || 0);
-      setActiveTime(saved?.activeTime || 'morning');
-
-      if (requiresFreshGeneration) {
-        setGeneratedResult(null);
-        setPlanFocusAct(null);
-        setStep(6);
-        setTimeout(() => {
-          handleGenerate(restoredFormData);
-        }, 0);
-        return;
-      }
-
       if (saved?.generatedResult?.days?.length) {
+        setFormData(prev => ({ ...prev, ...saved.formData }));
         setGeneratedResult(saved.generatedResult);
+        setSelectedDay(saved.selectedDay || 1);
+        setActiveDay(saved.activeDay || 0);
+        setActiveTime(saved.activeTime || 'morning');
         setStep(7); // go straight back to itinerary view
       }
     } catch (_) { }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, []);
 
 
   useEffect(() => {
@@ -3049,11 +3030,7 @@ export default function Planner() {
 
   const handleNext = () => { if (step < 4) setStep(step + 1); else handleGenerate(); };
 
-  const handleGenerate = async (overrideFormData = null) => {
-    const sourceFormData = overrideFormData
-      ? { ...formData, ...overrideFormData }
-      : formData;
-
+  const handleGenerate = async () => {
     setStep(6);
     setLoadPct(0);
     setLoadStep(0);
@@ -3061,36 +3038,36 @@ export default function Planner() {
     let finalCostInfo = null;
     let tripId = null;
     const plannerBudgetSummary = buildBudgetSummary(
-      sourceFormData.destination,
-      Math.max(1, Math.ceil((new Date(sourceFormData.endDate) - new Date(sourceFormData.startDate)) / 86400000)),
+      formData.destination,
+      Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)),
       budgetCategory,
-      sourceFormData.travelers,
-      sourceFormData.currency
+      formData.travelers,
+      formData.currency
     );
-    const plannerPerfectItinerary = buildItinerary({ ...sourceFormData, budgetCategory });
+    const plannerPerfectItinerary = buildItinerary({ ...formData, budgetCategory });
 
     try {
       const result = await Promise.race([
         generateMutation.mutateAsync({
-          destination: sourceFormData.destination, startDate: sourceFormData.startDate, endDate: sourceFormData.endDate,
-          travelers: sourceFormData.travelers, budget: sourceFormData.budget, currency: sourceFormData.currency,
-          travelStyle: sourceFormData.travelStyle, preferences: [],
+          destination: formData.destination, startDate: formData.startDate, endDate: formData.endDate,
+          travelers: formData.travelers, budget: formData.budget, currency: formData.currency,
+          travelStyle: formData.travelStyle, preferences: [],
           interests: []
         }),
         new Promise((_, reject) => {
-          setTimeout(() => reject(new Error("Planner generation took too long. Falling back locally.")), 32000);
+          setTimeout(() => reject(new Error("Planner generation took too long. Falling back locally.")), 16000);
         })
       ]);
 
-      const fallback = plannerPerfectItinerary;
+      const fallback = buildItinerary({ ...formData, budgetCategory });
       const normalizedBackendItinerary = Array.isArray(result?.itinerary)
         ? normalizeLegacyArrayItinerary(result.itinerary, {
-          destination: sourceFormData.destination,
-          startDate: sourceFormData.startDate,
-          endDate: sourceFormData.endDate,
-          travelers: sourceFormData.travelers,
-          travelStyle: sourceFormData.travelStyle,
-          currency: sourceFormData.currency,
+          destination: formData.destination,
+          startDate: formData.startDate,
+          endDate: formData.endDate,
+          travelers: formData.travelers,
+          travelStyle: formData.travelStyle,
+          currency: formData.currency,
           costBreakdown: result?.costBreakdown || plannerBudgetSummary.costBreakdown,
         })
         : null;
@@ -3101,13 +3078,13 @@ export default function Planner() {
           ? result
           : null;
 
-      // Prefer the rich backend itinerary when available. If the backend only
-      // returns the thinner legacy array shape, keep the richer local
-      // style-aware planner result instead of reviving the older generic view.
+      // If the backend only returns the thinner legacy array itinerary,
+      // preserve the richer planner-built version so saved trips match the
+      // high-quality planner result screen.
       finalItin = backendRichItinerary || plannerPerfectItinerary || normalizedBackendItinerary || fallback;
       finalCostInfo = backendRichItinerary
-        ? (result?.costBreakdown || result?.itinerary?.total_budget || result?.total_budget || normalizedBackendItinerary?.total_budget || plannerPerfectItinerary?.total_budget || plannerBudgetSummary.costBreakdown)
-        : (normalizedBackendItinerary?.total_budget || plannerPerfectItinerary?.total_budget || fallback.total_budget || plannerBudgetSummary.costBreakdown);
+        ? (result?.costBreakdown || result?.itinerary?.total_budget || result?.total_budget || plannerPerfectItinerary?.total_budget || plannerBudgetSummary.costBreakdown)
+        : (plannerPerfectItinerary?.total_budget || normalizedBackendItinerary?.total_budget || fallback.total_budget || plannerBudgetSummary.costBreakdown);
       tripId = result?.id || result?._id || null;
 
       setGeneratedResult(finalItin);
@@ -3116,7 +3093,7 @@ export default function Planner() {
     } catch (err) {
       console.error("Generation failed, using local fallback:", err);
       await new Promise(r => setTimeout(r, 2800));
-      finalItin = plannerPerfectItinerary;
+      finalItin = buildItinerary({ ...formData, budgetCategory });
       finalCostInfo = finalItin.total_budget || plannerBudgetSummary.costBreakdown;
       setGeneratedResult(finalItin);
       setActiveDay(0);
@@ -3132,14 +3109,14 @@ export default function Planner() {
       if (!persistedTripId) {
         try {
           const savedResult = await createTripMutation.mutateAsync({
-            destination: sourceFormData.destination, startDate: sourceFormData.startDate, endDate: sourceFormData.endDate,
-            travelers: sourceFormData.travelers, budget: budgetCategory, currency: sourceFormData.currency,
-            travelStyle: sourceFormData.travelStyle, preferences: [],
+            destination: formData.destination, startDate: formData.startDate, endDate: formData.endDate,
+            travelers: formData.travelers, budget: budgetCategory, currency: formData.currency,
+            travelStyle: formData.travelStyle, preferences: [],
             interests: [],
-            specialRequirements: sourceFormData.specialRequirements, status: "planned",
+            specialRequirements: formData.specialRequirements, status: "planned",
             itinerary: finalItin,
             costBreakdown: finalCostInfo || plannerBudgetSummary.costBreakdown,
-            title: `${sourceFormData.travelStyle} trip to ${sourceFormData.destination}`,
+            title: `${formData.travelStyle} trip to ${formData.destination}`,
           });
           persistedTripId = savedResult?.id || savedResult?._id || null;
         } catch (saveErr) {
@@ -3152,22 +3129,22 @@ export default function Planner() {
           await updateTripMutation.mutateAsync({
             id: persistedTripId,
             data: {
-              destination: sourceFormData.destination,
-              startDate: sourceFormData.startDate,
-              endDate: sourceFormData.endDate,
-              days: finalItin?.trip_overview?.total_days || Math.max(1, Math.ceil((new Date(sourceFormData.endDate) - new Date(sourceFormData.startDate)) / 86400000)),
+              destination: formData.destination,
+              startDate: formData.startDate,
+              endDate: formData.endDate,
+              days: finalItin?.trip_overview?.total_days || Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)),
               budget: String(budgetCategory || formData.budget || "moderate"),
-              currency: sourceFormData.currency,
-              travelStyle: sourceFormData.travelStyle,
-              travelers: sourceFormData.travelers,
+              currency: formData.currency,
+              travelStyle: formData.travelStyle,
+              travelers: formData.travelers,
               interests: [],
               status: "planned",
               preferences: {
-                travelStyle: sourceFormData.travelStyle,
+                travelStyle: formData.travelStyle,
                 interests: [],
-                travelers: sourceFormData.travelers,
-                currency: sourceFormData.currency,
-                specialRequests: sourceFormData.specialRequirements || "",
+                travelers: formData.travelers,
+                currency: formData.currency,
+                specialRequests: formData.specialRequirements || "",
               },
               itinerary: finalItin,
               costBreakdown: finalCostInfo || finalItin?.total_budget || plannerBudgetSummary.costBreakdown,
@@ -4531,7 +4508,7 @@ export default function Planner() {
                         // Save full planner state so we can restore it after login
                         try {
                           sessionStorage.setItem('rihla_planner_state', JSON.stringify({
-                            formData, generatedResult, selectedDay, activeDay, activeTime, requiresFreshGeneration: true
+                            formData, generatedResult, selectedDay, activeDay, activeTime
                           }));
                         } catch (_) { }
                         sessionStorage.setItem('rihla_redirect', '/planner');

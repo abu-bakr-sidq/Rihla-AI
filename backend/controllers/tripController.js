@@ -12,9 +12,10 @@
  */
 import { Trip } from "../models/Trip.js";
 import { TripCache, buildCacheKey } from "../models/TripCache.js";
+import { User } from "../models/User.js";
 import mongoose from "mongoose";
 import { createCityItinerary } from "../services/locationEnhancedPlanner.js";
-import { generateEnrichedItinerary } from "../services/aiPlannerService.js";
+import { generateEnrichedItinerary, generateItinerary, buildPlannerPrompt } from "../services/aiPlannerService.js";
 import { getWeatherForDestination, geocodeCity } from "../services/weatherService.js";
 import { getTopPlaces } from "../services/placesService.js";
 
@@ -68,6 +69,24 @@ function normalizeBudget(raw) {
 
 function normalizeTravelStyle(raw) {
   return String(pickScalar(raw, "balanced") || "balanced").trim().toLowerCase() || "balanced";
+}
+
+const STYLE_FALLBACK_THEMES = {
+  luxury: ["Arrival & Signature Comfort", "Private Heritage Flow", "Dining & Design Districts", "Scenic Leisure", "Boutique Culture", "Soft Luxury", "Waterfront Indulgence", "Grand Finale"],
+  cultural: ["Arrival & Historic Orientation", "Sacred Heritage Trail", "Museums & Story Layers", "Old Quarter Deep Dive", "Craft & Living Culture", "Archive Moments", "Architecture Details", "Farewell Through Heritage Streets"],
+  adventure: ["Arrival & Outdoor Orientation", "Active Morning Push", "Trail & Scenic Movement", "Action With Recovery", "Open-Air Discovery", "Challenge & Reward", "Reset By Water", "Finale Adventure Highlights"],
+  cinematic: ["Arrival & First Frames", "Panoramic Mornings", "Texture & Atmosphere", "Scenic Layers", "Blue Hour Highlights", "Architecture & Light Study", "Golden-Hour Build", "Farewell Through Best Views"],
+  urban: ["Arrival & City Pulse", "Boulevards & District Flow", "Markets & Design", "Modern City Contrasts", "Street Culture Energy", "Shopping & Skyline", "After-Dark Lifestyle", "Final City Highlights"],
+  wellness: ["Arrival & Nervous-System Reset", "Mindful Morning Flow", "Nature & Gentle Motion", "Spa & Quiet Corners", "Sacred Pause", "Slow Coastal Day", "Deep Rest", "Farewell Through Soft Rituals"],
+  halal: ["Arrival & Prayer-Aware Orientation", "Mosques & Halal Dining", "Family-Friendly Flow", "Comfort & Local Culture", "Sacred Architecture", "Halal Food Trail", "Scenic Calm", "Farewell With Reflection"],
+  coastal: ["Arrival & Sea-Breeze Orientation", "Promenade & Beach Rhythm", "Harbourfront & Open Water", "Sand & Slow Afternoons", "Clifftop Or Island Views", "Boardwalk Life", "Waterfront Finale", "Farewell Through The Shoreline"],
+  balanced: ["Arrival & First Impressions", "Historic Core", "Markets & Culture", "Green & Scenic", "Modern Local Flow", "Food & Evening Atmosphere", "Neighborhood Discovery", "Farewell Highlights"],
+};
+
+function buildStyleFallbackTheme(travelStyle = "balanced", day = 1) {
+  const style = normalizeTravelStyle(travelStyle);
+  const themes = STYLE_FALLBACK_THEMES[style] || STYLE_FALLBACK_THEMES.balanced;
+  return themes[(Math.max(1, day) - 1) % themes.length] || `Day ${day}`;
 }
 
 async function findTripByIdentifier(identifier, { lean = false } = {}) {
@@ -235,8 +254,7 @@ export const createTrip = async (req, res) => {
 
     // ── 2. Check cache ────────────────────────────────────────────────────────
     const cacheKey = buildCacheKey(destination, normDays, normBudget, normTravelStyle);
-    const shouldUseCache = !itinerary;
-    const cached = shouldUseCache ? await TripCache.findOne({ cacheKey }).lean() : null;
+    const cached = await TripCache.findOne({ cacheKey }).lean();
 
     if (cached) {
       console.log(`[TripCache] HIT for "${destination}" — serving instantly`);
@@ -315,9 +333,12 @@ export const createTrip = async (req, res) => {
         } catch (_) { }
       }
 
+      // Fallback 2: synthetic itinerary
       if (!generatedPayload) {
-        console.error("[AI Architect] Current itinerary engines did not return a trip");
-        return res.status(502).json({ message: "Failed to generate itinerary with the current planner engines" });
+        console.warn("[AI Architect] Using fallback synthetic itinerary");
+        generatedPayload = buildRichFallbackItinerary({
+          destination, days: normDays, budget: normBudget, travelStyle: normTravelStyle, interests: normInterests,
+        });
       }
     }
 
@@ -521,7 +542,7 @@ export const generateAITrip = async (req, res) => {
       try {
         generatedPayload = await withTimeout(
           createCityItinerary(destination, normDays, normBudget, travelStyle, normInterests),
-          12000,
+          4000,
           "Location itinerary fallback"
         );
       } catch (fallbackErr) {
@@ -530,21 +551,13 @@ export const generateAITrip = async (req, res) => {
     }
 
     if (!generatedPayload) {
-      try {
-        generatedPayload = await createCityItinerary(
-          destination,
-          normDays,
-          normBudget,
-          travelStyle,
-          normInterests
-        );
-      } catch (fallbackRetryErr) {
-        console.warn("[generateAITrip] final location-engine retry failed:", fallbackRetryErr.message);
-      }
-    }
-
-    if (!generatedPayload) {
-      return res.status(502).json({ message: "Failed to generate trip with the current planner engines" });
+      generatedPayload = buildRichFallbackItinerary({
+        destination,
+        days: normDays,
+        budget: normBudget,
+        travelStyle,
+        interests: normInterests,
+      });
     }
 
     return res.status(200).json({
