@@ -191,6 +191,27 @@ function fillTemplate(template = "", values = {}) {
   return String(template).replace(/\{(\w+)\}/g, (_match, key) => values[key] ?? "");
 }
 
+function inferPlaceProfile(sourceText = "", slotKey = "") {
+  const text = String(sourceText || "").toLowerCase();
+  const isTemple = /temple|mosque|church|shrine|mandir|masjid|kovil|pagoda|basilica|cathedral|dargah|monastery/i.test(text);
+  const isBeach = /beach|coast|shore|bay|promenade|marina|pier|waterfront|lake|river|harbor|harbour|lagoon/i.test(text);
+  const isMarket = /market|bazaar|bazar|souk|mall|shopping|vendor|street food|handloom|textile/i.test(text);
+  const isFood = /restaurant|cafe|coffee|dining|food|eat|kitchen|bistro|tea|chai|bakery|dhaba|brunch|grill/i.test(text);
+  const isMuseum = /museum|gallery|art|heritage|history|palace|fort|castle|exhibit|archive|monument|memorial/i.test(text);
+  const isPark = /park|garden|forest|nature|wildlife|botanical|hill|mountain|valley|viewpoint|trail|reserve/i.test(text);
+  const isStay = /hotel|suite|room|resort|stay|villa|inn|lodge|ryokan|residence|retreat|hostel/i.test(text);
+  const isNightSlot = /^night/i.test(slotKey);
+
+  if (isStay || isNightSlot) return "stay";
+  if (isTemple) return "sacred";
+  if (isBeach) return "coastal";
+  if (isMarket) return "market";
+  if (isFood) return "food";
+  if (isMuseum) return "culture";
+  if (isPark) return "nature";
+  return "generic";
+}
+
 function isGenericPlaceLabel(value = "", destination = "") {
   const text = cleanDisplayText(value).toLowerCase();
   const dest = cleanDisplayText(destination).toLowerCase();
