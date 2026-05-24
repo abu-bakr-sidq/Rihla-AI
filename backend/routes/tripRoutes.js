@@ -5,7 +5,7 @@ import { requireAuth } from "../middleware/auth.js";
 const router = express.Router();
 
 router.get("/cache/stats", requireAuth, getCacheStats);
-router.post("/generate",   requireAuth, generateAITrip);
+router.post("/generate",   generateAITrip);
 router.post("/",           requireAuth, createTrip);
 router.get("/",            requireAuth, getUserTrips);
 router.get("/:id",         requireAuth, getTripById);
