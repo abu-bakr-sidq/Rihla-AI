@@ -481,19 +481,21 @@ export const generateAITrip = async (req, res) => {
 
     let geoCoords = null;
     try {
-      geoCoords = await withTimeout(geocodeCity(destination), 5000, "Destination geocoding");
+      geoCoords = await withTimeout(geocodeCity(destination), 2500, "Destination geocoding");
     } catch (geoErr) {
       console.warn("[generateAITrip] geocoding skipped:", geoErr.message);
     }
 
     const [weatherResult, placesResult, userDNAResult] = await Promise.allSettled([
       geoCoords
-        ? withTimeout(getWeatherForDestination(destination, geoCoords.lat, geoCoords.lng), 5000, "Weather fetch")
-        : withTimeout(getWeatherForDestination(destination), 5000, "Weather fetch"),
+        ? withTimeout(getWeatherForDestination(destination, geoCoords.lat, geoCoords.lng), 3500, "Weather fetch")
+        : withTimeout(getWeatherForDestination(destination), 3500, "Weather fetch"),
       geoCoords
-        ? withTimeout(getTopPlaces(geoCoords.lat, geoCoords.lng, destination), 7000, "Places fetch")
+        ? withTimeout(getTopPlaces(geoCoords.lat, geoCoords.lng, destination), 4500, "Places fetch")
         : Promise.resolve(null),
-      withTimeout(getUserDNA(req.user?._id || req.user?.id), 3000, "User DNA fetch"),
+      req.user?._id || req.user?.id
+        ? withTimeout(getUserDNA(req.user._id || req.user.id), 1500, "User DNA fetch")
+        : Promise.resolve([]),
     ]);
 
     const weather = weatherResult.status === "fulfilled" ? weatherResult.value : null;
@@ -513,13 +515,13 @@ export const generateAITrip = async (req, res) => {
         weather,
         realPlaces,
         userDNA,
-      }), 20000, "AI itinerary generation");
+      }), 12000, "AI itinerary generation");
     } catch (llmErr) {
       console.warn("[generateAITrip] AI generation fallback:", llmErr.message);
       try {
         generatedPayload = await withTimeout(
           createCityItinerary(destination, normDays, normBudget, travelStyle, normInterests),
-          8000,
+          4000,
           "Location itinerary fallback"
         );
       } catch (fallbackErr) {

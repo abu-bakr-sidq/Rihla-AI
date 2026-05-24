@@ -2803,6 +2803,8 @@ export default function Planner() {
 
   const handleGenerate = async () => {
     setStep(6);
+    setLoadPct(0);
+    setLoadStep(0);
     let finalItin = null;
     let finalCostInfo = null;
     let tripId = null;
@@ -2816,12 +2818,17 @@ export default function Planner() {
     const plannerPerfectItinerary = buildItinerary({ ...formData, budgetCategory });
 
     try {
-      const result = await generateMutation.mutateAsync({
-        destination: formData.destination, startDate: formData.startDate, endDate: formData.endDate,
-        travelers: formData.travelers, budget: formData.budget, currency: formData.currency,
-        travelStyle: formData.travelStyle, preferences: [],
-        interests: []
-      });
+      const result = await Promise.race([
+        generateMutation.mutateAsync({
+          destination: formData.destination, startDate: formData.startDate, endDate: formData.endDate,
+          travelers: formData.travelers, budget: formData.budget, currency: formData.currency,
+          travelStyle: formData.travelStyle, preferences: [],
+          interests: []
+        }),
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error("Planner generation took too long. Falling back locally.")), 16000);
+        })
+      ]);
 
       const fallback = buildItinerary({ ...formData, budgetCategory });
       const normalizedBackendItinerary = Array.isArray(result?.itinerary)

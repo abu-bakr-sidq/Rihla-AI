@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl, resolveApiUrl } from "@/lib/api-contract";
 
-const REQUEST_TIMEOUT_MS = 45000;
+const DEFAULT_REQUEST_TIMEOUT_MS = 45000;
+const GENERATE_REQUEST_TIMEOUT_MS = 15000;
 
-async function fetchWithTimeout(url, options = {}) {
+async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     return await fetch(resolveApiUrl(url), {
@@ -14,7 +15,7 @@ async function fetchWithTimeout(url, options = {}) {
     });
   } catch (error) {
     if (error?.name === "AbortError") {
-      throw new Error("Request timed out. The server may be waking up, please try again.");
+      throw new Error("Request timed out. Using a faster fallback is recommended.");
     }
     throw error;
   } finally {
@@ -69,7 +70,7 @@ function useGenerateTrip() {
         headers: getAuthHeaders(),
         body: JSON.stringify(data),
         credentials: "include"
-      });
+      }, GENERATE_REQUEST_TIMEOUT_MS);
       if (!res.ok) {
         let msg = "Failed to generate trip itinerary. Please try again.";
         try { const d = await res.json(); msg = d.message || msg; } catch(_) {}
