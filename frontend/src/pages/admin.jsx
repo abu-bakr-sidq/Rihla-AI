@@ -262,6 +262,7 @@ const getCurrencySymbol = (dest) => {
 };
 
 const DESTINATION_CURRENCY_PRESETS = [
+  { keys: ["ooty", "kodaikanal", "rameswaram", "mahabalipuram"], glyph: "Rs ", code: "INR", rate: 83, dailyUsd: 34 },
   { keys: ["kerala", "kochi", "munnar", "alleppey", "kovalam", "thiruvananthapuram", "india", "chennai", "pondicherry", "kanyakumari", "mumbai", "delhi", "jaipur", "goa", "hyderabad", "bangalore", "bengaluru", "kolkata"], glyph: "₹", code: "INR", rate: 83, dailyUsd: 34 },
   { keys: ["tokyo", "kyoto", "osaka", "nara", "hakone", "sapporo", "japan"], glyph: "¥", code: "JPY", rate: 149, dailyUsd: 92 },
   { keys: ["seoul", "busan", "jeju", "korea"], glyph: "₩", code: "KRW", rate: 1320, dailyUsd: 85 },
@@ -472,21 +473,22 @@ function buildAdminBudgetSummary(destination, days = 1, travelStyle = "cultural"
   };
 }
 
-function getRecommendedPackageBudgetUsd(dest, days = 7, style = "") {
-  return buildAdminBudgetSummary(dest, days, style, "USD").total;
+function getRecommendedPackageBudget(dest, days = 7, style = "") {
+  const currency = getDestinationCurrencyMeta(dest).code;
+  return buildAdminBudgetSummary(dest, days, style, currency).total;
 }
 
 function getBudgetSliderBounds(dest, days = 7, style = "") {
-  const recommended = getRecommendedPackageBudgetUsd(dest, days, style);
+  const recommended = getRecommendedPackageBudget(dest, days, style);
   const min = Math.max(25, Math.floor(recommended * 0.55 / 25) * 25);
   const max = Math.max(min + 150, Math.ceil(recommended * 1.85 / 50) * 50);
   const step = recommended >= 400 ? 50 : 25;
   return { min, max, step, recommended };
 }
 
-function formatDestinationMoneyFromUsd(usdAmount, dest = "") {
+function formatDestinationMoney(amount, dest = "") {
   const meta = getDestinationCurrencyMeta(dest);
-  const localAmount = Math.max(0, Math.round((Number(usdAmount) || 0) * meta.rate));
+  const localAmount = Math.max(0, Math.round(Number(amount) || 0));
   const locale = meta.code === "INR" ? "en-IN" : "en";
   return `${meta.glyph}${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(localAmount)}`.replace(/\s+/g, " ").trim();
 }
@@ -508,12 +510,12 @@ function AddPackageModal({ isOpen, onClose }) {
 
   const createTourPackage = useCreateTourPackage();
   const currencyMeta = getDestinationCurrencyMeta(form.destination);
-  const displayBudget = formatDestinationMoneyFromUsd(form.budget, form.destination);
-  const plannerBudgetSummary = buildAdminBudgetSummary(form.destination, form.days, form.travelStyle, "USD");
+  const displayBudget = formatDestinationMoney(form.budget, form.destination);
+  const plannerBudgetSummary = buildAdminBudgetSummary(form.destination, form.days, form.travelStyle, currencyMeta.code);
   const budgetBounds = getBudgetSliderBounds(form.destination, form.days, form.travelStyle);
-  const recommendedBudgetUsd = budgetBounds.recommended;
-  const approxDailyBudgetUsd = Math.max(1, Math.round(recommendedBudgetUsd / Math.max(1, form.days)));
-  const budgetScale = recommendedBudgetUsd > 0 ? form.budget / recommendedBudgetUsd : 1;
+  const recommendedBudget = budgetBounds.recommended;
+  const approxDailyBudget = Math.max(1, Math.round(recommendedBudget / Math.max(1, form.days)));
+  const budgetScale = recommendedBudget > 0 ? form.budget / recommendedBudget : 1;
   const liveBudgetBreakdown = {
     stay: Math.max(0, Math.round(plannerBudgetSummary.stay * budgetScale)),
     transport: Math.max(0, Math.round(plannerBudgetSummary.transport * budgetScale)),
@@ -523,7 +525,7 @@ function AddPackageModal({ isOpen, onClose }) {
 
   useEffect(() => {
     if (!form.destination || budgetTouched) return;
-    setForm((prev) => ({ ...prev, budget: getRecommendedPackageBudgetUsd(prev.destination, prev.days, prev.travelStyle) }));
+    setForm((prev) => ({ ...prev, budget: getRecommendedPackageBudget(prev.destination, prev.days, prev.travelStyle) }));
   }, [form.destination, form.days, form.travelStyle, budgetTouched]);
 
   useEffect(() => {
@@ -659,7 +661,7 @@ function AddPackageModal({ isOpen, onClose }) {
       ...f,
       destination: r.title,
       src: r.src,
-      budget: getRecommendedPackageBudgetUsd(r.title, f.days, f.travelStyle),
+      budget: getRecommendedPackageBudget(r.title, f.days, f.travelStyle),
     }));
     setShowDropdown(false);
   };
@@ -672,7 +674,26 @@ function AddPackageModal({ isOpen, onClose }) {
     e.preventDefault();
     if (!form.destination) return;
     try {
-      if (createTourPackage) { await createTourPackage.mutateAsync({ ...form, preferences }); }
+      if (createTourPackage) {
+        await createTourPackage.mutateAsync({
+          ...form,
+          budget: {
+            total: form.budget,
+            currency: currencyMeta.code,
+            symbol: currencyMeta.glyph,
+          },
+          budgetBreakdown: {
+            stay: liveBudgetBreakdown.stay,
+            travel: liveBudgetBreakdown.transport,
+            food: liveBudgetBreakdown.food,
+            activities: liveBudgetBreakdown.activities,
+            total: form.budget,
+            currency: currencyMeta.code,
+            symbol: currencyMeta.glyph,
+          },
+          preferences,
+        });
+      }
       onClose();
     } catch (err) {
       console.error(err);
@@ -787,14 +808,14 @@ function AddPackageModal({ isOpen, onClose }) {
                 <div className="flex flex-col">
                   <label className="text-[10px] font-black uppercase tracking-widest text-[#D4AF37] mb-1 block">Number of Days</label>
                   <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => { setBudgetTouched(false); setForm(f => { const days = Math.max(1, f.days - 1); return { ...f, days, budget: getRecommendedPackageBudgetUsd(f.destination, days, f.travelStyle) }; }); }}
+                    <button type="button" onClick={() => { setBudgetTouched(false); setForm(f => { const days = Math.max(1, f.days - 1); return { ...f, days, budget: getRecommendedPackageBudget(f.destination, days, f.travelStyle) }; }); }}
                       className="w-10 h-10 rounded-xl bg-white/[0.04] border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] hover:bg-white/[0.08] hover:border-[#D4AF37]/50 transition-all">
                       <span className="text-lg font-black">-</span>
                     </button>
                     <div className="flex-1 h-10 bg-white/[0.04] border border-[#D4AF37]/20 rounded-xl flex items-center justify-center text-white font-black">
                       {form.days} {form.days === 1 ? 'Day' : 'Days'}
                     </div>
-                    <button type="button" onClick={() => { setBudgetTouched(false); setForm(f => { const days = Math.min(30, f.days + 1); return { ...f, days, budget: getRecommendedPackageBudgetUsd(f.destination, days, f.travelStyle) }; }); }}
+                    <button type="button" onClick={() => { setBudgetTouched(false); setForm(f => { const days = Math.min(30, f.days + 1); return { ...f, days, budget: getRecommendedPackageBudget(f.destination, days, f.travelStyle) }; }); }}
                       className="w-10 h-10 rounded-xl bg-white/[0.04] border border-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37] hover:bg-white/[0.08] hover:border-[#D4AF37]/50 transition-all">
                       <span className="text-lg font-black">+</span>
                     </button>
@@ -808,14 +829,12 @@ function AddPackageModal({ isOpen, onClose }) {
                     <label className="text-[10px] font-black uppercase tracking-widest text-[#D4AF37]">Precision Budget Engine</label>
                     <div className="px-2 py-1 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/40 text-[#D4AF37] font-black text-[10px] shadow-[0_0_15px_rgba(212,175,55,0.2)] self-start sm:self-auto">
                       {displayBudget}
-                      <span className="ml-2 text-[9px] text-white/35">
-                        ({currencyMeta.code} - ${form.budget.toLocaleString()})
-                      </span>
+                      <span className="ml-2 text-[9px] text-white/35">({currencyMeta.code})</span>
                     </div>
                   </div>
                   {!!form.destination && (
                     <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-white/35">
-                      Smart baseline for {form.days} {form.days === 1 ? "day" : "days"} - {plannerBudgetSummary.budgetCategory} - about {formatDestinationMoneyFromUsd(approxDailyBudgetUsd, form.destination)} per day
+                      Smart baseline for {form.days} {form.days === 1 ? "day" : "days"} - {plannerBudgetSummary.budgetCategory} - about {formatDestinationMoney(approxDailyBudget, form.destination)} per day
                     </p>
                   )}
 
@@ -830,7 +849,7 @@ function AddPackageModal({ isOpen, onClose }) {
                       <div key={b.l} className="bg-white/[0.03] border border-[#D4AF37]/10 rounded-xl p-2 relative overflow-hidden group hover:border-[#D4AF37]/40 transition-colors">
                         <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${b.c} to-transparent group-hover:h-full group-hover:opacity-10 transition-all`} />
                         <div className="text-[8px] font-black uppercase tracking-widest text-[#D4AF37]/70 mb-0.5">{b.l}</div>
-                        <div className="text-sm font-black text-white">{formatDestinationMoneyFromUsd(b.value, form.destination)}</div>
+                        <div className="text-sm font-black text-white">{formatDestinationMoney(b.value, form.destination)}</div>
                       </div>
                     ))}
                   </div>
@@ -841,7 +860,7 @@ function AddPackageModal({ isOpen, onClose }) {
                   <label className="text-[10px] font-black uppercase tracking-widest text-[#D4AF37] mb-1.5 block">Travel Architecture</label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
                     {Object.keys(stylePreferencesMap).map(style => (
-                      <button type="button" key={style} onClick={() => { setBudgetTouched(false); setForm((prev) => ({ ...prev, travelStyle: style, budget: getRecommendedPackageBudgetUsd(prev.destination, prev.days, style) })); setPreferences([]); }}
+                      <button type="button" key={style} onClick={() => { setBudgetTouched(false); setForm((prev) => ({ ...prev, travelStyle: style, budget: getRecommendedPackageBudget(prev.destination, prev.days, style) })); setPreferences([]); }}
                         className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border ${form.travelStyle === style ? 'bg-gradient-to-br from-[#D4AF37]/20 to-transparent border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.3)] scale-105' : 'bg-white/[0.03] border-[#D4AF37]/10 hover:border-[#D4AF37]/30'}`}
                       >
                         {style === "cultural" && <Globe className={`w-4 h-4 ${form.travelStyle === style ? 'text-[#D4AF37]' : 'text-[#D4AF37]/40'}`} />}

@@ -39,7 +39,7 @@ const CURRENCY_SYMBOLS = {
 };
 
 const DESTINATION_PRESETS = [
-  { keys: ["kerala", "kochi", "munnar", "alleppey", "kovalam", "thiruvananthapuram", "india", "chennai", "pondicherry", "kanyakumari", "mumbai", "delhi", "jaipur", "goa", "hyderabad", "bangalore", "bengaluru", "kolkata"], code: "INR", rate: 83, dailyUsd: 34 },
+  { keys: ["kerala", "kochi", "munnar", "alleppey", "kovalam", "thiruvananthapuram", "india", "chennai", "pondicherry", "kanyakumari", "mumbai", "delhi", "jaipur", "goa", "hyderabad", "bangalore", "bengaluru", "kolkata", "ooty", "kodaikanal", "rameswaram", "mahabalipuram"], code: "INR", rate: 83, dailyUsd: 34 },
   { keys: ["tokyo", "kyoto", "osaka", "nara", "hakone", "sapporo", "japan"], code: "JPY", rate: 149, dailyUsd: 92 },
   { keys: ["seoul", "busan", "jeju", "korea"], code: "KRW", rate: 1320, dailyUsd: 85 },
   { keys: ["bali", "jakarta", "ubud", "indonesia"], code: "IDR", rate: 15800, dailyUsd: 60 },
@@ -92,6 +92,24 @@ function parseBudgetNumber(value) {
   return null;
 }
 
+function getStoredBudgetMeta(value, destination = "") {
+  const destinationMeta = getPackageCurrencyMeta(destination);
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return { amount: value, currency: "USD", exchangeRate: 1 };
+  }
+  if (typeof value === "string") {
+    const parsed = parseBudgetNumber(value);
+    return { amount: parsed, currency: "USD", exchangeRate: 1 };
+  }
+  if (value && typeof value === "object") {
+    const amount = parseBudgetNumber(value.total ?? value.amount ?? value.value ?? value.budget);
+    const currency = String(value.currency || value.code || destinationMeta.code || "USD").toUpperCase();
+    const exchangeRate = Number(value.exchangeRate || value.rate || (currency === destinationMeta.code ? destinationMeta.rate : 1)) || 1;
+    return { amount, currency, exchangeRate };
+  }
+  return { amount: null, currency: destinationMeta.code, exchangeRate: destinationMeta.rate };
+}
+
 function normalizePackageBudgetUsd(pkg, days) {
   const safeDays = Math.max(1, Number(days) || 1);
   const meta = getPackageCurrencyMeta(pkg.destination);
@@ -102,15 +120,22 @@ function normalizePackageBudgetUsd(pkg, days) {
     style === "relaxation" ? 1.15 :
     style === "budget" ? 0.72 : 1;
   const estimatedTotalUsd = Math.round(meta.dailyUsd * styleMultiplier * safeDays);
-  const parsedBudget = parseBudgetNumber(pkg.budget);
+  const storedBudget = getStoredBudgetMeta(pkg.budget, pkg.destination);
+  const parsedBudget = storedBudget.amount;
 
   if (!Number.isFinite(parsedBudget) || parsedBudget <= 0) return estimatedTotalUsd;
 
-  const parsedPerDay = parsedBudget / safeDays;
+  const parsedBudgetUsd =
+    storedBudget.currency === "USD"
+      ? parsedBudget
+      : storedBudget.currency === meta.code
+        ? Math.round(parsedBudget / (storedBudget.exchangeRate || meta.rate || 1))
+        : parsedBudget;
+  const parsedPerDay = parsedBudgetUsd / safeDays;
   if (parsedPerDay < meta.dailyUsd * 0.6 || parsedPerDay > meta.dailyUsd * 1.55) {
     return estimatedTotalUsd;
   }
-  return Math.round(parsedBudget);
+  return Math.round(parsedBudgetUsd);
 }
 
 function formatLocalMoney(amount, currencyCode) {
