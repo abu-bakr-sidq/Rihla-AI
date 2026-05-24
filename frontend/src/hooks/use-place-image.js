@@ -11,6 +11,31 @@ import { resolveApiUrl } from "@/lib/api-contract";
 // Module-level cache: query → resolved URL (persists across component remounts)
 const _cache = new Map();
 
+function buildUnsplashFallback(query, photoIndex = 0) {
+  const queries = Array.isArray(query) ? query.filter(Boolean) : [query];
+  const primary = String(queries[0] || "travel destination scenic").trim();
+  const cleaned = primary
+    .replace(/[^\w\s,-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const featuredQuery = encodeURIComponent(
+    `${cleaned || "travel destination"} scenic landmark`,
+  );
+
+  const staticFallbacks = [
+    "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=1200",
+    "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=80&w=1200",
+    "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=1200",
+    "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&q=80&w=1200",
+  ];
+
+  return [
+    `https://images.unsplash.com/featured/1200x800/?${featuredQuery}`,
+    staticFallbacks[Math.abs(photoIndex) % staticFallbacks.length],
+  ];
+}
+
 /**
  * Resolve an image URL for a given search query.
  * Calls /api/place-image which:
@@ -120,8 +145,14 @@ export function usePlaceImage(query, options = {}) {
 export function PlaceImage({ query, queries, alt, className, fallbackSrc, style, photoIndex = 0, onlyGoogle = false }) {
   const lookup = Array.isArray(queries) && queries.length ? queries : query;
   const { src, loading } = usePlaceImage(lookup, { photoIndex, onlyGoogle });
-  const displaySrc = src || (onlyGoogle ? null : fallbackSrc);
+  const fallbackChain = onlyGoogle ? [] : [fallbackSrc, ...buildUnsplashFallback(lookup, photoIndex)].filter(Boolean);
+  const [fallbackIndex, setFallbackIndex] = useState(0);
+  const displaySrc = src || fallbackChain[fallbackIndex] || null;
   const cls = className || "absolute inset-0 w-full h-full object-cover";
+
+  useEffect(() => {
+    setFallbackIndex(0);
+  }, [src, fallbackSrc, lookup, photoIndex, onlyGoogle]);
 
   if (loading && !displaySrc) {
     // Spinner while loading
@@ -149,7 +180,15 @@ export function PlaceImage({ query, queries, alt, className, fallbackSrc, style,
     );
   }
 
-  if (!displaySrc) return null;
+  if (!displaySrc) {
+    return createElement("div", {
+      className: cls,
+      style: {
+        background: "linear-gradient(135deg, rgba(15,23,42,0.92) 0%, rgba(30,41,59,0.86) 48%, rgba(14,165,233,0.24) 100%)",
+        ...style,
+      },
+    });
+  }
 
   return createElement("img", {
     src: displaySrc,
@@ -157,11 +196,11 @@ export function PlaceImage({ query, queries, alt, className, fallbackSrc, style,
     className: cls,
     style,
     onError: (e) => {
-      if (!onlyGoogle && fallbackSrc && e.target.src !== fallbackSrc) {
-        e.target.src = fallbackSrc;
-      } else {
-        e.target.style.display = "none";
+      if (!src && fallbackIndex < fallbackChain.length - 1) {
+        setFallbackIndex((prev) => prev + 1);
+        return;
       }
+      e.target.style.display = "none";
     },
   });
 }

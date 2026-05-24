@@ -216,20 +216,20 @@ export function buildStreetFindChips(activityData = {}, fallbackContent = {}, co
   }));
 }
 
-export function generatePlaceCardFallbackContent(placeName = "", activity = "", destination = "", slotKey = "", fallbackIndex = 0) {
-  const place = resolvePlannedPlaceName(placeName || activity, destination, slotKey, fallbackIndex);
+export function generatePlaceCardFallbackContent(placeName = "", activity = "", destination = "", slotKey = "") {
+  const place = resolvePlannedPlaceName(placeName || activity, destination, slotKey);
   const area = getAreaLabel(placeName, destination);
   const sourceText = `${placeName} ${activity}`.toLowerCase();
   const times = {
-    morning: ["08:00", "08:45", "09:30"],
-    morningActivity: ["10:00", "10:50", "11:40"],
-    afternoon: ["12:30", "13:20", "14:10"],
-    afternoonActivity: ["14:30", "15:20", "16:10"],
-    evening: ["17:00", "18:00", "19:15"],
-    eveningActivity: ["19:30", "20:15", "21:00"],
-    night: ["21:00", "21:45", "22:30"],
-    nightActivity: ["22:30", "23:00", "23:30"],
-  }[slotKey] || ["10:00", "10:45", "11:30"];
+    morning: ["8:00 AM", "9:15 AM", "10:30 AM"],
+    morningActivity: ["10:45 AM", "11:30 AM", "12:15 PM"],
+    afternoon: ["12:30 PM", "1:30 PM", "2:30 PM"],
+    afternoonActivity: ["2:45 PM", "3:45 PM", "4:45 PM"],
+    evening: ["5:30 PM", "6:30 PM", "7:30 PM"],
+    eveningActivity: ["6:45 PM", "7:45 PM", "8:45 PM"],
+    night: ["8:15 PM", "9:00 PM", "10:00 PM"],
+    nightActivity: ["9:15 PM", "10:00 PM", "10:45 PM"],
+  }[slotKey] || ["10:00 AM", "11:00 AM", "12:00 PM"];
 
   const isTemple = /temple|mosque|church|shrine|mandir|masjid|kovil|pagoda|basilica|cathedral|dargah/i.test(sourceText);
   const isBeach = /beach|coast|shore|bay|promenade|marina|pier|waterfront|lake|river/i.test(sourceText);
@@ -324,41 +324,11 @@ export function generatePlaceCardFallbackContent(placeName = "", activity = "", 
     ];
   }
 
-  const scheduleVariants = [
-    [
-      `${times[0]} Arrive at ${place} and get your bearings around the main approach`,
-      `${times[1]} Focus on the signature stretch of ${place} and its most interesting details`,
-      `${times[2]} Step into the nearby lanes around ${place} for smaller shops and local rhythm`,
-    ],
-    [
-      `${times[0]} Enter through the quieter side of ${place} and settle into the local pace`,
-      `${times[1]} Spend your main window on the most photogenic corner of ${place}`,
-      `${times[2]} Use the final stretch to uncover nearby details around ${area}`,
-    ],
-    [
-      `${times[0]} Open this stop with a slow first pass through ${place}`,
-      `${times[1]} Anchor your time around one standout pocket of ${place}`,
-      `${times[2]} Finish by drifting into the surrounding streets for a more local feel`,
-    ],
-  ];
-  const schedule = buildUniqueLines(scheduleVariants[Math.abs(fallbackIndex) % scheduleVariants.length]);
-
-  const slotIdeaLead = {
-    morning: "Keep the start gentle and observant",
-    morningActivity: "Turn the late morning into a deeper discovery",
-    afternoon: "Let the midday energy carry the experience",
-    afternoonActivity: "Use this follow-up stop for a more focused local angle",
-    evening: "Lean into atmosphere and softer light",
-    eveningActivity: "Treat this hour as the character-building part of the evening",
-    night: "Use the night stop to slow the pace and absorb ambience",
-    nightActivity: "Close out with a more intimate final layer of the neighborhood",
-  }[slotKey] || "Explore this stop with a slower local lens";
-
-  ideas = buildUniqueLines([
-    `${slotIdeaLead} around ${place}, instead of trying to rush every corner at once.`,
-    ...ideas,
-    `If ${place} feels busy, move one street over and compare how ${area} changes in mood.`,
-  ]).slice(0, 6);
+  const schedule = buildUniqueLines([
+    `Start around ${times[0]} at ${place} and ease into the area before the main crowd builds.`,
+    `Around ${times[1]}, focus on the strongest part of ${place} and its most rewarding details.`,
+    `Toward ${times[2]}, move into the nearby lanes around ${place} for a more local rhythm.`,
+  ]);
 
   return {
     schedule,
