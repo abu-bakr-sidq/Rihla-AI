@@ -542,7 +542,7 @@ export const generateAITrip = async (req, res) => {
       try {
         generatedPayload = await withTimeout(
           createCityItinerary(destination, normDays, normBudget, travelStyle, normInterests),
-          4000,
+          12000,
           "Location itinerary fallback"
         );
       } catch (fallbackErr) {
@@ -551,7 +551,21 @@ export const generateAITrip = async (req, res) => {
     }
 
     if (!generatedPayload) {
-      generatedPayload = buildRichFallbackItinerary({
+      try {
+        generatedPayload = await createCityItinerary(
+          destination,
+          normDays,
+          normBudget,
+          travelStyle,
+          normInterests
+        );
+      } catch (fallbackRetryErr) {
+        console.warn("[generateAITrip] final location-engine retry failed:", fallbackRetryErr.message);
+      }
+    }
+
+    if (!generatedPayload) {
+      generatedPayload = buildFallbackItinerary({
         destination,
         days: normDays,
         budget: normBudget,
