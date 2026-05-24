@@ -813,16 +813,7 @@ function AddPackageModal({ isOpen, onClose }) {
                       </span>
                     </div>
                   </div>
-                  <input
-                    type="range"
-                    min={budgetBounds.min}
-                    max={budgetBounds.max}
-                    step={budgetBounds.step}
-                    value={form.budget}
-                    onChange={e => { setBudgetTouched(true); setForm({ ...form, budget: parseInt(e.target.value, 10) }); }}
-                    className="w-full h-1 rounded-full bg-[#D4AF37]/20 appearance-none cursor-pointer"
-                  />
-                  {!!form.destination && !budgetTouched && (
+                  {!!form.destination && (
                     <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-white/35">
                       Smart baseline for {form.days} {form.days === 1 ? "day" : "days"} - {plannerBudgetSummary.budgetCategory} - about {formatDestinationMoneyFromUsd(approxDailyBudgetUsd, form.destination)} per day
                     </p>
