@@ -4,6 +4,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
+    "build": "npm run build --prefix frontend",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "node backend/server.js",
     "dev:client": "npm run dev --prefix frontend",
