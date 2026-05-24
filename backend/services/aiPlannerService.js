@@ -99,6 +99,16 @@ Chain-of-Thought approach:
 5. Prioritize REAL verified places from the provided data
 6. Output strictly valid JSON only.`;
 
+
+  const styleString = String(travelStyle || "").toLowerCase();
+  const styleBlock = styleString.includes("halal")
+    ? "STYLE ENFORCEMENT (HALAL): You MUST prioritize mosques, halal-certified dining, family-friendly spaces, and alcohol-free environments. STRICTLY EXCLUDE bars, pubs, clubs, nightlife venues, and non-halal food recommendations."
+    : styleString.includes("adventure")
+      ? "STYLE ENFORCEMENT (ADVENTURE): Prioritize hiking, water sports, outdoor trails, and high-energy activities. Exclude slow, purely passive sightseeing."
+      : styleString.includes("coastal")
+        ? "STYLE ENFORCEMENT (COASTAL): Prioritize beaches, waterfronts, sea-breeze walks, and coastal views. Stay near the water where possible."
+        : `STYLE ENFORCEMENT: Ensure activities strictly align with the ${travelStyle} travel style.`;
+
   const userPrompt = `Design an optimized ${days}-day travel itinerary for ${destination}.
 
 PARAMETERS:
@@ -113,6 +123,8 @@ ${weatherBlock}
 ${placesBlock}
 
 ${dnaBlock}
+
+${styleBlock}
 
     ENGINEERING REQUIREMENTS:
     - Group activities by geographical proximity (minimize travel time between spots)

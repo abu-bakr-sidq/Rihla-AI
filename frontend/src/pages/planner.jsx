@@ -3017,7 +3017,7 @@ export default function Planner() {
           interests: []
         }),
         new Promise((_, reject) => {
-          setTimeout(() => reject(new Error("Planner generation took too long. Falling back locally.")), 16000);
+          setTimeout(() => reject(new Error("Planner generation took too long. Falling back locally.")), Math.min(100000, 15000 + (Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)) * 3500)));
         })
       ]);
 
@@ -3040,13 +3040,12 @@ export default function Planner() {
           ? result
           : null;
 
-      // If the backend only returns the thinner legacy array itinerary,
-      // preserve the richer planner-built version so saved trips match the
-      // high-quality planner result screen.
-      finalItin = backendRichItinerary || plannerPerfectItinerary || normalizedBackendItinerary || fallback;
-      finalCostInfo = backendRichItinerary
-        ? (result?.costBreakdown || result?.itinerary?.total_budget || result?.total_budget || plannerPerfectItinerary?.total_budget || plannerBudgetSummary.costBreakdown)
-        : (plannerPerfectItinerary?.total_budget || normalizedBackendItinerary?.total_budget || fallback.total_budget || plannerBudgetSummary.costBreakdown);
+      // Prefer backend-generated itineraries because they are the only ones
+      // guaranteed to reflect the selected travel style and real-place data.
+      finalItin = backendRichItinerary || normalizedBackendItinerary || plannerPerfectItinerary || fallback;
+      finalCostInfo = backendRichItinerary || normalizedBackendItinerary
+        ? (result?.costBreakdown || result?.itinerary?.total_budget || result?.total_budget || normalizedBackendItinerary?.total_budget || plannerBudgetSummary.costBreakdown)
+        : (plannerPerfectItinerary?.total_budget || fallback.total_budget || plannerBudgetSummary.costBreakdown);
       tripId = result?.id || result?._id || null;
 
       setGeneratedResult(finalItin);

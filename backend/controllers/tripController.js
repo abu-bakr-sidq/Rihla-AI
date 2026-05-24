@@ -496,6 +496,7 @@ export const generateAITrip = async (req, res) => {
     }
 
     const normBudget = normalizeBudget(budget);
+    const normTravelStyle = normalizeTravelStyle(travelStyle);
     const normDays = Number(days) || getDayCount(startDate, endDate) || 7;
     const normInterests = Array.isArray(interests) ? interests : [];
     const normTravelers = Number(travelers) || 1;
@@ -530,18 +531,18 @@ export const generateAITrip = async (req, res) => {
         destination,
         days: normDays,
         budget: normBudget,
-        travelStyle,
+        travelStyle: normTravelStyle,
         interests: normInterests,
         preferences: { ...preferences, travelers: normTravelers },
         weather,
         realPlaces,
         userDNA,
-      }), 12000, "AI itinerary generation");
+      }), Math.min(90000, 10000 + (normDays * 3000)), "AI itinerary generation");
     } catch (llmErr) {
       console.warn("[generateAITrip] AI generation fallback:", llmErr.message);
       try {
         generatedPayload = await withTimeout(
-          createCityItinerary(destination, normDays, normBudget, travelStyle, normInterests),
+          createCityItinerary(destination, normDays, normBudget, normTravelStyle, normInterests),
           4000,
           "Location itinerary fallback"
         );
@@ -555,7 +556,7 @@ export const generateAITrip = async (req, res) => {
         destination,
         days: normDays,
         budget: normBudget,
-        travelStyle,
+        travelStyle: normTravelStyle,
         interests: normInterests,
       });
     }
@@ -565,6 +566,7 @@ export const generateAITrip = async (req, res) => {
       days: normDays,
       travelers: normTravelers,
       currency,
+      travelStyle: normTravelStyle,
       itinerary: generatedPayload?.itinerary || generatedPayload,
       costBreakdown: generatedPayload?.costBreakdown || {},
       routeCoordinates: generatedPayload?.routeCoordinates || [],
