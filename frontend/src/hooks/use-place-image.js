@@ -147,11 +147,13 @@ export function PlaceImage({ query, queries, alt, className, fallbackSrc, style,
   const { src, loading } = usePlaceImage(lookup, { photoIndex, onlyGoogle });
   const fallbackChain = onlyGoogle ? [] : [fallbackSrc, ...buildUnsplashFallback(lookup, photoIndex)].filter(Boolean);
   const [fallbackIndex, setFallbackIndex] = useState(0);
-  const displaySrc = src || fallbackChain[fallbackIndex] || null;
+  const [primaryFailed, setPrimaryFailed] = useState(false);
+  const displaySrc = (!primaryFailed && src) || fallbackChain[fallbackIndex] || null;
   const cls = className || "absolute inset-0 w-full h-full object-cover";
 
   useEffect(() => {
     setFallbackIndex(0);
+    setPrimaryFailed(false);
   }, [src, fallbackSrc, lookup, photoIndex, onlyGoogle]);
 
   if (loading && !displaySrc) {
@@ -196,7 +198,11 @@ export function PlaceImage({ query, queries, alt, className, fallbackSrc, style,
     className: cls,
     style,
     onError: (e) => {
-      if (!src && fallbackIndex < fallbackChain.length - 1) {
+      if (!primaryFailed && src) {
+        setPrimaryFailed(true);
+        return;
+      }
+      if (fallbackIndex < fallbackChain.length - 1) {
         setFallbackIndex((prev) => prev + 1);
         return;
       }
