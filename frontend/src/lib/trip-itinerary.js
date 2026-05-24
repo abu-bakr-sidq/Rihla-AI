@@ -353,21 +353,45 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
     nightActivity: "10:30 PM",
   };
 
+  const createCompanionSlot = (activity = {}, basePlace = "", slotKey = "", cost = 0) => {
+    const normalizedPlace = cleanDisplayText(basePlace) || cleanDisplayText(activity.location) || cleanDisplayText(activity.title) || "Local stop";
+    const companionPlace = /^activity$/i.test(cleanDisplayText(activity.title || ""))
+      ? `${normalizedPlace} Experience`
+      : normalizedPlace;
+    const seedContent = generatePlaceCardFallbackContent(normalizedPlace, activity.description || activity.title || "", destination, slotKey);
+    return {
+      place: companionPlace,
+      activity: activity.description || activity.title || `Continue exploring ${normalizedPlace}.`,
+      title: activity.title || companionPlace,
+      cost: Math.max(0, Math.round(cost * 0.45)),
+      travel: activity.travelSuggestion || slotTimes[slotKey],
+      duration: activity.duration || "1-2h",
+      imageUrl: activity.imageUrl || "",
+      imageQuery: extractPlaceImageQuery(companionPlace, destination),
+      reason: activity.culturalInsight || activity.tips || activity.description || "",
+      tips: activity.tips || "",
+      timePlan: Array.isArray(activity.timePlan) && activity.timePlan.length ? activity.timePlan : seedContent.schedule,
+      nearbyHighlights: Array.isArray(activity.nearbyHighlights) && activity.nearbyHighlights.length ? activity.nearbyHighlights : seedContent.streetFinds,
+      streetFinds: Array.isArray(activity.streetFinds) && activity.streetFinds.length ? activity.streetFinds : seedContent.streetFinds,
+      exploreIdeas: Array.isArray(activity.exploreIdeas) && activity.exploreIdeas.length ? activity.exploreIdeas : seedContent.ideas,
+      transportationTip: activity.transportationTip || "",
+      localFood: activity.localFood || "",
+      safetyTip: activity.safetyTip || "",
+      culturalInsight: activity.culturalInsight || "",
+      lat: activity.lat,
+      lng: activity.lng,
+    };
+  };
+
   const normalizedDays = days.map((day, index) => {
     const activities = Array.isArray(day?.activities) ? day.activities : [];
     const slots = {};
     let activityBudget = 0;
-    const activeSlotOrder = activities.length <= 4 ? compactSlotKeys : slotKeys;
-
-    activeSlotOrder.forEach((slotKey, slotIndex) => {
-      const activity = activities[slotIndex];
-      if (!activity) return;
-
+    const createSlotPayload = (activity, slotKey, slotIndex, baseCostOverride = null) => {
+      if (!activity) return null;
       const place = activity.location || activity.title || `Stop ${slotIndex + 1}`;
-      const cost = parseCost(activity.cost);
-      activityBudget += cost;
-
-      slots[slotKey] = {
+      const cost = baseCostOverride == null ? parseCost(activity.cost) : baseCostOverride;
+      return {
         place,
         activity: activity.description || activity.title || "",
         title: activity.title || "",
@@ -389,7 +413,35 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
         lat: activity.lat,
         lng: activity.lng,
       };
-    });
+    };
+
+    if (activities.length > 0 && activities.length <= 4) {
+      compactSlotKeys.forEach((mainSlot, idx) => {
+        const activity = activities[Math.min(idx, activities.length - 1)];
+        if (!activity) return;
+        const cost = parseCost(activity.cost);
+        const mainPayload = createSlotPayload(activity, mainSlot, idx, Math.max(0, Math.round(cost * 0.55)));
+        if (mainPayload) {
+          slots[mainSlot] = mainPayload;
+          activityBudget += mainPayload.cost;
+        }
+        const activitySlot = `${mainSlot}Activity`;
+        const companion = createCompanionSlot(activity, mainPayload?.place || "", activitySlot, cost);
+        if (slotKeys.includes(activitySlot)) {
+          slots[activitySlot] = companion;
+          activityBudget += companion.cost;
+        }
+      });
+    } else {
+      slotKeys.forEach((slotKey, slotIndex) => {
+        const activity = activities[slotIndex];
+        if (!activity) return;
+        const payload = createSlotPayload(activity, slotKey, slotIndex);
+        if (!payload) return;
+        slots[slotKey] = payload;
+        activityBudget += payload.cost;
+      });
+    }
 
     const dateObj = startDate ? new Date(startDate) : null;
     if (dateObj && !Number.isNaN(dateObj.getTime())) {
