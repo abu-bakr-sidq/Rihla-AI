@@ -1,0 +1,167 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, buildUrl } from "@/lib/api-contract";
+
+function getAuthHeaders() {
+  const token = localStorage.getItem("auth_token");
+  const headers = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  return headers;
+}
+
+function parseWithLogging(schema, data, label) {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    console.error(`[Zod] ${label} validation failed:`, result.error.format());
+    throw new Error(`Invalid response format from ${label}`);
+  }
+  return result.data;
+}
+function useTrips() {
+  return useQuery({
+    queryKey: [api.trips.list.path],
+    queryFn: async () => {
+      const res = await fetch(api.trips.list.path, { headers: getAuthHeaders(), credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch trips");
+      return parseWithLogging(api.trips.list.responses[200], await res.json(), "trips.list");
+    }
+  });
+}
+function useTrip(id) {
+  return useQuery({
+    queryKey: [api.trips.get.path, id],
+    queryFn: async () => {
+      const url = buildUrl(api.trips.get.path, { id });
+      const res = await fetch(url, { headers: getAuthHeaders(), credentials: "include" });
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error("Failed to fetch trip");
+      return parseWithLogging(api.trips.get.responses[200], await res.json(), "trips.get");
+    },
+    enabled: !!id
+  });
+}
+function useGenerateTrip() {
+  return useMutation({
+    mutationFn: async (data) => {
+      // Allow the backend to handle the raw payload since Drizzle schema might be mismatched
+      const res = await fetch(api.trips.generate.path, {
+        method: api.trips.generate.method,
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+        credentials: "include"
+      });
+      if (!res.ok) {
+        let msg = "Failed to generate trip itinerary. Please try again.";
+        try { const d = await res.json(); msg = d.message || msg; } catch(_) {}
+        throw new Error(msg);
+      }
+      return await res.json();
+    }
+  });
+}
+function useCreateTrip() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data) => {
+      // Use safeParse — if validation fails, send raw data anyway
+      const parseResult = api.trips.create.input.safeParse(data);
+      const payload = parseResult.success ? parseResult.data : data;
+      const res = await fetch(api.trips.create.path, {
+        method: api.trips.create.method,
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
+        credentials: "include"
+      });
+      if (!res.ok) {
+        let errMsg = "Failed to save trip";
+        try {
+          const errBody = await res.json();
+          errMsg = errBody.message || errBody.error || errMsg;
+          console.error("[Trip Create Error]", errBody);
+        } catch (_) {}
+        throw new Error(errMsg);
+      }
+      const json = await res.json();
+      return json;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.trips.list.path] })
+  });
+}
+
+function useDeleteTrip() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id) => {
+      if (!id) throw new Error("Trip ID is required");
+      const url = buildUrl(api.trips.delete.path, { id: id.toString() });
+      const res = await fetch(url, {
+        method: api.trips.delete.method,
+        headers: getAuthHeaders(),
+        credentials: "include"
+      });
+      if (!res.ok) throw new Error("Failed to delete trip");
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.trips.list.path] })
+  });
+}
+
+function useUpdateTrip() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }) => {
+      if (!id) throw new Error("Trip ID is required");
+      const payload = api.trips.update.input.parse(data);
+      const url = buildUrl(api.trips.update.path, { id: id.toString() });
+      const res = await fetch(url, {
+        method: api.trips.update.method,
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
+        credentials: "include"
+      });
+      if (!res.ok) {
+        let errMsg = "Failed to update trip";
+        try {
+          const errBody = await res.json();
+          errMsg = errBody.message || errBody.error || errMsg;
+        } catch (_) {}
+        throw new Error(errMsg);
+      }
+      return await res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [api.trips.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.trips.get.path, variables.id] });
+    }
+  });
+}
+function useDeleteAllTrips() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch("/api/trips", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+      if (!res.ok) {
+        let msg = "Failed to delete all trips";
+        try { const d = await res.json(); msg = d.message || msg; } catch (_) {}
+        throw new Error(msg);
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.trips.list.path] }),
+  });
+}
+
+export {
+  useCreateTrip,
+  useDeleteTrip,
+  useDeleteAllTrips,
+  useGenerateTrip,
+  useTrip,
+  useTrips,
+  useUpdateTrip
+};
