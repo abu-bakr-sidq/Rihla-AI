@@ -145,10 +145,11 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                        className="absolute right-0 top-full mt-5 w-72 glass-premium rounded-3xl border border-white/10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.9)] z-50 overflow-hidden origin-top-right"
+                        className="absolute right-0 top-full mt-5 w-72 rounded-3xl border border-white/10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.9)] z-50 overflow-hidden origin-top-right"
+                        style={{ background: "#0b1420" }}
                       >
                         {/* Command Center Header */}
-                        <div className="p-6 bg-gradient-to-br from-[#D4AF37]/[0.05] to-transparent border-b border-white/[0.08]">
+                        <div className="p-6 border-b border-white/[0.08]" style={{ background: "linear-gradient(180deg, rgba(15,23,35,0.98) 0%, rgba(11,20,32,1) 100%)" }}>
                           <div className="flex items-center gap-4">
                              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#D4AF37] to-[#B8860B] p-[1px]">
                               <div className="w-full h-full rounded-[14px] bg-zinc-900 flex items-center justify-center font-black text-white text-sm overflow-hidden relative">
@@ -175,7 +176,8 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
                           <Link href="/settings">
                             <button 
                               onClick={() => setUserMenuOpen(false)} 
-                              className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.05] hover:border-white/20 transition-all group/card"
+                              className="w-full flex items-center gap-4 p-4 rounded-2xl border border-white/[0.06] hover:border-white/20 transition-all group/card"
+                              style={{ background: "#121b28" }}
                             >
                               <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/10 flex items-center justify-center text-[#D4AF37] group-hover/card:scale-110 transition-transform">
                                 <Plane className="w-5 h-5" />
@@ -190,7 +192,8 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
 
                           <button
                             onClick={handleLogout}
-                            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/30 transition-all group/logout"
+                            className="w-full flex items-center gap-4 p-4 rounded-2xl border border-red-500/20 hover:border-red-500/30 transition-all group/logout"
+                            style={{ background: "#171720" }}
                           >
                             <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 group-hover/logout:scale-110 transition-transform">
                               <Wind className="w-5 h-5" />
