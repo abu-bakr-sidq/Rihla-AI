@@ -223,13 +223,20 @@ const extractLocationQuery = (placeName, destination) => {
   return `${shortName} ${dest}`.trim();
 };
 
+const getApiBaseUrl = () => {
+  const configured = (import.meta.env.VITE_API_URL || '').trim();
+  if (!configured) return '';
+  return configured.replace(/\/+$/, '').replace(/\/api$/i, '');
+};
+
 const _fetchActivityImage = async (query, globalIndex) => {
   const cacheKey = query + '__gi' + (globalIndex || 0);
   if (_imgCache[cacheKey]) return _imgCache[cacheKey];
 
   try {
+    const apiBase = getApiBaseUrl();
     const r = await fetch(
-      `/api/place-image?query=${encodeURIComponent(query)}&photoIndex=${globalIndex || 0}&onlyGoogle=1`,
+      `${apiBase}/api/place-image?query=${encodeURIComponent(query)}&photoIndex=${globalIndex || 0}&onlyGoogle=1`,
       { signal: AbortSignal.timeout(8000) }
     );
     if (r.ok) {

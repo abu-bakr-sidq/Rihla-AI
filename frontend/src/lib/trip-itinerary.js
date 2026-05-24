@@ -36,6 +36,30 @@ const DESTINATION_PLACE_LIBRARY = {
     evening: ["Chapora Fort", "Ashwem beach", "Palolem sands", "Sinquerim waterfront"],
     night: ["Baga lane dinner", "Vagator clifftop dining", "Mandovi river cruise", "Feni tasting bar"],
   },
+  ooty: {
+    morning: ["Government Botanical Garden", "Ooty Lake promenade", "Doddabetta Peak", "St. Stephen's Church"],
+    afternoon: ["Tea Factory Museum", "Charing Cross food stop", "Thread Garden", "Rose Garden Ooty"],
+    evening: ["Wenlock Downs", "Pykara viewpoint", "Tea estate valley trail", "Boat House lakeside walk"],
+    night: ["Upper Bazaar dinner stop", "Colonial tea lounge", "Bonfire hillside retreat", "Town market dessert stop"],
+  },
+  kodaikanal: {
+    morning: ["Coaker's Walk", "Bryant Park", "Kodaikanal Lake", "Pillar Rocks"],
+    afternoon: ["Chettiar Park", "Homemade chocolate lane", "Green Valley View", "Pine Forest trail"],
+    evening: ["Silver Cascade viewpoint", "Upper Lake View", "Lake road cycling loop", "Sunset ridge trail"],
+    night: ["Lakeside dinner", "Bazaar road cafe", "Campfire lookout", "Quiet hill stay"],
+  },
+  pondicherry: {
+    morning: ["Promenade Beach", "French Quarter streets", "Sri Aurobindo Ashram", "Basilica of the Sacred Heart"],
+    afternoon: ["White Town cafe trail", "Pondicherry Museum", "Auroville Bakery", "Botanical Garden"],
+    evening: ["Rock Beach sunset walk", "Serenity Beach", "Heritage lane photo stop", "Goubert Avenue"],
+    night: ["White Town dinner", "Rooftop creperie", "Beach road gelato stop", "French colony night stroll"],
+  },
+  puducherry: {
+    morning: ["Promenade Beach", "French Quarter streets", "Sri Aurobindo Ashram", "Basilica of the Sacred Heart"],
+    afternoon: ["White Town cafe trail", "Pondicherry Museum", "Auroville Bakery", "Botanical Garden"],
+    evening: ["Rock Beach sunset walk", "Serenity Beach", "Heritage lane photo stop", "Goubert Avenue"],
+    night: ["White Town dinner", "Rooftop creperie", "Beach road gelato stop", "French colony night stroll"],
+  },
 };
 
 function cleanDisplayText(value) {
@@ -354,15 +378,20 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
   };
 
   const createCompanionSlot = (activity = {}, basePlace = "", slotKey = "", cost = 0) => {
-    const normalizedPlace = cleanDisplayText(basePlace) || cleanDisplayText(activity.location) || cleanDisplayText(activity.title) || "Local stop";
-    const companionPlace = /^activity$/i.test(cleanDisplayText(activity.title || ""))
-      ? `${normalizedPlace} Experience`
-      : normalizedPlace;
+    const slotSeed =
+      slotKeys.indexOf(slotKey) >= 0 ? slotKeys.indexOf(slotKey) : compactSlotKeys.indexOf(getSlotBucket(slotKey));
+    const normalizedPlace = resolvePlannedPlaceName(
+      cleanDisplayText(basePlace) || cleanDisplayText(activity.location) || cleanDisplayText(activity.title) || "",
+      destination,
+      slotKey,
+      Math.max(0, slotSeed)
+    ) || "Local stop";
+    const companionPlace = normalizedPlace;
     const seedContent = generatePlaceCardFallbackContent(normalizedPlace, activity.description || activity.title || "", destination, slotKey);
     return {
       place: companionPlace,
       activity: activity.description || activity.title || `Continue exploring ${normalizedPlace}.`,
-      title: activity.title || companionPlace,
+      title: companionPlace,
       cost: Math.max(0, Math.round(cost * 0.45)),
       travel: activity.travelSuggestion || slotTimes[slotKey],
       duration: activity.duration || "1-2h",
@@ -389,7 +418,7 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
     let activityBudget = 0;
     const createSlotPayload = (activity, slotKey, slotIndex, baseCostOverride = null) => {
       if (!activity) return null;
-      const place = activity.location || activity.title || `Stop ${slotIndex + 1}`;
+      const place = resolvePlannedPlaceName(activity.location || activity.title || "", destination, slotKey, slotIndex) || `Stop ${slotIndex + 1}`;
       const cost = baseCostOverride == null ? parseCost(activity.cost) : baseCostOverride;
       return {
         place,
