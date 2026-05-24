@@ -156,6 +156,41 @@ function pickVariant(list = [], seed = 0, fallback = []) {
   return source[Math.abs(seed) % source.length] || source[0];
 }
 
+function hashSeed(value = "") {
+  return String(value)
+    .split("")
+    .reduce((acc, ch, index) => ((acc * 33) + ch.charCodeAt(0) + index) >>> 0, 5381);
+}
+
+function pickOne(list = [], seed = 0, fallback = "") {
+  const source = Array.isArray(list) && list.length ? list : fallback ? [fallback] : [];
+  if (!source.length) return "";
+  return source[Math.abs(seed) % source.length] || source[0];
+}
+
+function pickMany(list = [], count = 3, seed = 0) {
+  const source = Array.isArray(list) ? list.filter(Boolean) : [];
+  if (!source.length) return [];
+  const picked = [];
+  const used = new Set();
+  for (let i = 0; i < Math.min(count, source.length); i += 1) {
+    const baseIndex = Math.abs(seed + i * 7) % source.length;
+    let finalIndex = baseIndex;
+    let offset = 0;
+    while (used.has(finalIndex) && offset < source.length) {
+      offset += 1;
+      finalIndex = (baseIndex + offset) % source.length;
+    }
+    used.add(finalIndex);
+    picked.push(source[finalIndex]);
+  }
+  return picked;
+}
+
+function fillTemplate(template = "", values = {}) {
+  return String(template).replace(/\{(\w+)\}/g, (_match, key) => values[key] ?? "");
+}
+
 function isGenericPlaceLabel(value = "", destination = "") {
   const text = cleanDisplayText(value).toLowerCase();
   const dest = cleanDisplayText(destination).toLowerCase();
@@ -226,7 +261,7 @@ export function generatePlaceCardFallbackContent(placeName = "", activity = "", 
   const place = resolvePlannedPlaceName(placeName || activity, destination, slotKey);
   const area = getAreaLabel(placeName, destination);
   const sourceText = `${placeName} ${activity}`.toLowerCase();
-  const seed = `${place}|${slotKey}|${destination}`.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const seed = hashSeed(`${place}|${slotKey}|${destination}|${activity}`);
   const times = {
     morning: ["8:00 AM", "9:15 AM", "10:30 AM"],
     morningActivity: ["10:45 AM", "11:30 AM", "12:15 PM"],
@@ -238,293 +273,317 @@ export function generatePlaceCardFallbackContent(placeName = "", activity = "", 
     nightActivity: ["9:15 PM", "10:00 PM", "10:45 PM"],
   }[slotKey] || ["10:00 AM", "11:00 AM", "12:00 PM"];
 
-  const isTemple = /temple|mosque|church|shrine|mandir|masjid|kovil|pagoda|basilica|cathedral|dargah/i.test(sourceText);
-  const isBeach = /beach|coast|shore|bay|promenade|marina|pier|waterfront|lake|river/i.test(sourceText);
-  const isMarket = /market|bazaar|bazar|souk|mall|shopping|vendor|street food/i.test(sourceText);
-  const isFood = /restaurant|cafe|coffee|dining|food|eat|kitchen|bistro|tea|chai|bakery|dhaba/i.test(sourceText);
-  const isMuseum = /museum|gallery|art|heritage|history|palace|fort|castle|exhibit|archive/i.test(sourceText);
-  const isPark = /park|garden|forest|nature|wildlife|botanical|hill|mountain|valley|viewpoint/i.test(sourceText);
-  const isStay = /hotel|suite|room|resort|stay|villa|palace stay|inn|lodge|ryokan|courtyard stay|residence/i.test(sourceText);
-  const isNightSlot = /^night/i.test(slotKey);
-
-  let profile = "generic";
-  if (isStay || isNightSlot) profile = "stay";
-  else if (isTemple) profile = "sacred";
-  else if (isBeach) profile = "coastal";
-  else if (isMarket) profile = "market";
-  else if (isFood) profile = "food";
-  else if (isMuseum) profile = "culture";
-  else if (isPark) profile = "nature";
-
-  let streetFinds = [
-    `${place} local snack stall`,
-    `${place} photo point`,
-    `${place} nearby souvenir shop`,
-    `${area} tea corner near ${place}`,
-  ];
-  let ideas = [
-    `Take one extra lane around ${place} to see how ${area} feels beyond the headline stop.`,
-    `Use ${place} as your anchor, then walk outward for calmer photo angles and small local finds.`,
-    `Ask one nearby vendor what locals usually pair with a visit to ${place}.`,
-  ];
-
-  if (isTemple) {
-    streetFinds = [
-      `${place} flower garland lane`,
-      `${place} prasadam shop row`,
-      `${place} brass lamp and incense stores`,
-      `${place} coconut water stand`,
-    ];
-    ideas = [
-      `Arrive a little early at ${place} to watch the entrance streets wake up before the crowd builds.`,
-      `Circle one side lane around ${place} for quieter shrines, ritual counters, and smaller photo moments.`,
-      `Look for the oldest shopfront near ${place}; it is often the best place for local offerings and stories.`,
-    ];
-  } else if (isBeach) {
-    streetFinds = [
-      `${place} promenade snack carts`,
-      `${place} tender coconut stand`,
-      `${place} shell craft stalls`,
-      `${place} sunset chai point`,
-    ];
-    ideas = [
-      `Walk beyond the busiest part of ${place} for a calmer stretch and cleaner views.`,
-      `Use the edge streets behind ${place} to find local cafes and breezier routes back.`,
-      `Pause near the fishing or promenade side of ${place} for the most grounded local atmosphere.`,
-    ];
-  } else if (isMarket) {
-    streetFinds = [
-      `${place} handloom and textile shops`,
-      `${place} spice and dry goods lane`,
-      `${place} antique and craft corner`,
-      `${place} fresh juice stall`,
-    ];
-    ideas = [
-      `Walk the full length of ${place} once before buying so the best lane and prices reveal themselves.`,
-      `Check the side rows branching off ${place}; that is usually where the more unique stores sit.`,
-      `Ask which section of ${place} locals use for everyday shopping instead of souvenir browsing.`,
-    ];
-  } else if (isFood) {
-    streetFinds = [
-      `${place} bakery counter`,
-      `${place} chai or coffee stall`,
-      `${place} dessert shop nearby`,
-      `${area} fruit juice kiosk near ${place}`,
-    ];
-    ideas = [
-      `Pair your stop at ${place} with a short food walk in the surrounding block for one extra local favorite.`,
-      `Check what the staff around ${place} recommend as the freshest thing on the street today.`,
-      `Use ${place} as the center point, then explore the next lane for sweets, drinks, or late snacks.`,
-    ];
-  } else if (isMuseum) {
-    streetFinds = [
-      `${place} museum store`,
-      `${place} postcard and print corner`,
-      `${place} cafe or tea room`,
-      `${place} local history bookshop`,
-    ];
-    ideas = [
-      `After the main galleries, step outside ${place} and check the adjoining block for architecture and quieter details.`,
-      `Look for a side courtyard, annex, or smaller entrance around ${place} that most people walk past.`,
-      `Use the streets around ${place} for slower photo stops once you finish the main exhibit flow.`,
-    ];
-  } else if (isPark) {
-    streetFinds = [
-      `${place} entry chai stall`,
-      `${place} cycle or buggy rental point`,
-      `${place} shaded bench area`,
-      `${place} bird-view corner`,
-    ];
-    ideas = [
-      `Start at the widest view in ${place}, then move into the quieter paths for the best contrast.`,
-      `Keep one relaxed loop around ${place} instead of rushing between exits and viewpoints.`,
-      `Watch where locals pause inside ${place}; those small resting areas are usually the most rewarding.`,
-    ];
-  }
-
-  const scheduleVariantsByProfile = {
-    stay: [
-      [
-        `Start around ${times[0]} by settling into ${place} and taking a first look at the property and its atmosphere.`,
-        `Around ${times[1]}, use the best window for a slower hotel moment, whether that means a lounge break, terrace view, or reset before dinner.`,
-        `Toward ${times[2]}, step out around ${area} for a short neighbourhood stroll or ease back in for a calmer night close.`,
-      ],
-      [
-        `Begin around ${times[0]} with check-in rhythm at ${place}, then give yourself time to absorb the mood instead of rushing onward.`,
-        `Around ${times[1]}, lean into the signature comfort of ${place} such as its heritage spaces, rooftop angle, or quiet corners.`,
-        `Toward ${times[2]}, choose between a nearby evening walk in ${area} or a softer in-house unwind before the night settles.`,
-      ],
-      [
-        `Ease into ${place} around ${times[0]} and let this stop act as your reset point for the evening.`,
-        `By ${times[1]}, focus on the most memorable part of the stay experience, from design details to a drink, tea, or skyline-facing pause.`,
-        `Closer to ${times[2]}, keep the pace gentle with either a short local loop near ${area} or a relaxed return indoors.`,
-      ],
-    ],
-    sacred: [
-      [
-        `Start around ${times[0]} at ${place} while the approach still feels quieter and more reflective.`,
-        `Around ${times[1]}, focus on the strongest ritual, architectural, or symbolic details inside the main precinct.`,
-        `Toward ${times[2]}, drift into the surrounding lanes around ${place} for offerings, small counters, and lived-in local rhythm.`,
-      ],
-      [
-        `Reach ${place} near ${times[0]} to catch the area before it turns fully busy.`,
-        `By ${times[1]}, give your best time to the central shrine, prayer hall, or sacred courtyard rather than trying to rush every corner.`,
-        `Around ${times[2]}, use the outer streets near ${area} for quieter details and human-scale moments.`,
-      ],
-    ],
-    coastal: [
-      [
-        `Start around ${times[0]} at ${place} and take the first stretch slowly for light, breeze, and orientation.`,
-        `Around ${times[1]}, focus on the most scenic edge of ${place} rather than staying in the busiest pocket.`,
-        `Toward ${times[2]}, peel into the promenade or back streets around ${area} for snacks, views, and smaller local finds.`,
-      ],
-      [
-        `Begin near ${times[0]} with the calmer side of ${place} before the footfall thickens.`,
-        `By ${times[1]}, make your way to the signature waterfront angle or promenade section that gives the place its personality.`,
-        `Around ${times[2]}, let the stop loosen into a nearby cafe, sunset chai point, or slower wander beyond the main edge.`,
-      ],
-    ],
-    market: [
-      [
-        `Start around ${times[0]} with a full first pass through ${place} so the layout makes sense before you stop to buy.`,
-        `Around ${times[1]}, return to the lanes or stalls that felt strongest and give your time to their best details.`,
-        `Toward ${times[2]}, use the deeper side rows near ${area} for more local texture and better small finds.`,
-      ],
-      [
-        `Begin near ${times[0]} by reading the rhythm of ${place} before making decisions too quickly.`,
-        `Around ${times[1]}, spend your main window on the section of ${place} that feels most distinctive for craft, food, or atmosphere.`,
-        `By ${times[2]}, step into the narrower offshoot lanes where the market usually feels less generic and more local.`,
-      ],
-    ],
-    food: [
-      [
-        `Start around ${times[0]} at ${place}, settle in, and let the first few minutes tell you what the room or street corner does best.`,
-        `Around ${times[1]}, focus on the signature order or freshest local recommendation instead of over-ordering too early.`,
-        `Toward ${times[2]}, stretch the stop into dessert, tea, or a short food-street walk around ${area}.`,
-      ],
-      [
-        `Begin near ${times[0]} with a lighter first pass at ${place} so you can read the menu or local cues properly.`,
-        `By ${times[1]}, commit to the strongest dish or tasting moment that makes ${place} worth the stop.`,
-        `Closer to ${times[2]}, keep the rhythm easy with a nearby sweet, coffee, or late snack loop around ${area}.`,
-      ],
-    ],
-    culture: [
-      [
-        `Start around ${times[0]} at ${place} and use the first phase to understand the context before chasing highlights.`,
-        `Around ${times[1]}, give your best time to the central galleries, courtyard, or historic rooms that define the stop.`,
-        `Toward ${times[2]}, move outside the main path around ${area} for architecture, bookshops, or quieter details.`,
-      ],
-      [
-        `Begin near ${times[0]} with the broadest orientation pass through ${place}.`,
-        `By ${times[1]}, narrow your attention to the strongest rooms, objects, or heritage details instead of trying to cover everything.`,
-        `Around ${times[2]}, use the edges of ${place} and the neighbouring block for slower, less obvious discoveries.`,
-      ],
-    ],
-    nature: [
-      [
-        `Start around ${times[0]} at ${place} from the widest or calmest approach so the setting opens up properly.`,
-        `Around ${times[1]}, focus on one lookout, trail, or garden pocket instead of scattering your energy.`,
-        `Toward ${times[2]}, move into the quieter paths around ${area} for a more unforced local rhythm.`,
-      ],
-      [
-        `Begin near ${times[0]} by letting ${place} reveal its pace before you pick a direction.`,
-        `By ${times[1]}, give your strongest attention to the most scenic or rewarding part of the grounds.`,
-        `Around ${times[2]}, use the softer corners of ${place} for benches, tea, or one final slower loop.`,
-      ],
-    ],
-    generic: [
-      [
-        `Start around ${times[0]} at ${place} and ease into the area before the main crowd builds.`,
-        `Around ${times[1]}, focus on the strongest part of ${place} and its most rewarding details.`,
-        `Toward ${times[2]}, move into the nearby lanes around ${place} for a more local rhythm.`,
-      ],
-      [
-        `Begin near ${times[0]} with a first pass through ${place} so the stop feels grounded instead of rushed.`,
-        `By ${times[1]}, spend your best energy on the part of ${place} that gives it the clearest character.`,
-        `Closer to ${times[2]}, let the stop spill into the surrounding streets near ${area} for smaller and more local details.`,
-      ],
-    ],
+  const profile = inferPlaceProfile(sourceText, slotKey);
+  const areaLabel = cleanDisplayText(area) || cleanDisplayText(destination).split(",")[0] || "the surrounding area";
+  const vars = {
+    place,
+    area: areaLabel,
+    destination: cleanDisplayText(destination).split(",")[0] || areaLabel,
+    t0: times[0],
+    t1: times[1],
+    t2: times[2],
   };
 
-  const streetFindVariantsByProfile = {
-    stay: [
-      [`${place} lobby lounge`, `${place} tea service corner`, `${area} quiet evening cafe`, `${area} short heritage walk`],
-      [`${place} rooftop or terrace bar`, `${place} concierge-recommended dinner spot`, `${area} late dessert counter`, `${area} softly lit side street`],
-      [`${place} in-house patisserie or coffee bar`, `${place} spa or wellness wing`, `${area} calm night drive route`, `${area} hotel-lined boulevard`],
-    ],
-    food: [
-      [`${place} dessert counter`, `${place} tea or coffee pairing`, `${area} nearby snack stop`, `${area} late sweet shop`],
-      [`${place} house special counter`, `${place} bakery or pastry shelf`, `${area} local chai point`, `${area} short after-dinner lane`],
-    ],
-    culture: [
-      [`${place} museum store`, `${place} postcard and print corner`, `${place} cafe or tea room`, `${place} local history bookshop`],
-      [`${place} side courtyard`, `${place} archive wing or annex`, `${area} architecture photo angle`, `${area} heritage book stall`],
-    ],
-    coastal: [
-      [`${place} promenade snack carts`, `${place} tender coconut stand`, `${place} shell craft stalls`, `${place} sunset chai point`],
-      [`${place} quieter waterfront edge`, `${area} seaside cafe`, `${area} evening gelato stop`, `${place} lookout rail or jetty`],
-    ],
-    market: [
-      [`${place} handloom and textile shops`, `${place} spice and dry goods lane`, `${place} antique and craft corner`, `${place} fresh juice stall`],
-      [`${place} local produce section`, `${place} hidden back-lane vendor`, `${area} chai break point`, `${area} everyday shopping row`],
-    ],
-    sacred: [
-      [`${place} flower garland lane`, `${place} prasadam shop row`, `${place} brass lamp and incense stores`, `${place} coconut water stand`],
-      [`${place} quieter side shrine`, `${area} offering counter`, `${area} prayer goods stall`, `${place} outer courtyard lane`],
-    ],
-    nature: [
-      [`${place} entry chai stall`, `${place} cycle or buggy rental point`, `${place} shaded bench area`, `${place} bird-view corner`],
-      [`${place} quiet lookout`, `${area} tea kiosk`, `${area} low-traffic trail edge`, `${place} sunset bench line`],
-    ],
-    generic: [
-      [`${place} local snack stall`, `${place} photo point`, `${place} nearby souvenir shop`, `${area} tea corner near ${place}`],
-      [`${place} side lane cafe`, `${place} tucked-away view line`, `${area} local shopfront cluster`, `${area} slower walking segment`],
-    ],
+  const banks = {
+    stay: {
+      scheduleOpen: [
+        "Start around {t0} by settling into {place} and letting the property itself shape the mood of the stop.",
+        "Reach {place} near {t0} and use the first stretch to absorb the feel of the stay before adding anything else.",
+        "Ease into {place} around {t0} and treat this as your reset point, not just a place to sleep.",
+        "Begin around {t0} with a slower arrival at {place}, giving the stay room to feel like part of the journey.",
+      ],
+      scheduleFocus: [
+        "By {t1}, lean into the best part of the stay experience, whether that means a lounge pause, skyline angle, courtyard, or quieter heritage detail.",
+        "Around {t1}, focus on one memorable comfort moment at {place} instead of rushing straight through the stop.",
+        "Use the {t1} window to enjoy the signature atmosphere of {place}, from its calmer corners to the spaces that make it worth staying in.",
+        "Around {t1}, keep the rhythm soft and give your attention to the most rewarding in-house corner, terrace, or unwind point.",
+      ],
+      scheduleClose: [
+        "Toward {t2}, step out around {area} for a short neighbourhood loop or ease back indoors for a gentler night close.",
+        "Closer to {t2}, choose between a nearby stroll in {area} and a quieter return indoors so the day closes without friction.",
+        "By {t2}, let the stop taper into either a short local walk near {area} or an easy final unwind back at the property.",
+        "Toward {t2}, keep movement minimal and use the surrounding block of {area} only if it adds to the calm rather than breaking it.",
+      ],
+      streetFinds: [
+        "{place} lobby lounge",
+        "{place} tea service corner",
+        "{place} terrace or rooftop pocket",
+        "{area} quiet evening cafe",
+        "{area} softly lit side street",
+        "{area} short heritage walk loop",
+      ],
+      ideas: [
+        "Use {place} as a reset point, not just a sleep stop, and give yourself one unhurried hour to actually enjoy it.",
+        "Ask the staff at {place} which nearby lane or block in {area} feels best after dark for a short, low-stress stroll.",
+        "The strongest hotel moments usually come from one small ritual: tea, skyline view, courtyard pause, or simply the quietest corner.",
+        "If {place} has a rooftop, lounge, or heritage common area, make that your final memorable pause instead of forcing another big activity.",
+        "Treat the stay itself as part of the trip story, especially if the mood in {area} is better explored on foot than by another long transfer.",
+      ],
+    },
+    sacred: {
+      scheduleOpen: [
+        "Reach {place} near {t0} to catch the area while it still feels more reflective and less compressed.",
+        "Start around {t0} at {place} and use the quieter first minutes to settle into the tone before the flow thickens.",
+        "Arrive at {place} around {t0} so the sacred precinct still has enough calm to read the setting properly.",
+        "Use the {t0} window to enter {place} before the busiest rhythm takes over the surrounding streets.",
+      ],
+      scheduleFocus: [
+        "By {t1}, give your best time to the central shrine, prayer hall, or symbolic core rather than trying to rush every corner.",
+        "Around {t1}, focus on the strongest ritual or architectural layer of {place} and let that shape the stop.",
+        "Use the {t1} stretch for the most meaningful sacred courtyard, hall, or ceremonial detail instead of over-scattering your attention.",
+        "By {t1}, narrow your energy to the central spiritual or visual anchor of {place}.",
+      ],
+      scheduleClose: [
+        "Around {t2}, use the outer streets near {area} for quieter details and more human-scale moments.",
+        "Toward {t2}, drift into the edges of {area} where counters, side shrines, and smaller rituals tend to feel more grounded.",
+        "By {t2}, let the formal visit soften into the surrounding lanes around {area} rather than ending too abruptly.",
+        "Closer to {t2}, use the outer approach around {area} for slower details most visitors skim past.",
+      ],
+      streetFinds: [
+        "{place} quieter side shrine",
+        "{area} offering counter",
+        "{area} prayer goods stall",
+        "{place} outer courtyard lane",
+        "{area} flower or incense seller",
+        "{place} side entrance detail",
+      ],
+      ideas: [
+        "Use the first minutes at {place} to settle into the tone before reaching for photos.",
+        "The small counters and side shrines around {area} often hold the most grounded local texture.",
+        "Ask which entrance or path locals usually prefer at {place}; it often changes the feel of the stop completely.",
+        "One quieter lane around {place} usually says more than the busiest central frontage.",
+        "If the main sacred core feels crowded, look at the outer ritual details in {area} before moving on.",
+      ],
+    },
+    coastal: {
+      scheduleOpen: [
+        "Start around {t0} at {place} and let the first stretch stay loose enough for light, breeze, and orientation.",
+        "Reach {place} near {t0} while the waterfront still feels more open than crowded.",
+        "Use the {t0} window to take in {place} before the stop turns into pure foot traffic.",
+        "Begin around {t0} with the calmer edge of {place} rather than the most obvious front-facing pocket.",
+      ],
+      scheduleFocus: [
+        "By {t1}, focus on the most scenic edge of {place} rather than staying fixed in the busiest patch.",
+        "Around {t1}, give your attention to the stretch of {place} that best captures its mood, not just its headline angle.",
+        "Use {t1} to lean into the strongest view line, promenade pocket, or waterfront rhythm at {place}.",
+        "Around {t1}, let the best visual part of {place} carry the stop instead of chasing every angle.",
+      ],
+      scheduleClose: [
+        "Toward {t2}, peel into the promenade or back streets around {area} for snacks, views, and smaller local finds.",
+        "By {t2}, let the stop loosen into a nearby cafe, tea point, or slower wander beyond the main edge.",
+        "Around {t2}, use the streets behind {area} for a softer second chapter to the waterfront stop.",
+        "Closer to {t2}, move just beyond the obvious frontage of {place} for a more grounded close.",
+      ],
+      streetFinds: [
+        "{place} promenade snack carts",
+        "{place} quieter waterfront edge",
+        "{area} seaside cafe",
+        "{area} sunset chai point",
+        "{place} shell or craft stall",
+        "{place} lookout rail or jetty",
+      ],
+      ideas: [
+        "Walk a little past the busiest pocket of {place}; that is usually where the atmosphere gets better.",
+        "Treat {place} as more than a photo stop by giving time to the edge streets and pause points too.",
+        "The best coastal memories often come from combining the view with one small food or tea moment nearby.",
+        "If the front side of {place} feels crowded, the return path through {area} often feels more personal and local.",
+        "Stay long enough for the light to change once at {place}; that shift often transforms the mood.",
+      ],
+    },
+    market: {
+      scheduleOpen: [
+        "Start around {t0} with a full first pass through {place} so the layout makes sense before you stop to buy.",
+        "Begin near {t0} by reading the rhythm of {place} before making decisions too quickly.",
+        "Use the opening window to orient yourself to {place} rather than spending at the first interesting stall.",
+        "Reach {place} around {t0} and let the market reveal its shape before you commit to one lane.",
+      ],
+      scheduleFocus: [
+        "By {t1}, return to the rows that felt strongest and give your energy to the best details instead of everything at once.",
+        "Around {t1}, spend your main window on the section of {place} that feels most distinctive for craft, food, or atmosphere.",
+        "Use {t1} for the lane or vendor cluster that actually makes {place} memorable rather than generic.",
+        "By {t1}, narrow down to the strongest market pocket and let that shape the stop.",
+      ],
+      scheduleClose: [
+        "Toward {t2}, use the deeper side rows near {area} for more local texture and better small finds.",
+        "By {t2}, step into the narrower offshoot lanes where the market usually feels less polished and more real.",
+        "Around {t2}, let the stop taper into the edges of {area} where everyday shopping still dominates.",
+        "Closer to {t2}, use the back lanes near {area} for the kind of details that do not appear in the main strip.",
+      ],
+      streetFinds: [
+        "{place} local produce row",
+        "{place} spice and dry goods lane",
+        "{place} hidden back-lane vendor",
+        "{area} chai break point",
+        "{area} everyday shopping row",
+        "{place} craft or textile pocket",
+      ],
+      ideas: [
+        "Walk {place} once without buying, then go back with clearer instincts.",
+        "The more interesting vendors at {place} are often one lane deeper than the obvious first row.",
+        "Ask what locals actually come to {place} for; that answer usually reveals the real specialty.",
+        "The strongest market memories usually come from one conversation and one unplanned side purchase.",
+        "If {place} feels too polished, look for the narrower row where everyday shopping still dominates.",
+      ],
+    },
+    food: {
+      scheduleOpen: [
+        "Start around {t0} at {place}, settle in, and let the first few minutes tell you what the room or street corner does best.",
+        "Begin near {t0} with a lighter first pass at {place} so you can read the menu or local cues properly.",
+        "Reach {place} around {t0} and use the opening stretch to understand the mood before over-ordering.",
+        "Use the first phase to let {place} reveal its pace, staff energy, and strongest menu signals.",
+      ],
+      scheduleFocus: [
+        "By {t1}, commit to the strongest dish or tasting moment that makes {place} worth the stop.",
+        "Around {t1}, focus on the signature order or freshest local recommendation instead of trying to do everything.",
+        "Use {t1} for the course or dish that gives {place} its real character.",
+        "By {t1}, let one standout food moment anchor the stop rather than turning it into a checklist meal.",
+      ],
+      scheduleClose: [
+        "Toward {t2}, stretch the stop into dessert, tea, or a short food-street walk around {area}.",
+        "Closer to {t2}, keep the rhythm easy with a nearby sweet, coffee, or late snack loop around {area}.",
+        "By {t2}, let the meal taper naturally into a second, smaller flavour stop nearby.",
+        "Around {t2}, use the surrounding block of {area} for one softer final bite or drink.",
+      ],
+      streetFinds: [
+        "{place} dessert counter",
+        "{place} house special corner",
+        "{area} local tea or coffee point",
+        "{area} nearby sweet shop",
+        "{place} bakery or pastry shelf",
+        "{area} short after-dinner lane",
+      ],
+      ideas: [
+        "Pair your stop at {place} with one extra local bite nearby instead of making the whole meal happen in one place.",
+        "Ask what regulars order first at {place}; it usually tells you more than the menu headings do.",
+        "The best version of this stop is usually one signature dish plus one local recommendation.",
+        "Let {place} set the tone, then use the next lane for a second, smaller food moment.",
+        "If the energy is right, extend the stop into dessert, tea, or one quieter block around {area}.",
+      ],
+    },
+    culture: {
+      scheduleOpen: [
+        "Start around {t0} at {place} and use the first phase to understand the context before chasing highlights.",
+        "Begin near {t0} with the broadest orientation pass through {place}.",
+        "Use the opening window to read the setting of {place} before narrowing into the headline rooms or galleries.",
+        "Reach {place} around {t0} and let the stop open with context rather than immediacy.",
+      ],
+      scheduleFocus: [
+        "By {t1}, narrow your attention to the strongest rooms, objects, or heritage details instead of trying to cover everything.",
+        "Around {t1}, give your best time to the central galleries, courtyard, or historic spaces that define the stop.",
+        "Use {t1} for the section of {place} that actually carries its story, rather than flattening the whole visit into one pace.",
+        "By {t1}, let one core part of {place} take the lead instead of dispersing your attention.",
+      ],
+      scheduleClose: [
+        "Toward {t2}, move outside the main path around {area} for architecture, bookshops, or quieter details.",
+        "Around {t2}, use the edges of {place} and the neighbouring block for slower, less obvious discoveries.",
+        "By {t2}, let the formal visit soften into the street life, side courts, or quieter frontage around {area}.",
+        "Closer to {t2}, finish in the surrounding block of {area}, where the stop often makes more sense at human scale.",
+      ],
+      streetFinds: [
+        "{place} side courtyard",
+        "{place} archive wing or annex",
+        "{area} architecture photo angle",
+        "{area} heritage book stall",
+        "{place} print or postcard corner",
+        "{place} cafe or tea room",
+      ],
+      ideas: [
+        "After the main galleries or heritage rooms, step outside {place} and look for the details most visitors walk past.",
+        "Use one slower lap through {place} instead of trying to cover every section equally.",
+        "The block around {place} often explains the stop better than the final label on the wall does.",
+        "Ask staff which corner of {place} they would show first to someone who only had ten minutes.",
+        "Pair the formal visit with a looser architecture walk around {area}.",
+      ],
+    },
+    nature: {
+      scheduleOpen: [
+        "Start around {t0} at {place} from the widest or calmest approach so the setting opens up properly.",
+        "Begin near {t0} by letting {place} reveal its pace before you pick a direction.",
+        "Use the opening window to settle into the landscape of {place} rather than hurrying toward the obvious first viewpoint.",
+        "Reach {place} around {t0} and let the stop breathe before turning it into a route.",
+      ],
+      scheduleFocus: [
+        "By {t1}, give your strongest attention to the most scenic or rewarding part of the grounds.",
+        "Around {t1}, focus on one lookout, trail, or garden pocket instead of scattering your energy.",
+        "Use {t1} for the section of {place} that feels most restorative or visually distinct.",
+        "By {t1}, commit to the most rewarding path or view line rather than chasing all of them.",
+      ],
+      scheduleClose: [
+        "Toward {t2}, move into the quieter paths around {area} for a more unforced local rhythm.",
+        "Around {t2}, use the softer corners of {place} for benches, tea, or one final slower loop.",
+        "By {t2}, let the stop end in the calmest part of {area}, not the busiest return route.",
+        "Closer to {t2}, keep the final movement gentle and let one quieter path carry the close.",
+      ],
+      streetFinds: [
+        "{place} quiet lookout",
+        "{area} tea kiosk",
+        "{area} low-traffic trail edge",
+        "{place} shaded bench line",
+        "{place} cycle or buggy point",
+        "{place} bird-view corner",
+      ],
+      ideas: [
+        "Stay with one section of {place} long enough for it to feel slower and quieter.",
+        "The most rewarding part of {place} is often not the first viewpoint but the second or third pause beyond it.",
+        "Use benches, tea stalls, and shaded corners around {area} as part of the stop rather than rushing past them.",
+        "Move through {place} in one deliberate loop instead of zig-zagging for every angle.",
+        "Look where locals linger inside {place}; that is usually the most naturally rewarding zone.",
+      ],
+    },
+    generic: {
+      scheduleOpen: [
+        "Start around {t0} at {place} and let the stop settle naturally before the busier rhythm arrives.",
+        "Reach {place} near {t0} so the first phase feels more grounded than rushed.",
+        "Use the opening window to orient yourself to {place} before chasing the obvious highlights.",
+        "Begin near {t0} with a slower first pass through {place}.",
+      ],
+      scheduleFocus: [
+        "By {t1}, spend your best energy on the part of {place} that gives it the clearest character.",
+        "Around {t1}, focus on the strongest part of {place} rather than trying to flatten the whole stop into one pace.",
+        "Use the {t1} stretch for the section of {place} that feels most distinct or memorable.",
+        "By {t1}, let one core pocket of {place} take the lead.",
+      ],
+      scheduleClose: [
+        "Toward {t2}, let the stop spill into the surrounding streets near {area} for smaller and more local details.",
+        "Around {t2}, move into the nearby lanes around {area} where the place often feels more human-scale.",
+        "By {t2}, use the last phase for edges, side lanes, and local texture rather than only the main frontage.",
+        "Closer to {t2}, let the stop widen into whatever part of {area} feels less obvious and more lived-in.",
+      ],
+      streetFinds: [
+        "{place} side lane cafe",
+        "{place} tucked-away view line",
+        "{area} local shopfront cluster",
+        "{area} slower walking segment",
+        "{place} smaller photo angle",
+        "{area} tea or snack point",
+      ],
+      ideas: [
+        "Use {place} as your anchor, then let the nearby streets around {area} supply the more memorable details.",
+        "One extra lane beyond {place} usually tells you more than the most obvious frontage does.",
+        "Ask a nearby vendor what people typically pair with a visit to {place}.",
+        "Do not try to complete {place} too quickly; the best version of the stop usually comes from one slower detour.",
+        "The best finds near {place} are often small, unplanned, and only one block away.",
+      ],
+    },
   };
 
-  const ideaVariantsByProfile = {
-    stay: [
-      [`Use ${place} as a reset point, not just a sleep stop, and give yourself one slow hour to enjoy it properly.`, `Ask the staff at ${place} which nearby street feels best after dark for a short, safe stroll.`, `If the property has a rooftop, courtyard, or heritage lounge, use that as your most memorable final pause of the day.`],
-      [`Treat ${place} as part of the experience by pairing it with one small neighbourhood walk in ${area}.`, `The best hotel moments are usually the unhurried ones: tea, skyline, pool deck, or simply the quietest corner.`, `Ask for one local recommendation within 10 minutes of ${place} rather than heading back into the busiest district.`],
-    ],
-    food: [
-      [`Pair your stop at ${place} with one extra local bite nearby instead of making the whole meal happen in one place.`, `Ask what regulars order first at ${place}; it usually tells you more than the menu headings do.`, `If the energy is good, extend the stop into a dessert or tea walk around ${area}.`],
-      [`Let ${place} set the tone, then use the next lane for a second, smaller food moment.`, `The best version of this stop is usually one signature dish plus one local recommendation.`, `Use the surrounding block around ${place} for the kind of casual food find you would miss by cab-hopping away too quickly.`],
-    ],
-    culture: [
-      [`After the main galleries or heritage rooms, step outside ${place} and look for the details most visitors walk past.`, `Use one slower lap through ${place} instead of trying to cover every section equally.`, `The block around ${place} often explains the stop better than the final label on the wall does.`],
-      [`Look for one room, courtyard, or view line inside ${place} that feels quieter than the headline route.`, `Ask staff which corner of ${place} they would show first to someone who only had ten minutes.`, `Pair the formal visit with a looser architecture walk around ${area}.`],
-    ],
-    coastal: [
-      [`Walk a little past the busiest pocket of ${place}; that is usually where the atmosphere gets better.`, `Use the promenade behind ${place} for a second angle instead of staying fixed in one photo spot.`, `The best coastal stops often come from combining the view with one small food or tea moment nearby.`],
-      [`Treat ${place} as more than a photo stop by giving time to the edge streets and pause points too.`, `If the front side feels crowded, the return path through ${area} often feels more personal and local.`, `Stay long enough at ${place} for the light to change once; that shift often transforms the mood.`],
-    ],
-    market: [
-      [`Walk ${place} once without buying, then go back with clearer instincts.`, `The more interesting vendors at ${place} are often one lane deeper than the obvious first row.`, `Ask what locals actually come to ${place} for; that answer usually reveals the real specialty.`],
-      [`Use the first half of the stop to observe how ${place} moves, then spend in the second half.`, `If ${place} feels too polished, hunt for the narrower row where everyday shopping still dominates.`, `The strongest market memories usually come from one conversation and one unplanned side purchase.`],
-    ],
-    sacred: [
-      [`Arrive early enough at ${place} to notice how the space changes before and after the crowd thickens.`, `One quieter lane around ${place} usually says more than the busiest central approach.`, `Look for ritual details at the edges of ${place}; those are often the most human moments.`],
-      [`Use the first minutes at ${place} to settle into the tone before reaching for photos.`, `The small counters and side shrines around ${area} often hold the most grounded local texture.`, `Ask which entrance or path locals prefer at ${place}; it often changes the whole feel of the stop.`],
-    ],
-    nature: [
-      [`Stay with one section of ${place} long enough for it to feel slower and quieter.`, `The most rewarding part of ${place} is often not the first viewpoint but the second or third pause beyond it.`, `Use benches, tea stalls, and shaded corners around ${area} as part of the stop rather than rushing past them.`],
-      [`Move through ${place} in one deliberate loop instead of zig-zagging for every angle.`, `If you hear yourself rushing, pick one path inside ${place} and follow it to the end.`, `Look where locals linger inside ${place}; that is usually the most naturally rewarding zone.`],
-    ],
-    generic: [
-      [`Use ${place} as your anchor, then let the nearby streets around ${area} supply the more memorable details.`, `One extra lane beyond ${place} usually tells you more than the most obvious frontage does.`, `Ask a nearby vendor what people typically pair with a visit to ${place}.`],
-      [`Do not try to complete ${place} too quickly; the best version of the stop usually comes from one slower detour.`, `Use the edges of ${area} to balance the headline stop with a more local perspective.`, `The best finds near ${place} are often small, unplanned, and only one block away.`],
-    ],
-  };
-
-  streetFinds = pickVariant(streetFindVariantsByProfile[profile], seed, [streetFinds]);
-  ideas = pickVariant(ideaVariantsByProfile[profile], seed, [ideas]);
-  const schedule = buildUniqueLines(pickVariant(scheduleVariantsByProfile[profile], seed, scheduleVariantsByProfile.generic[0]));
+  const bank = banks[profile] || banks.generic;
+  const schedule = buildUniqueLines([
+    fillTemplate(pickOne(bank.scheduleOpen, seed), vars),
+    fillTemplate(pickOne(bank.scheduleFocus, seed + 11), vars),
+    fillTemplate(pickOne(bank.scheduleClose, seed + 23), vars),
+  ]);
+  const streetFinds = buildUniqueLines(
+    pickMany(bank.streetFinds, 4, seed + 31).map((item) => fillTemplate(item, vars)),
+  ).slice(0, 6);
+  const ideas = buildUniqueLines(
+    pickMany(bank.ideas, 4, seed + 47).map((item) => fillTemplate(item, vars)),
+  ).slice(0, 6);
 
   return {
     schedule,
-    streetFinds: buildUniqueLines(streetFinds).slice(0, 6),
-    ideas: buildUniqueLines(ideas).slice(0, 6),
+    streetFinds,
+    ideas,
   };
 }
 
