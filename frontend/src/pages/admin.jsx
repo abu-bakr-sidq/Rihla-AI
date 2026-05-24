@@ -262,6 +262,7 @@ const getCurrencySymbol = (dest) => {
 };
 
 const DESTINATION_CURRENCY_PRESETS = [
+  { keys: ["coimbatore"], glyph: "Rs ", code: "INR", rate: 83, dailyUsd: 34 },
   { keys: ["ooty", "kodaikanal", "rameswaram", "mahabalipuram"], glyph: "Rs ", code: "INR", rate: 83, dailyUsd: 34 },
   { keys: ["kerala", "kochi", "munnar", "alleppey", "kovalam", "thiruvananthapuram", "india", "chennai", "pondicherry", "kanyakumari", "mumbai", "delhi", "jaipur", "goa", "hyderabad", "bangalore", "bengaluru", "kolkata"], glyph: "₹", code: "INR", rate: 83, dailyUsd: 34 },
   { keys: ["tokyo", "kyoto", "osaka", "nara", "hakone", "sapporo", "japan"], glyph: "¥", code: "JPY", rate: 149, dailyUsd: 92 },
@@ -334,6 +335,7 @@ const ADMIN_PLACE_DAILY_BENCHMARKS_INR = {
   rameswaram: 2200,
   pondicherry: 3200,
   mahabalipuram: 2600,
+  coimbatore: 2900,
   bangalore: 4300,
   mumbai: 5200,
   delhi: 4500,
@@ -362,7 +364,7 @@ const ADMIN_PLACE_DAILY_BENCHMARKS_INR = {
 };
 
 const ADMIN_BUDGET_COUNTRY_MATCHERS = {
-  india: ["india", "chennai", "ooty", "kodaikanal", "rameswaram", "pondicherry", "mahabalipuram", "bangalore", "mumbai", "delhi", "goa", "jaipur", "hyderabad", "kolkata"],
+  india: ["india", "chennai", "ooty", "kodaikanal", "rameswaram", "pondicherry", "mahabalipuram", "coimbatore", "bangalore", "mumbai", "delhi", "goa", "jaipur", "hyderabad", "kolkata"],
   uae: ["uae", "dubai", "abu dhabi", "sharjah"],
   japan: ["japan", "tokyo", "kyoto", "osaka", "nara", "hakone", "sapporo"],
   france: ["france", "paris", "nice", "lyon"],

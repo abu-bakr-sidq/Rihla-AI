@@ -39,7 +39,7 @@ const CURRENCY_SYMBOLS = {
 };
 
 const DESTINATION_PRESETS = [
-  { keys: ["kerala", "kochi", "munnar", "alleppey", "kovalam", "thiruvananthapuram", "india", "chennai", "pondicherry", "kanyakumari", "mumbai", "delhi", "jaipur", "goa", "hyderabad", "bangalore", "bengaluru", "kolkata", "ooty", "kodaikanal", "rameswaram", "mahabalipuram"], code: "INR", rate: 83, dailyUsd: 34 },
+  { keys: ["kerala", "kochi", "munnar", "alleppey", "kovalam", "thiruvananthapuram", "india", "chennai", "pondicherry", "kanyakumari", "mumbai", "delhi", "jaipur", "goa", "hyderabad", "bangalore", "bengaluru", "kolkata", "ooty", "kodaikanal", "rameswaram", "mahabalipuram", "coimbatore"], code: "INR", rate: 83, dailyUsd: 34 },
   { keys: ["tokyo", "kyoto", "osaka", "nara", "hakone", "sapporo", "japan"], code: "JPY", rate: 149, dailyUsd: 92 },
   { keys: ["seoul", "busan", "jeju", "korea"], code: "KRW", rate: 1320, dailyUsd: 85 },
   { keys: ["bali", "jakarta", "ubud", "indonesia"], code: "IDR", rate: 15800, dailyUsd: 60 },
