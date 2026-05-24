@@ -108,28 +108,73 @@ function buildFallbackItinerary({ destination, days, budget, travelStyle, intere
 }
 
 function buildRichFallbackItinerary({ destination, days, budget }) {
-  const slotTemplates = [
-    { time: "Morning", title: "Sunrise Orientation", description: `Begin with a scenic introduction to ${destination}.` },
-    { time: "Morning Activity", title: "Heritage Walk", description: `Explore historic corners and local character in ${destination}.` },
-    { time: "Afternoon", title: "Local Cuisine", description: `Enjoy signature daytime food experiences in ${destination}.` },
-    { time: "Afternoon Activity", title: "Museum Or Craft Stop", description: `Spend the mid-afternoon on culture, craft, or a landmark session in ${destination}.` },
-    { time: "Evening", title: "Sunset Views", description: `Catch the golden-hour highlights and best evening scenery in ${destination}.` },
-    { time: "Evening Activity", title: "Neighborhood Stroll", description: `Walk a lively district and experience the local evening rhythm in ${destination}.` },
-    { time: "Night", title: "Dining Experience", description: `Settle into a more atmospheric dinner or lounge moment in ${destination}.` },
-    { time: "Night Activity", title: "Stay Wind-Down", description: `Close the day with a calmer final stop or stay experience in ${destination}.` },
+  const dayThemes = [
+    {
+      label: "Historic Core",
+      slots: [
+        ["Morning", "Sunrise Orientation", `Begin with a scenic introduction to ${destination}.`],
+        ["Morning Activity", "Heritage Walk", `Explore historic corners and local character in ${destination}.`],
+        ["Afternoon", "Local Cuisine", `Enjoy signature daytime food experiences in ${destination}.`],
+        ["Afternoon Activity", "Museum Or Craft Stop", `Spend the mid-afternoon on culture, craft, or a landmark session in ${destination}.`],
+        ["Evening", "Sunset Views", `Catch the golden-hour highlights and best evening scenery in ${destination}.`],
+        ["Evening Activity", "Neighborhood Stroll", `Walk a lively district and experience the local evening rhythm in ${destination}.`],
+        ["Night", "Dining Experience", `Settle into a more atmospheric dinner or lounge moment in ${destination}.`],
+        ["Night Activity", "Stay Wind-Down", `Close the day with a calmer final stop or stay experience in ${destination}.`],
+      ],
+    },
+    {
+      label: "Markets & Culture",
+      slots: [
+        ["Morning", "Old Quarter Start", `Ease into the day with a walk through the older heart of ${destination}.`],
+        ["Morning Activity", "Temple Or Landmark Route", `Focus on a major spiritual or civic landmark in ${destination}.`],
+        ["Afternoon", "Market Lunch Trail", `Use lunch hours to explore local market flavor in ${destination}.`],
+        ["Afternoon Activity", "Gallery Or Museum Session", `Spend the afternoon on an arts, history, or museum stop in ${destination}.`],
+        ["Evening", "Golden Hour Viewpoint", `Move toward a photogenic evening viewpoint in ${destination}.`],
+        ["Evening Activity", "Street Food Stroll", `Follow the after-hours food rhythm and casual crowd flow in ${destination}.`],
+        ["Night", "Signature Dinner Stop", `Anchor the night around one strong dining or social stop in ${destination}.`],
+        ["Night Activity", "Late Evening Pause", `Finish with a slower final stop before closing the day in ${destination}.`],
+      ],
+    },
+    {
+      label: "Green & Scenic",
+      slots: [
+        ["Morning", "Garden District Start", `Open the day with a calmer park, lake, or garden-side introduction to ${destination}.`],
+        ["Morning Activity", "Scenic Route", `Take a visually rewarding route through one scenic side of ${destination}.`],
+        ["Afternoon", "Cafe & Local Lunch", `Break midday with a comfortable lunch and local cafe atmosphere in ${destination}.`],
+        ["Afternoon Activity", "Craft Quarter Session", `Use the afternoon for craft, design, or a cultural quarter stop in ${destination}.`],
+        ["Evening", "Waterfront Or Ridge View", `Catch softer evening light from one of the better outlooks in ${destination}.`],
+        ["Evening Activity", "Local Rhythm Walk", `Follow the neighborhood energy as the day transitions into night in ${destination}.`],
+        ["Night", "Atmospheric Dinner", `Keep the night refined with a more atmospheric dinner or lounge setting in ${destination}.`],
+        ["Night Activity", "Quiet Stay Finish", `End the day with a calmer close and a comfortable stay experience in ${destination}.`],
+      ],
+    },
+    {
+      label: "Modern Local Flow",
+      slots: [
+        ["Morning", "City Pulse Start", `Start with a fresh look at the contemporary side of ${destination}.`],
+        ["Morning Activity", "Boulevard Discovery", `Explore a walkable modern district or public boulevard in ${destination}.`],
+        ["Afternoon", "Lunch Discovery Loop", `Use the lunch window for a strong local stop and nearby discovery in ${destination}.`],
+        ["Afternoon Activity", "Design Or Specialty Stop", `Spend the afternoon on a specialty, design, or niche local attraction in ${destination}.`],
+        ["Evening", "Skyline Or Open View", `Shift into the evening with a wider city view or open-air scenic pause in ${destination}.`],
+        ["Evening Activity", "Lifestyle District Walk", `Take in the social energy of a more active lifestyle district in ${destination}.`],
+        ["Night", "Premium Night Stop", `Use the night for one elevated dining or premium local experience in ${destination}.`],
+        ["Night Activity", "Stay Recovery Window", `Finish the route with a relaxed final stop and recovery pace in ${destination}.`],
+      ],
+    },
   ];
 
   const dayPlans = [];
   for (let d = 1; d <= Number(days); d++) {
+    const theme = dayThemes[(d - 1) % dayThemes.length];
     dayPlans.push({
       day: d,
       title: `Day ${d} in ${destination}`,
-      theme: "City Exploration",
-      activities: slotTemplates.map((slot, idx) => ({
-        time: slot.time,
-        title: `${destination} - ${slot.title}`,
-        description: `${slot.description} Day ${d} focus.`,
-        location: `${destination} ${slot.title}`,
+      theme: theme.label,
+      activities: theme.slots.map((slot, idx) => ({
+        time: slot[0],
+        title: `${destination} - ${slot[1]}`,
+        description: `${slot[2]} Day ${d} focus.`,
+        location: `${destination} ${theme.label} ${slot[1]}`,
         lat: 0,
         lng: 0,
         cost: `$${budget === "luxury" ? 80 + idx * 20 : budget === "moderate" ? 20 + idx * 10 : 10 + idx * 5}-${budget === "luxury" ? 150 + idx * 25 : budget === "moderate" ? 40 + idx * 12 : 25 + idx * 6}`,
