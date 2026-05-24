@@ -8,7 +8,6 @@ import { usePrayerTimes } from '@/hooks/usePrayerTimes';
 import { exportTripPDF, downloadTripPDF } from '@/services/exportTripPDF';
 import { useDeleteTrip } from '@/hooks/use-trips';
 import { useToast } from '@/hooks/use-toast';
-import { resolveApiUrl } from '@/lib/api-contract';
 import { buildActivityDisplayContent, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from '@/lib/trip-itinerary';
 import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerTimesCard, TripPreviewCard } from '@/components/trip/EnhancedPanels';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -230,7 +229,7 @@ const _fetchActivityImage = async (query, globalIndex) => {
 
   try {
     const r = await fetch(
-      resolveApiUrl(`/api/place-image?query=${encodeURIComponent(query)}&photoIndex=${globalIndex || 0}&onlyGoogle=1`),
+      `/api/place-image?query=${encodeURIComponent(query)}&photoIndex=${globalIndex || 0}&onlyGoogle=1`,
       { signal: AbortSignal.timeout(8000) }
     );
     if (r.ok) {
@@ -775,7 +774,7 @@ export default function TripDetail() {
     const token = localStorage.getItem('auth_token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    fetch(resolveApiUrl(`/api/trips/${id}`), { headers, credentials: 'include' })
+    fetch(`/api/trips/${id}`, { headers, credentials: 'include' })
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
