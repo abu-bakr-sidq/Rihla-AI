@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, startTransition } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useUser } from '@/hooks/use-auth';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -110,14 +110,14 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
         {imgSrc ? (
           <img src={imgSrc} onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" alt={displayPlace} />
         ) : null}
-        <div className={`absolute top-0 inset-x-0 h-24 ${isLight ? 'bg-gradient-to-b from-white/90 to-transparent' : 'bg-gradient-to-b from-[#0E1520]/90 to-transparent'}`} />
-        <div className={`absolute bottom-0 inset-x-0 h-32 ${isLight ? 'bg-gradient-to-t from-slate-50 via-slate-50/70 to-transparent' : 'bg-gradient-to-t from-[#0E1520] via-[#0E1520]/60 to-transparent'}`} />
-        <div className="absolute top-3 left-3 backdrop-blur-xl px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg" style={{ background: isLight ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.4)', border: `1px solid ${accentColor}40` }}>
+        <div className={`absolute top-0 inset-x-0 h-24 ${isLight ? 'bg-gradient-to-b from-white/26 via-white/8 to-transparent' : 'bg-gradient-to-b from-[#0E1520]/90 to-transparent'}`} />
+        <div className={`absolute bottom-0 inset-x-0 h-32 ${isLight ? 'bg-gradient-to-t from-[rgba(248,250,252,0.82)] via-[rgba(248,250,252,0.38)] to-transparent' : 'bg-gradient-to-t from-[#0E1520] via-[#0E1520]/60 to-transparent'}`} />
+        <div className="absolute top-3 left-3 backdrop-blur-xl px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg" style={{ background: isLight ? 'rgba(255,255,255,0.94)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(226,232,240,0.96)' : `1px solid ${accentColor}40` }}>
           {SlotIcon ? <SlotIcon size={12} strokeWidth={2.5} style={{ color: accentColor }} /> : null}
           <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: accentColor }}>{slotLabel}</span>
         </div>
-        <div className="absolute top-3 right-3 backdrop-blur-xl px-3 py-1.5 rounded-full shadow-lg" style={{ background: isLight ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(148,163,184,0.22)' : '1px solid rgba(255,255,255,0.1)' }}>
-          <span className={`text-[10px] font-black tracking-wider ${isLight ? 'text-slate-700' : 'text-white/90'}`}>{slotTime}</span>
+        <div className="absolute top-3 right-3 backdrop-blur-xl px-3 py-1.5 rounded-full shadow-lg" style={{ background: isLight ? 'rgba(255,255,255,0.96)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(203,213,225,0.92)' : '1px solid rgba(255,255,255,0.1)' }}>
+          <span className={`text-[10px] font-black tracking-wider ${isLight ? 'text-slate-900' : 'text-white/90'}`}>{slotTime}</span>
         </div>
         <div
           className="absolute bottom-3 right-3 flex items-center gap-1.5 backdrop-blur-xl px-3 py-1.5 rounded-[10px] shadow-lg"
@@ -885,7 +885,7 @@ export default function TripDetail() {
 
   return (
     <AppInnerLayout>
-      <div className={`trip-detail-shell ${isLightDetail ? 'detail-light' : 'detail-dark'} relative w-full min-h-screen pb-10 overflow-hidden`}>
+      <div className={`trip-detail-shell ${isLightDetail ? 'detail-light bg-[#eef4fb]' : 'detail-dark'} relative w-full min-h-screen pb-10 overflow-hidden transition-colors duration-300`}>
         <div className="fixed inset-0 -z-10 overflow-hidden">
           {backgroundSlides.length > 0 ? (
             backgroundSlides.map((src, index) => (
@@ -907,16 +907,16 @@ export default function TripDetail() {
           ) : (
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_34%),linear-gradient(180deg,#0b1728_0%,#07111d_100%)]" />
           )}
-          <div className={`absolute inset-0 transition-all duration-500 ${isLightDetail
-            ? 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.09),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.08),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.1)_0%,rgba(246,249,253,0.3)_45%,rgba(236,242,248,0.62)_100%)]'
+          <div className={`absolute inset-0 transition-all duration-300 ${isLightDetail
+            ? 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.06),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.05),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(244,248,252,0.64)_42%,rgba(238,244,250,0.96)_100%)]'
             : 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.2),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.16),transparent_22%),linear-gradient(180deg,rgba(6,11,20,0.14)_0%,rgba(6,11,20,0.58)_45%,rgba(6,11,20,0.9)_100%)]'}`} />
           <motion.div
-            className={`absolute -top-24 left-[8%] h-[300px] w-[300px] rounded-full blur-[90px] ${isLightDetail ? 'bg-[#38BDF8]/8' : 'bg-[#38BDF8]/10'}`}
+            className={`absolute -top-24 left-[8%] h-[300px] w-[300px] rounded-full blur-[90px] ${isLightDetail ? 'bg-[#38BDF8]/5' : 'bg-[#38BDF8]/10'}`}
             animate={{ x: [0, 44, 0], y: [0, 18, 0], scale: [1, 1.1, 1] }}
             transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
-            className={`absolute top-[18%] right-[10%] h-[240px] w-[240px] rounded-full blur-[82px] ${isLightDetail ? 'bg-[#D4AF37]/8' : 'bg-[#D4AF37]/10'}`}
+            className={`absolute top-[18%] right-[10%] h-[240px] w-[240px] rounded-full blur-[82px] ${isLightDetail ? 'bg-[#D4AF37]/5' : 'bg-[#D4AF37]/10'}`}
             animate={{ x: [0, -32, 0], y: [0, 24, 0], scale: [1, 1.08, 1] }}
             transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
           />
@@ -927,7 +927,7 @@ export default function TripDetail() {
             className="trip-glass-panel mb-4 rounded-[28px] border px-4 py-4 md:px-5 md:py-5 shadow-[0_28px_90px_rgba(0,0,0,0.18)]"
             style={{
               background: isLightDetail
-                ? 'linear-gradient(180deg, rgba(255,255,255,0.78) 0%, rgba(244,248,252,0.9) 100%)'
+                ? 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(244,248,252,0.96) 100%)'
                 : 'linear-gradient(180deg, rgba(8,18,31,0.62) 0%, rgba(8,16,28,0.82) 100%)',
               borderColor: isLightDetail ? 'rgba(148,163,184,0.2)' : 'rgba(255,255,255,0.08)',
               backdropFilter: 'blur(22px)'
@@ -962,11 +962,11 @@ export default function TripDetail() {
                       compact={true}
                       isDarkOverride={!isLightDetail}
                       className="shadow-none"
-                      onClick={() => setDetailTheme((curr) => curr === 'light' ? 'dark' : 'light')}
+                      onClick={() => startTransition(() => setDetailTheme((curr) => curr === 'light' ? 'dark' : 'light'))}
                     />
                   </div>
                 </div>
-                <div className={`rounded-[20px] border px-4 py-3 text-center backdrop-blur-xl ${isLightDetail ? 'border-[#D4AF37]/20 bg-white/72' : 'border-[#D4AF37]/16 bg-black/18'}`}>
+                <div className={`rounded-[20px] border px-4 py-3 text-center backdrop-blur-xl transition-colors duration-300 ${isLightDetail ? 'border-[#D4AF37]/24 bg-white/90' : 'border-[#D4AF37]/16 bg-black/18'}`}>
                   <p className={`text-[9px] uppercase tracking-[0.26em] mb-1 ${isLightDetail ? 'text-slate-500' : 'text-white/45'}`}>Total Budget</p>
                   <p className="text-[clamp(1.75rem,3vw,2.7rem)] font-black text-[#D4AF37] tracking-tight leading-none">{fmtCur(TOTAL_BUDGET, tripCurrency)}</p>
                 </div>

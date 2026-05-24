@@ -197,7 +197,7 @@ function AccordionShell({ title, Icon, accent, defaultOpen = true, children, isL
       )}
       style={{
         background: isLight
-          ? "linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(241,245,249,0.98) 100%)"
+          ? "linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(243,247,251,0.99) 100%)"
           : "linear-gradient(180deg, rgba(16,23,37,0.96) 0%, rgba(8,13,24,0.92) 100%)",
         boxShadow: isLight
           ? "0 18px 46px rgba(148,163,184,0.16)"
@@ -393,8 +393,8 @@ export function TripPrayerTimesCard({ destination, dateStr, dayIdx, onPrev, onNe
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <div className={cn("flex h-7 w-7 items-center justify-center rounded-2xl", isLight ? "bg-emerald-500/10" : "bg-emerald-400/10")}>
-                      <Moon size={13} className={isLight ? "text-emerald-600" : "text-emerald-300"} />
+                    <div className={cn("flex h-7 w-7 items-center justify-center rounded-2xl", isLight ? "bg-emerald-500/12" : "bg-emerald-400/10")}>
+                      <Moon size={13} className={isLight ? "text-emerald-700" : "text-emerald-300"} />
                     </div>
                     <span className={cn("text-[9px] font-black uppercase tracking-[0.18em]", isLight ? "text-slate-600" : "text-white/72")}>Prayer Schedule</span>
                   </div>
@@ -403,7 +403,7 @@ export function TripPrayerTimesCard({ destination, dateStr, dayIdx, onPrev, onNe
                 </div>
                 <div className={cn(
                   "shrink-0 rounded-[14px] border px-2.5 py-1.5 text-right",
-                  isLight ? "border-emerald-200/80 bg-white/72" : "border-emerald-400/15 bg-emerald-400/8"
+                  isLight ? "border-emerald-300/80 bg-white/94" : "border-emerald-400/15 bg-emerald-400/8"
                 )}>
                   <p className={cn("text-[7px] font-black uppercase tracking-[0.16em]", isLight ? "text-emerald-700/70" : "text-emerald-300/70")}>Next</p>
                   <p className={cn("mt-0.5 text-[11px] font-black", isLight ? "text-slate-900" : "text-white")}>{nextPrayer?.key || "Prayer"}</p>
@@ -411,7 +411,7 @@ export function TripPrayerTimesCard({ destination, dateStr, dayIdx, onPrev, onNe
                 </div>
               </div>
             </div>
-            <Moon size={54} className={cn("absolute right-2 top-2", isLight ? "text-emerald-500/6" : "text-white/5")} strokeWidth={1.1} />
+            <Moon size={40} className={cn("absolute right-3 top-3 pointer-events-none", isLight ? "text-emerald-500/4" : "text-white/5")} strokeWidth={1.05} />
           </div>
 
           <div className="px-3 py-3">
@@ -504,7 +504,7 @@ export function TripPreviewCard({ destination, imageUrl, selectedItem, currency,
     <div className={cn(
       "rounded-[28px] overflow-hidden border transition-colors duration-300",
       isLight ? "border-slate-300/55 shadow-[0_20px_50px_rgba(148,163,184,0.18)]" : "border-white/10 shadow-[0_20px_55px_rgba(0,0,0,0.3)]"
-    )} style={{ background: isLight ? "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(242,246,251,0.98) 100%)" : "linear-gradient(180deg,rgba(18,28,44,0.98) 0%,rgba(9,14,24,0.98) 100%)" }}>
+    )} style={{ background: isLight ? "linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(243,247,251,0.99) 100%)" : "linear-gradient(180deg,rgba(18,28,44,0.98) 0%,rgba(9,14,24,0.98) 100%)" }}>
       <div className={cn("relative h-[240px]", isLight ? "bg-slate-200" : "bg-[#111f30]")}>
         {displayImage ? (
           <img
@@ -520,9 +520,9 @@ export function TripPreviewCard({ destination, imageUrl, selectedItem, currency,
             }}
           />
         ) : (
-          <div className={cn("absolute inset-0", isLight ? "bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.22),transparent_58%),linear-gradient(180deg,#dcebf8_0%,#bdd0e2_100%)]" : "bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_58%),linear-gradient(180deg,#142033_0%,#0b1321_100%)]")} />
+          <div className={cn("absolute inset-0", isLight ? "bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.14),transparent_58%),linear-gradient(180deg,#dcebf8_0%,#bdd0e2_100%)]" : "bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_58%),linear-gradient(180deg,#142033_0%,#0b1321_100%)]")} />
         )}
-        <div className={cn("absolute inset-0", isLight ? "bg-[linear-gradient(to_top,rgba(248,250,252,0.98)_0%,rgba(248,250,252,0.38)_50%,transparent_100%)]" : "bg-[linear-gradient(to_top,rgba(7,12,20,0.96)_0%,rgba(7,12,20,0.42)_48%,transparent_100%)]")} />
+        <div className={cn("absolute inset-0", isLight ? "bg-[linear-gradient(to_top,rgba(248,250,252,0.84)_0%,rgba(248,250,252,0.18)_48%,transparent_100%)]" : "bg-[linear-gradient(to_top,rgba(7,12,20,0.96)_0%,rgba(7,12,20,0.42)_48%,transparent_100%)]")} />
         <div className="absolute left-5 right-5 bottom-4">
           {selectedItem ? (
             <>
