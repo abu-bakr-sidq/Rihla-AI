@@ -71,6 +71,24 @@ function normalizeTravelStyle(raw) {
   return String(pickScalar(raw, "balanced") || "balanced").trim().toLowerCase() || "balanced";
 }
 
+const STYLE_FALLBACK_THEMES = {
+  luxury: ["Arrival & Signature Comfort", "Private Heritage Flow", "Dining & Design Districts", "Scenic Leisure", "Boutique Culture", "Soft Luxury", "Waterfront Indulgence", "Grand Finale"],
+  cultural: ["Arrival & Historic Orientation", "Sacred Heritage Trail", "Museums & Story Layers", "Old Quarter Deep Dive", "Craft & Living Culture", "Archive Moments", "Architecture Details", "Farewell Through Heritage Streets"],
+  adventure: ["Arrival & Outdoor Orientation", "Active Morning Push", "Trail & Scenic Movement", "Action With Recovery", "Open-Air Discovery", "Challenge & Reward", "Reset By Water", "Finale Adventure Highlights"],
+  cinematic: ["Arrival & First Frames", "Panoramic Mornings", "Texture & Atmosphere", "Scenic Layers", "Blue Hour Highlights", "Architecture & Light Study", "Golden-Hour Build", "Farewell Through Best Views"],
+  urban: ["Arrival & City Pulse", "Boulevards & District Flow", "Markets & Design", "Modern City Contrasts", "Street Culture Energy", "Shopping & Skyline", "After-Dark Lifestyle", "Final City Highlights"],
+  wellness: ["Arrival & Nervous-System Reset", "Mindful Morning Flow", "Nature & Gentle Motion", "Spa & Quiet Corners", "Sacred Pause", "Slow Coastal Day", "Deep Rest", "Farewell Through Soft Rituals"],
+  halal: ["Arrival & Prayer-Aware Orientation", "Mosques & Halal Dining", "Family-Friendly Flow", "Comfort & Local Culture", "Sacred Architecture", "Halal Food Trail", "Scenic Calm", "Farewell With Reflection"],
+  coastal: ["Arrival & Sea-Breeze Orientation", "Promenade & Beach Rhythm", "Harbourfront & Open Water", "Sand & Slow Afternoons", "Clifftop Or Island Views", "Boardwalk Life", "Waterfront Finale", "Farewell Through The Shoreline"],
+  balanced: ["Arrival & First Impressions", "Historic Core", "Markets & Culture", "Green & Scenic", "Modern Local Flow", "Food & Evening Atmosphere", "Neighborhood Discovery", "Farewell Highlights"],
+};
+
+function buildStyleFallbackTheme(travelStyle = "balanced", day = 1) {
+  const style = normalizeTravelStyle(travelStyle);
+  const themes = STYLE_FALLBACK_THEMES[style] || STYLE_FALLBACK_THEMES.balanced;
+  return themes[(Math.max(1, day) - 1) % themes.length] || `Day ${day}`;
+}
+
 async function findTripByIdentifier(identifier, { lean = false } = {}) {
   if (!identifier) return null;
   const query = mongoose.Types.ObjectId.isValid(identifier)
@@ -97,16 +115,18 @@ async function getUserDNA(userId) {
 
 // Fallback itinerary when everything else fails
 function buildFallbackItinerary({ destination, days, budget, travelStyle, interests }) {
+  const style = normalizeTravelStyle(travelStyle);
   const dayPlans = [];
   for (let d = 1; d <= Number(days); d++) {
+    const theme = buildStyleFallbackTheme(style, d);
     dayPlans.push({
       day: d,
       title: `Day ${d} in ${destination}`,
-      theme: "City Exploration",
+      theme,
       activities: [
-        { time: "Morning", title: `${destination} — Morning Walk`, description: `Explore ${destination} in the morning.`, location: destination, lat: 0, lng: 0, cost: `$${budget === "luxury" ? "80-150" : "20-40"}` },
-        { time: "Afternoon", title: `${destination} — Local Cuisine`, description: `Enjoy local food in ${destination}.`, location: destination, lat: 0, lng: 0, cost: `$${budget === "luxury" ? "60-120" : "15-30"}` },
-        { time: "Evening", title: `${destination} — Sunset Views`, description: `Evening highlights of ${destination}.`, location: destination, lat: 0, lng: 0, cost: `$${budget === "luxury" ? "40-80" : "10-20"}` },
+        { time: "Morning", title: `${destination} — ${theme} Start`, description: `Begin ${destination} through a ${style}-aware morning chapter shaped around ${theme.toLowerCase()}.`, location: destination, lat: 0, lng: 0, cost: `$${budget === "luxury" ? "80-150" : "20-40"}` },
+        { time: "Afternoon", title: `${destination} — ${style === "cultural" ? "Story-Led" : style === "adventure" ? "Active" : style === "luxury" ? "Refined" : "Curated"} Midday Flow`, description: `Use the middle of the day to deepen the ${style} rhythm of your trip in ${destination}.`, location: destination, lat: 0, lng: 0, cost: `$${budget === "luxury" ? "60-120" : "15-30"}` },
+        { time: "Evening", title: `${destination} — ${style === "coastal" ? "Waterfront" : style === "cinematic" ? "Golden Hour" : style === "urban" ? "City Lights" : "Evening"} Close`, description: `Close day ${d} with an evening chapter that still fits your ${style} travel style in ${destination}.`, location: destination, lat: 0, lng: 0, cost: `$${budget === "luxury" ? "40-80" : "10-20"}` },
       ],
     });
   }
@@ -118,7 +138,7 @@ function buildFallbackItinerary({ destination, days, budget, travelStyle, intere
   };
 }
 
-function buildRichFallbackItinerary({ destination, days, budget }) {
+function buildRichFallbackItinerary({ destination, days, budget, travelStyle = "balanced" }) {
   const dayThemes = [
     {
       label: "Historic Core",
@@ -177,15 +197,16 @@ function buildRichFallbackItinerary({ destination, days, budget }) {
   const dayPlans = [];
   for (let d = 1; d <= Number(days); d++) {
     const theme = dayThemes[(d - 1) % dayThemes.length];
+    const styleTheme = buildStyleFallbackTheme(travelStyle, d);
     dayPlans.push({
       day: d,
       title: `Day ${d} in ${destination}`,
-      theme: theme.label,
+      theme: styleTheme,
       activities: theme.slots.map((slot, idx) => ({
         time: slot[0],
         title: `${destination} - ${slot[1]}`,
-        description: `${slot[2]} Day ${d} focus.`,
-        location: `${destination} ${theme.label} ${slot[1]}`,
+        description: `${slot[2]} Day ${d} focus within the ${styleTheme.toLowerCase()} chapter.`,
+        location: `${destination} ${styleTheme} ${slot[1]}`,
         lat: 0,
         lng: 0,
         cost: `$${budget === "luxury" ? 80 + idx * 20 : budget === "moderate" ? 20 + idx * 10 : 10 + idx * 5}-${budget === "luxury" ? 150 + idx * 25 : budget === "moderate" ? 40 + idx * 12 : 25 + idx * 6}`,

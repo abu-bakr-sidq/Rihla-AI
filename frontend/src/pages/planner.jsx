@@ -22,7 +22,7 @@ import { FocusCards } from "@/components/ui/focus-cards";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { ChatButton } from "@/components/ChatBot/ChatButton";
 import { exportTripPDF, downloadTripPDF } from "@/services/exportTripPDF";
-import { buildActivityDisplayContent, buildStreetFindChips, extractPlaceImageQuery, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from "@/lib/trip-itinerary";
+import { buildActivityDisplayContent, buildStreetFindChips, buildStyleAwareDayTheme, extractPlaceImageQuery, generatePlaceCardFallbackContent, getStyleTravelProfile, getTripPhase, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from "@/lib/trip-itinerary";
 import { sanitizeVisibleText } from "@/lib/display-text";
 import { resolveApiUrl } from "@/lib/api-contract";
 import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerTimesCard, TripPreviewCard } from "@/components/trip/EnhancedPanels";
@@ -1037,9 +1037,12 @@ function buildVariantActivity(category, variantIndex, fd) {
   const destination = fd.destination || 'this destination';
   const districts = getFallbackDistricts(destination);
   const district = districts[variantIndex % districts.length];
-  const variantLabel = FALLBACK_SLOT_VARIANTS[category]?.[variantIndex % FALLBACK_SLOT_VARIANTS[category].length] || 'Curated Stop';
-  const theme = FALLBACK_DAY_THEMES[variantIndex % FALLBACK_DAY_THEMES.length];
+  const styleProfile = getStyleTravelProfile(fd.travelStyle);
+  const variantPool = styleProfile.slotLabels?.[category] || FALLBACK_SLOT_VARIANTS[category];
+  const variantLabel = variantPool?.[variantIndex % variantPool.length] || FALLBACK_SLOT_VARIANTS[category]?.[variantIndex % FALLBACK_SLOT_VARIANTS[category].length] || 'Curated Stop';
+  const theme = buildStyleAwareDayTheme(fd.travelStyle, variantIndex + 1, Math.max(4, Number(fd.totalDaysHint || 8)));
   const style = fd.travelStyle || 'balanced';
+  const phase = getTripPhase(variantIndex + 1, Math.max(4, Number(fd.totalDaysHint || 8)));
   const slotNarratives = {
     morning: [
       `Start in ${district} with a gentler introduction to ${destination}, keeping the first stop easy to enter and rewarding on foot.`,
@@ -1062,11 +1065,21 @@ function buildVariantActivity(category, variantIndex, fd) {
       `End around ${district} so ${destination} finishes with comfort, ambience, and a lighter late-night pace.`
     ]
   };
+  const styleClosers = {
+    luxury: ` Shape it like a ${phase === 'finale' ? 'grand closing' : 'premium'} chapter, with comfort and atmosphere doing most of the work.`,
+    cultural: ` Treat it as part of a deeper story-led route through ${destination}, not just an isolated stop.`,
+    adventure: ` Keep the rhythm active enough to feel like forward motion, but leave recovery space for the rest of the trip.`,
+    cinematic: ` Give the light, framing, and atmosphere enough time to matter here.`,
+    urban: ` Let one district reveal multiple layers before moving on again.`,
+    wellness: ` Keep the pacing restorative and spacious rather than trying to maximize coverage.`,
+    halal: ` Keep the flow comfortable, respectful, and easy to navigate around practical needs.`,
+    coastal: ` Let the water, breeze, or open-air edge shape the rhythm rather than forcing the pace.`,
+  };
   const desc = slotNarratives[category]?.[variantIndex % slotNarratives[category].length] || `Explore ${district} in ${destination}.`;
 
   return {
     name: `${district} ${variantLabel}`,
-    desc: `${desc} This stop is tuned for your ${style} travel style and supports the day's ${theme.toLowerCase()} mood with a more distinct local angle.`,
+    desc: `${desc} This stop is tuned for your ${style} travel style and supports the day's ${theme.toLowerCase()} mood with a more distinct local angle.${styleClosers[String(style).toLowerCase()] || ''}`,
     id: null,
   };
 }
@@ -1089,6 +1102,7 @@ function buildExpandedActivityPool(items, category, needed, fd) {
 
 function buildItinerary(fd) {
   const daysNum = Math.max(1, Math.ceil((new Date(fd.endDate) - new Date(fd.startDate)) / 86400000));
+  fd.totalDaysHint = daysNum;
   const travelers = Math.max(1, Number(fd.travelers || fd.groupSize) || 1);
   const category = typeof fd.budgetCategory === "string"
     ? fd.budgetCategory
@@ -1141,7 +1155,7 @@ function buildItinerary(fd) {
     const date = new Date(fd.startDate);
     date.setDate(date.getDate() + i);
     const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const dayTheme = FALLBACK_DAY_THEMES[(dNum - 1) % FALLBACK_DAY_THEMES.length] || `Day ${dNum} - ${fd.destination}`;
+    const dayTheme = buildStyleAwareDayTheme(fd.travelStyle, dNum, daysNum) || FALLBACK_DAY_THEMES[(dNum - 1) % FALLBACK_DAY_THEMES.length] || `Day ${dNum} - ${fd.destination}`;
     const dayBudgetProfile = dayBudgetProfiles[i] || buildDayBudgetProfile(dayTheme, i, daysNum, fd.destination, fd.travelStyle);
 
     const getAct = (slot) => {
@@ -1160,7 +1174,12 @@ function buildItinerary(fd) {
       const slot = baseCat[si];
       const act = getAct(slot);
       const knownId = act.id && act.id.length >= 10 && !act.id.includes(' ');
-      const fallbackContent = generatePlaceCardFallbackContent(act.name, act.desc, fd.destination, slotKey);
+      const fallbackContent = generatePlaceCardFallbackContent(act.name, act.desc, fd.destination, slotKey, {
+        travelStyle: fd.travelStyle,
+        dayNumber: dNum,
+        totalDays: daysNum,
+        dayTheme,
+      });
       const transferMinutes = 14 + ((dNum * 11 + si * 7) % 18);
       acc[slotKey] = {
         place: act.name,

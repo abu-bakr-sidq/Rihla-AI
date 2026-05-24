@@ -369,11 +369,13 @@ function normalizePlaceDescription(text, destination) {
   return clipped.charAt(0).toUpperCase() + clipped.slice(1);
 }
 
-function buildDailyInsights(destination, travelStyle, interests, day = 1, slotIndex = 0, placeTitle = "") {
+function buildDailyInsights(destination, travelStyle, interests, day = 1, slotIndex = 0, placeTitle = "", totalDays = 1) {
   const destinationLabel = formatDisplayName(destination) || destination;
   const interestText = interests.length ? interests.join(", ") : "general sightseeing";
   const placeLabel = formatDisplayName(String(placeTitle || destinationLabel).trim()) || destinationLabel;
   const slotName = ["morning", "morning", "afternoon", "afternoon", "evening", "evening", "night", "night"][slotIndex] || "daytime";
+  const styleProfile = getStyleProfile(travelStyle);
+  const tripPhase = getTripPhase(day, totalDays);
   const daySeed = day * 17 + slotIndex * 31 + placeLabel.length;
   const districts = rotateUnique([
     "old quarter", "riverfront zone", "cultural belt", "central district",
@@ -391,13 +393,20 @@ function buildDailyInsights(destination, travelStyle, interests, day = 1, slotIn
     `Pair ${placeLabel} with a nearby cafe or market stop to keep pacing comfortable.`,
     `Keep one flexible break after ${placeLabel} before moving to the next area.`
   ];
+  const phaseLine = {
+    arrival: `Use ${placeLabel} to set the tone for your first day in ${destinationLabel}.`,
+    deep: `This part of the trip should make ${destinationLabel} feel more layered and less obvious.`,
+    reset: `Keep the pacing easier here so the longer itinerary still has room to breathe.`,
+    finale: `Let ${placeLabel} feel like part of a proper closing chapter for ${destinationLabel}.`,
+    "finale-build": `Build gently toward the closing stretch instead of peaking too early.`,
+  }[tripPhase] || "";
   return {
     nearbyHighlights: [`${placeLabel} surroundings`, `Walkable ${districts[0] || "city"} segment`, `${districts[1] || "viewpoint"} photo point`],
     travelSuggestion: `${chooseVariant(routePatterns, daySeed)} Day ${day} focus.`,
     localFood: `Focus on signature dishes in ${districts[0] || "nearby local areas"}. Preference focus: ${interestText}.`,
     transportationTip: "Shift transfers 20-30 minutes earlier to avoid peak traffic windows.",
     safetyTip: `Keep valuables secured around ${placeLabel} and avoid isolated stretches late evening.`,
-    culturalInsight: `At ${placeLabel}, follow local etiquette and observe site-specific guidelines.`
+    culturalInsight: `At ${placeLabel}, follow local etiquette and observe site-specific guidelines. ${styleProfile.note} ${phaseLine}`.trim()
   };
 }
 
@@ -465,6 +474,80 @@ function activitySummaryByInterest(interests, seed = 0) {
   return chooseVariant(["Balanced city highlights.", "Designed for broad city coverage.", "Combines key local highlights."], seed);
 }
 
+function resolveStyleProfileKey(travelStyle = "") {
+  const normalized = normalizeToken(travelStyle).replace(/\s+/g, "");
+  if (!normalized) return "balanced";
+  const match = Object.entries(STYLE_CITY_PROFILES).find(([, profile]) =>
+    (profile.aliases || []).some((alias) => normalizeToken(alias).replace(/\s+/g, "") === normalized)
+  );
+  return match?.[0] || "balanced";
+}
+
+function getStyleProfile(travelStyle = "") {
+  return STYLE_CITY_PROFILES[resolveStyleProfileKey(travelStyle)] || STYLE_CITY_PROFILES.balanced;
+}
+
+function getTripPhase(day = 1, totalDays = 1) {
+  const safeDay = Math.max(1, Number(day) || 1);
+  const safeTotal = Math.max(1, Number(totalDays) || 1);
+  if (safeDay === 1) return "arrival";
+  if (safeDay === safeTotal) return "finale";
+  if (safeTotal <= 4) return safeDay === 2 ? "core" : "deep";
+  const progress = safeDay / safeTotal;
+  if (progress <= 0.28) return "core";
+  if (progress <= 0.6) return "deep";
+  if (progress <= 0.82) return "reset";
+  return "finale-build";
+}
+
+function buildStyleDayTheme(travelStyle = "", day = 1, totalDays = 1) {
+  const profile = getStyleProfile(travelStyle);
+  const themes = Array.isArray(profile.dayThemes) && profile.dayThemes.length ? profile.dayThemes : CITY_ITINERARY_DAY_THEMES;
+  const base = themes[(Math.max(1, day) - 1) % themes.length] || `Day ${day}`;
+  const phase = getTripPhase(day, totalDays);
+  const suffix = {
+    reset: " - Slower Chapter",
+    "finale-build": " - Closing Build",
+    finale: " - Grand Finish",
+  }[phase] || "";
+  return `${base}${suffix}`;
+}
+
+function inferPlaceKind(place = {}) {
+  const category = normalizeToken(place.category || "");
+  const title = normalizeToken(place.title || "");
+  const description = normalizeToken(place.description || "");
+  const source = `${category} ${title} ${description}`;
+  if (/temple|mosque|church|shrine|monastery|cathedral|basilica|sacred/.test(source)) return "temple";
+  if (/museum|gallery|archive|heritage|culture/.test(source)) return "museum";
+  if (/beach|coast|shore|promenade/.test(source)) return "beach";
+  if (/waterfront|harbour|harbor|river|lake|marina|boat/.test(source)) return "waterfront";
+  if (/park|garden|forest|nature|trail|hill|marsh|peak|valley/.test(source)) return "park";
+  if (/market|bazaar|souk|shopping|mall/.test(source)) return "market";
+  if (/neighborhood|neighbourhood|street|district|quarter/.test(source)) return "neighborhood";
+  if (/landmark|fort|palace|tower|lighthouse|summit|view/.test(source)) return "landmark";
+  return category || "generic";
+}
+
+function scorePlaceForStyle(place, travelStyle, slotName, day, totalDays) {
+  const profile = getStyleProfile(travelStyle);
+  const desired = profile.slotCategories?.[slotName] || profile.slotCategories?.morning || [];
+  const kind = inferPlaceKind(place);
+  let score = 0;
+  if (desired.includes(kind)) score += 8;
+  if (kind === "waterfront" && /coastal|cinematic|luxury/.test(resolveStyleProfileKey(travelStyle))) score += 4;
+  if (kind === "temple" && /cultural|halal|wellness/.test(resolveStyleProfileKey(travelStyle))) score += 4;
+  if (kind === "market" && /urban|halal|cultural/.test(resolveStyleProfileKey(travelStyle))) score += 3;
+  if (kind === "park" && /wellness|adventure|cinematic|coastal/.test(resolveStyleProfileKey(travelStyle))) score += 3;
+  if (kind === "museum" && /cultural|urban|luxury/.test(resolveStyleProfileKey(travelStyle))) score += 3;
+  const phase = getTripPhase(day, totalDays);
+  if (phase === "arrival" && /landmark|waterfront|park/.test(kind)) score += 2;
+  if (phase === "reset" && /park|waterfront|beach|culture/.test(kind)) score += 2;
+  if (phase === "finale" && /waterfront|landmark|culture|beach/.test(kind)) score += 2;
+  score += (place.title || "").length % 3;
+  return score;
+}
+
 const SLOT_TIME_LABELS = [
   "Morning",
   "Morning Activity",
@@ -487,23 +570,37 @@ const SLOT_ACTIVITY_FOCUS = [
   "Close the day with a relaxed final stop or stay experience.",
 ];
 
-function makePlaceActivity(place, destination, budget, slotIndex, travelStyle, interests, day = 1) {
+function makePlaceActivity(place, destination, budget, slotIndex, travelStyle, interests, day = 1, totalDays = 1, dayTheme = "") {
   const destinationLabel = formatDisplayName(destination) || destination;
   const concise = normalizePlaceDescription(place.description, destination);
-  const insights = buildDailyInsights(destination, travelStyle, interests, day, slotIndex, place.title);
+  const insights = buildDailyInsights(destination, travelStyle, interests, day, slotIndex, place.title, totalDays);
   const revisitCount = Number(place.revisitCount || 1);
   const title = revisitCount > 1 ? `${place.title} (Visit ${revisitCount})` : place.title;
+  const styleProfile = getStyleProfile(travelStyle);
+  const phase = getTripPhase(day, totalDays);
+  const styleKey = resolveStyleProfileKey(travelStyle);
+  const styleClose = {
+    luxury: "Favor atmosphere, comfort, and one standout premium moment.",
+    cultural: "Let the strongest story or heritage layer guide the stop.",
+    adventure: "Keep the momentum active without losing later-day recovery.",
+    cinematic: "Give the best light or most rewarding frame enough time to matter.",
+    urban: "Let one district reveal several layers instead of over-transferring.",
+    wellness: "Protect spaciousness so the experience feels restorative, not packed.",
+    halal: "Keep the route comfortable and easy to navigate around practical needs.",
+    coastal: "Let the waterfront rhythm shape the pace instead of forcing it inland.",
+    balanced: "Balance atmosphere, local texture, and a clear highlight.",
+  }[styleKey] || "Balance atmosphere, local texture, and a clear highlight.";
   return {
     time: SLOT_TIME_LABELS[slotIndex] || "Anytime",
     title,
-    description: `${concise}${concise.endsWith(".") ? "" : "."} ${SLOT_ACTIVITY_FOCUS[slotIndex] || "Enjoy a well-paced city moment."} ${activitySummaryByInterest(interests, day * 13 + slotIndex * 7 + title.length)} Day ${day} focus.`,
+    description: `${concise}${concise.endsWith(".") ? "" : "."} ${SLOT_ACTIVITY_FOCUS[slotIndex] || "Enjoy a well-paced city moment."} ${activitySummaryByInterest(interests, day * 13 + slotIndex * 7 + title.length)} Day ${day} focus within the ${dayTheme || buildStyleDayTheme(travelStyle, day, totalDays)} chapter. ${styleClose}`,
     location: `${place.title}, ${destinationLabel}`,
     lat: place.lat,
     lng: place.lng,
     imageUrl: place.imageUrl || null,
     imageAlternatives: Array.isArray(place.imageAlternatives) ? place.imageAlternatives : [],
     cost: normalizeCost(budget, slotIndex + 1),
-    tips: travelStyle === "packed" ? "Start early and pre-book timed entries." : "Keep a 30-45 minute buffer.",
+    tips: travelStyle === "packed" ? "Start early and pre-book timed entries." : `${styleProfile.note} Keep a 30-45 minute buffer.`,
     nearbyHighlights: insights.nearbyHighlights,
     travelSuggestion: insights.travelSuggestion,
     localFood: insights.localFood,
@@ -546,6 +643,31 @@ function makeSyntheticPlace(destination, day, slot, fallbackBase) {
   };
 }
 
+function pickPlaceForSlot(candidates, usedKeys, travelStyle, slotName, day, totalDays, slotIndex = 0) {
+  const ranked = [...(Array.isArray(candidates) ? candidates : [])]
+    .sort((a, b) => {
+      const scoreDiff = scorePlaceForStyle(b, travelStyle, slotName, day, totalDays) - scorePlaceForStyle(a, travelStyle, slotName, day, totalDays);
+      if (scoreDiff !== 0) return scoreDiff;
+      return String(a.title || "").localeCompare(String(b.title || ""));
+    });
+
+  for (const candidate of ranked) {
+    const key = normalizeToken(candidate.title);
+    const usage = usedKeys.get(key) || 0;
+    if (usage === 0 || (slotIndex >= 6 && usage < 2)) {
+      usedKeys.set(key, usage + 1);
+      return candidate;
+    }
+  }
+
+  const fallback = ranked[slotIndex % Math.max(1, ranked.length)] || null;
+  if (fallback) {
+    const key = normalizeToken(fallback.title);
+    usedKeys.set(key, (usedKeys.get(key) || 0) + 1);
+  }
+  return fallback;
+}
+
 const CITY_ITINERARY_DAY_THEMES = [
   "Historic Core",
   "Markets & Culture",
@@ -554,6 +676,180 @@ const CITY_ITINERARY_DAY_THEMES = [
   "Food & Evening Atmosphere",
   "Neighborhood Discovery",
 ];
+
+const STYLE_CITY_PROFILES = {
+  luxury: {
+    aliases: ["luxury", "premium"],
+    dayThemes: [
+      "Arrival & Signature Comfort",
+      "Private Heritage Flow",
+      "Design, Dining & Refined Districts",
+      "Scenic Leisure Chapter",
+      "Boutique Culture & Shopping",
+      "Soft Luxury & Local Details",
+      "Waterfront Aperitif Rhythm",
+      "Grand Finale & Night Ambience",
+    ],
+    slotCategories: {
+      morning: ["landmark", "culture", "park", "beach"],
+      afternoon: ["museum", "culture", "mall", "market"],
+      evening: ["waterfront", "beach", "park", "landmark"],
+      night: ["mall", "culture", "waterfront", "landmark"],
+    },
+    note: "Prioritize comfort, premium atmosphere, and one strong signature highlight over volume.",
+  },
+  cultural: {
+    aliases: ["cultural", "history", "heritage"],
+    dayThemes: [
+      "Arrival & Historic Orientation",
+      "Sacred Heritage Trail",
+      "Museums & Story Layers",
+      "Old Quarter Deep Dive",
+      "Markets, Craft & Living Culture",
+      "Traditions & Archive Moments",
+      "Architecture & Quiet Details",
+      "Farewell Through Heritage Streets",
+    ],
+    slotCategories: {
+      morning: ["temple", "landmark", "culture", "museum"],
+      afternoon: ["museum", "culture", "market", "neighborhood"],
+      evening: ["landmark", "waterfront", "neighborhood", "culture"],
+      night: ["culture", "landmark", "neighborhood", "market"],
+    },
+    note: "Use each day to deepen the destination's story instead of flattening it into generic sightseeing.",
+  },
+  adventure: {
+    aliases: ["adventure", "active"],
+    dayThemes: [
+      "Arrival & Outdoor Orientation",
+      "Active Morning Push",
+      "Trail, Ridge & Scenic Movement",
+      "Local Action & Recovery Balance",
+      "Open-Air Discovery Day",
+      "Challenge & Reward Circuit",
+      "Waterfront or Peak Reset",
+      "Finale Adventure Highlights",
+    ],
+    slotCategories: {
+      morning: ["nature", "park", "waterfront", "landmark"],
+      afternoon: ["nature", "park", "market", "neighborhood"],
+      evening: ["waterfront", "park", "landmark", "beach"],
+      night: ["neighborhood", "market", "culture", "waterfront"],
+    },
+    note: "Front-load movement and outdoor reward while protecting recovery later in the day.",
+  },
+  cinematic: {
+    aliases: ["cinematic", "scenery", "photography"],
+    dayThemes: [
+      "Arrival & First Frames",
+      "Panoramic Mornings",
+      "Texture, Streets & Atmosphere",
+      "Scenic Layers & Quiet Vistas",
+      "Blue Hour Highlights",
+      "Architecture & Light Study",
+      "Golden-Hour Finale Build",
+      "Farewell Through Best Views",
+    ],
+    slotCategories: {
+      morning: ["beach", "park", "landmark", "nature"],
+      afternoon: ["culture", "museum", "neighborhood", "market"],
+      evening: ["waterfront", "beach", "landmark", "park"],
+      night: ["landmark", "waterfront", "culture", "market"],
+    },
+    note: "Let light, scenery, and atmosphere decide the strongest moments of the day.",
+  },
+  urban: {
+    aliases: ["urban", "city"],
+    dayThemes: [
+      "Arrival & City Pulse",
+      "Boulevards & District Flow",
+      "Markets, Cafes & Design",
+      "Modern City Contrasts",
+      "Street Culture & Food Energy",
+      "Shopping, Skyline & Local Motion",
+      "After-Dark Lifestyle Circuit",
+      "Final City Highlights",
+    ],
+    slotCategories: {
+      morning: ["landmark", "neighborhood", "park", "culture"],
+      afternoon: ["market", "mall", "culture", "museum"],
+      evening: ["waterfront", "landmark", "neighborhood", "market"],
+      night: ["market", "mall", "neighborhood", "culture"],
+    },
+    note: "Favor walkable districts, modern local life, and layered city energy.",
+  },
+  wellness: {
+    aliases: ["wellness", "relaxation"],
+    dayThemes: [
+      "Arrival & Nervous-System Reset",
+      "Mindful Morning Flow",
+      "Nature, Calm & Gentle Motion",
+      "Spa, Tea & Quiet Corners",
+      "Sacred Pause & Reflection",
+      "Slow Coastal or Garden Day",
+      "Deep Rest & Nourishing Meals",
+      "Farewell Through Soft Rituals",
+    ],
+    slotCategories: {
+      morning: ["park", "nature", "temple", "beach"],
+      afternoon: ["park", "culture", "museum", "waterfront"],
+      evening: ["waterfront", "beach", "park", "culture"],
+      night: ["culture", "waterfront", "park", "neighborhood"],
+    },
+    note: "Protect calm, recovery, and low-friction pacing instead of maximizing stop count.",
+  },
+  halal: {
+    aliases: ["halal", "halalfriendly"],
+    dayThemes: [
+      "Arrival & Prayer-Aware Orientation",
+      "Mosques, Heritage & Halal Dining",
+      "Family-Friendly City Flow",
+      "Markets, Modest Comfort & Local Culture",
+      "Sacred Architecture & Quiet Stops",
+      "Halal Food Trail & Community Pacing",
+      "Scenic Calm With Easy Access",
+      "Farewell With Comfort & Reflection",
+    ],
+    slotCategories: {
+      morning: ["temple", "culture", "landmark", "park"],
+      afternoon: ["market", "culture", "museum", "waterfront"],
+      evening: ["waterfront", "park", "neighborhood", "culture"],
+      night: ["market", "culture", "neighborhood", "waterfront"],
+    },
+    note: "Keep the routing comfortable, respectful, and easy to navigate around practical needs.",
+  },
+  coastal: {
+    aliases: ["coastal", "beach"],
+    dayThemes: [
+      "Arrival & Sea-Breeze Orientation",
+      "Promenade & Beach Rhythm",
+      "Harbourfront, Boats & Open Water",
+      "Seafood, Sand & Slow Afternoons",
+      "Clifftop or Island Views",
+      "Coastal Culture & Boardwalk Life",
+      "Golden-Hour Waterfront Finale",
+      "Farewell Through the Shoreline",
+    ],
+    slotCategories: {
+      morning: ["beach", "waterfront", "park", "nature"],
+      afternoon: ["waterfront", "market", "culture", "park"],
+      evening: ["beach", "waterfront", "landmark", "park"],
+      night: ["waterfront", "market", "culture", "neighborhood"],
+    },
+    note: "Let the waterfront, promenade, and open-air rhythm shape the trip.",
+  },
+  balanced: {
+    aliases: ["balanced"],
+    dayThemes: CITY_ITINERARY_DAY_THEMES,
+    slotCategories: {
+      morning: ["landmark", "park", "temple", "beach"],
+      afternoon: ["museum", "market", "culture", "neighborhood"],
+      evening: ["waterfront", "landmark", "park", "beach"],
+      night: ["market", "culture", "neighborhood", "waterfront"],
+    },
+    note: "Balance culture, scenery, food, and local atmosphere throughout the trip.",
+  },
+};
 
 export async function createCityItinerary(destination, days, budget, travelStyle, interests) {
   try {
@@ -590,13 +886,20 @@ export async function createCityItinerary(destination, days, budget, travelStyle
     }
 
     const dayPlans = [];
+    const styleProfile = getStyleProfile(travelStyle);
+    const slotNames = ["morning", "morning", "afternoon", "afternoon", "evening", "evening", "night", "night"];
     for (let day = 1; day <= days; day++) {
       const activities = [];
-      const dayTheme = CITY_ITINERARY_DAY_THEMES[(day - 1) % CITY_ITINERARY_DAY_THEMES.length];
+      const dayTheme = buildStyleDayTheme(travelStyle, day, days);
       const rotatedPlaces = rotateUnique(places, day * 7 + destination.length, Math.max(places.length, 8));
+      const dayUsedKeys = new Map();
       for (let slot = 0; slot < 8; slot++) {
-        const themedIndex = (slot * 2 + day - 1) % Math.max(rotatedPlaces.length || 1, 1);
-        const place = rotatedPlaces[themedIndex] || makeSyntheticPlace(destination, day, slot, fallbackBase);
+        const slotName = slotNames[slot] || "morning";
+        const preferredPool = rotatedPlaces.filter((candidate) =>
+          (styleProfile.slotCategories?.[slotName] || []).includes(inferPlaceKind(candidate))
+        );
+        const sourcePool = preferredPool.length ? preferredPool : rotatedPlaces;
+        const place = pickPlaceForSlot(sourcePool, dayUsedKeys, travelStyle, slotName, day, days, slot) || makeSyntheticPlace(destination, day, slot, fallbackBase);
         const key = normalizeToken(place.title);
         placeUsage.set(key, (placeUsage.get(key) || 0) + 1);
         placeCursor++;
@@ -608,7 +911,7 @@ export async function createCityItinerary(destination, days, budget, travelStyle
           description: `${normalizePlaceDescription(place.description, destination)} This stop supports the day's ${dayTheme.toLowerCase()} rhythm.`,
           imageUrl: images[0],
           imageAlternatives: images.slice(1)
-        }, destination, budget, slot, travelStyle, interests, day));
+        }, destination, budget, slot, travelStyle, interests, day, days, dayTheme));
       }
       dayPlans.push({ day, title: `Day ${day} in ${destination}`, theme: dayTheme, activities });
     }

@@ -67,6 +67,282 @@ const DESTINATION_PLACE_LIBRARY = {
   },
 };
 
+export const STYLE_TRAVEL_PROFILES = {
+  luxury: {
+    aliases: ["luxury", "premium"],
+    pace: "refined",
+    placeBias: ["stay", "food", "culture", "coastal", "generic"],
+    dayThemes: [
+      "Arrival & Signature Comfort",
+      "Heritage With Private Touches",
+      "Fine Dining & Design Districts",
+      "Scenic Leisure & Soft Luxury",
+      "Curated Shopping & Lounge Moments",
+      "Slow Culture & Premium Corners",
+      "Waterfront Indulgence",
+      "Grand Finale & Night Ambience",
+    ],
+    slotLabels: {
+      morning: ["Suite Arrival Ritual", "Elegant Heritage Opening", "Private Morning Circuit", "Spa & Slow Start"],
+      afternoon: ["Chef-Led Lunch Chapter", "Boutique Culture Session", "Private Gallery Flow", "Refined District Pause"],
+      evening: ["Golden Hour Terrace Drift", "Waterfront Aperitif Route", "Sunset Lounge Sequence", "Evening Signature Views"],
+      night: ["Fine Dining Experience", "Rooftop Night Finish", "Boutique Stay Wind-Down", "After-Dark Luxury Pause"],
+    },
+    narrative: {
+      schedule: [
+        "Keep this chapter polished and low-friction, with one standout moment instead of too many small pivots.",
+        "Favor comfort, atmosphere, and one premium highlight over checklist pacing.",
+      ],
+      ideas: [
+        "For a luxury rhythm, let the strongest single experience lead instead of stacking too many medium ones.",
+        "A memorable luxury day usually lands best when one stay, dining, or sunset moment becomes the anchor.",
+      ],
+    },
+  },
+  cultural: {
+    aliases: ["cultural", "history", "heritage"],
+    pace: "immersive",
+    placeBias: ["culture", "sacred", "market", "generic", "food"],
+    dayThemes: [
+      "Arrival & Historic Orientation",
+      "Sacred Heritage Trail",
+      "Museums & Story Layers",
+      "Old Quarter Deep Dive",
+      "Markets, Craft & Living Culture",
+      "Local Traditions & Archive Moments",
+      "Architecture & Quiet Details",
+      "Farewell Through Heritage Streets",
+    ],
+    slotLabels: {
+      morning: ["Monument Opening Loop", "Temple & Heritage Start", "Old Quarter Orientation", "Museum Preview Route"],
+      afternoon: ["Historic Core Deep Dive", "Archive & Gallery Session", "Craft & Storytelling Stop", "Culture District Walk"],
+      evening: ["Lantern Street Stroll", "Golden Hour Heritage Circuit", "Waterfront History Pause", "Twilight Facade Walk"],
+      night: ["Cultural Dinner Session", "Classical Evening Finish", "Heritage Stay Wind-Down", "Old Town Night Pause"],
+    },
+    narrative: {
+      schedule: [
+        "Use this stop to understand the story of the place, not just its most photographed angle.",
+        "Let one monument, archive, or sacred detail shape the pace here.",
+      ],
+      ideas: [
+        "For a history-led trip, pair the formal site with one surrounding street or bookshop so the story feels lived-in.",
+        "The most memorable cultural days usually combine one major anchor with one quieter, more local follow-up.",
+      ],
+    },
+  },
+  adventure: {
+    aliases: ["adventure", "active"],
+    pace: "energetic",
+    placeBias: ["nature", "coastal", "generic", "market", "food"],
+    dayThemes: [
+      "Arrival & Outdoor Orientation",
+      "Active Morning Push",
+      "Trail, Ridge & Scenic Movement",
+      "Local Action & Recovery Balance",
+      "Open-Air Discovery Day",
+      "Challenge & Reward Circuit",
+      "Waterfront or Peak Reset",
+      "Finale Adventure Highlights",
+    ],
+    slotLabels: {
+      morning: ["Sunrise Trail Start", "Lookout & Active Warm-Up", "Outdoor Discovery Loop", "Early Scenic Push"],
+      afternoon: ["Adrenaline Window", "Cliffside or Forest Route", "Active Midday Detour", "Terrain Shift Session"],
+      evening: ["Golden Hour Recovery Walk", "Viewpoint Cool-Down", "Adventure Debrief Stroll", "Sunset Edge Route"],
+      night: ["Campfire or Lounge Finish", "Recovery Dinner Stop", "Low-Key Night Reset", "Rest & Recharge Sequence"],
+    },
+    narrative: {
+      schedule: [
+        "Keep the energy front-loaded, then protect recovery so the next day still feels strong.",
+        "Adventure days work best when you alternate high-output windows with calmer reset pockets.",
+      ],
+      ideas: [
+        "A strong adventure rhythm usually earns one proper recovery stop later in the day.",
+        "Use the first half for movement and the second half for scenery, food, or reset so the trip can sustain itself.",
+      ],
+    },
+  },
+  cinematic: {
+    aliases: ["cinematic", "scenery", "photography"],
+    pace: "visual",
+    placeBias: ["coastal", "nature", "culture", "generic", "stay"],
+    dayThemes: [
+      "Arrival & First Frames",
+      "Panoramic Mornings",
+      "Texture, Streets & Atmosphere",
+      "Scenic Layers & Quiet Vistas",
+      "Blue Hour Highlights",
+      "Architecture & Light Study",
+      "Golden-Hour Finale Build",
+      "Farewell Through Best Views",
+    ],
+    slotLabels: {
+      morning: ["Sunrise Frame Walk", "Panoramic Opening Loop", "Soft-Light View Route", "Landmark Lens Start"],
+      afternoon: ["Texture & Detail Session", "Landscape Midday Sweep", "Photo Story Stopover", "Visual Culture Circuit"],
+      evening: ["Golden Hour Walk", "Sunset Frame Sequence", "Blue Hour Streets", "Waterside View Drift"],
+      night: ["Night Photography Pause", "Skyline Reflection Finish", "City Lights Wind-Down", "After-Dark Composition Stop"],
+    },
+    narrative: {
+      schedule: [
+        "Let light and vantage points decide the pace here more than the map does.",
+        "Treat this stop like a visual chapter, with time for both the obvious frame and the quieter second angle.",
+      ],
+      ideas: [
+        "Scenery-led days feel strongest when you save room for a second look after the first good frame.",
+        "The best cinematic memories usually come from timing, light, and one slower pause, not just famous coordinates.",
+      ],
+    },
+  },
+  urban: {
+    aliases: ["urban", "city"],
+    pace: "dynamic",
+    placeBias: ["market", "food", "culture", "generic", "stay"],
+    dayThemes: [
+      "Arrival & City Pulse",
+      "Boulevards & District Flow",
+      "Markets, Cafes & Design",
+      "Modern City Contrasts",
+      "Street Culture & Food Energy",
+      "Shopping, Skyline & Local Motion",
+      "After-Dark Lifestyle Circuit",
+      "Final City Highlights",
+    ],
+    slotLabels: {
+      morning: ["City Pulse Start", "Boulevard Discovery", "Modern District Opening", "Cafe Quarter Loop"],
+      afternoon: ["Design & Market Circuit", "Urban Lunch Discovery", "Creative Quarter Walk", "Retail & Culture Session"],
+      evening: ["Skyline Drift", "Riverside City Walk", "Lifestyle District Stroll", "Golden Hour Urban Flow"],
+      night: ["Nightlife Preview", "Late Dining Sequence", "City Lights Finish", "Downtown Wind-Down"],
+    },
+    narrative: {
+      schedule: [
+        "Use this stop to feel the city in motion, not just to tick off a landmark.",
+        "Urban pacing works best when one district carries multiple small discoveries in one walkable sweep.",
+      ],
+      ideas: [
+        "The strongest urban days usually combine one modern district, one food pause, and one street-level surprise.",
+        "Avoid over-transferring; let one neighborhood reveal its own layers before you jump again.",
+      ],
+    },
+  },
+  wellness: {
+    aliases: ["wellness", "relaxation"],
+    pace: "restorative",
+    placeBias: ["nature", "stay", "coastal", "sacred", "food"],
+    dayThemes: [
+      "Arrival & Nervous-System Reset",
+      "Mindful Morning Flow",
+      "Nature, Calm & Gentle Motion",
+      "Spa, Tea & Quiet Corners",
+      "Sacred Pause & Reflection",
+      "Slow Coastal or Garden Day",
+      "Deep Rest & Nourishing Meals",
+      "Farewell Through Soft Rituals",
+    ],
+    slotLabels: {
+      morning: ["Mindful Opening Walk", "Yoga & Sunrise Reset", "Garden Calm Start", "Quiet Ritual Loop"],
+      afternoon: ["Spa or Tea Chapter", "Slow Nature Session", "Restorative Lunch Pause", "Gentle Cultural Drift"],
+      evening: ["Sunset Unwind Route", "Calm Waterfront Drift", "Soft-Light Reflection Walk", "Quiet District Pause"],
+      night: ["Sleep-First Wind-Down", "Tea & Recovery Finish", "Low-Stimulus Evening Close", "Stay Reset Sequence"],
+    },
+    narrative: {
+      schedule: [
+        "Protect spaciousness here; the point is to leave more grounded than when you arrived.",
+        "Wellness pacing works best when you deliberately stop adding tasks once the rhythm feels right.",
+      ],
+      ideas: [
+        "A wellness trip gets better when one calm place is allowed to be enough.",
+        "Use meals, gardens, and slower walks as part of the recovery plan, not as filler between bigger stops.",
+      ],
+    },
+  },
+  halal: {
+    aliases: ["halal", "halalfriendly"],
+    pace: "considered",
+    placeBias: ["sacred", "food", "culture", "market", "stay"],
+    dayThemes: [
+      "Arrival & Prayer-Aware Orientation",
+      "Mosques, Heritage & Halal Dining",
+      "Family-Friendly City Flow",
+      "Markets, Modest Comfort & Local Culture",
+      "Sacred Architecture & Quiet Stops",
+      "Halal Food Trail & Community Pacing",
+      "Scenic Calm With Easy Access",
+      "Farewell With Comfort & Reflection",
+    ],
+    slotLabels: {
+      morning: ["Prayer-Space Start", "Mosque & Heritage Loop", "Quiet Family Walk", "Sacred District Opening"],
+      afternoon: ["Halal Lunch Route", "Family-Friendly Culture Stop", "Community Market Session", "Comfort-Led Midday Pause"],
+      evening: ["Sunset & Prayer-Aware Drift", "Waterfront Family Stroll", "Cultural Evening Pause", "After-Maghrib Walk"],
+      night: ["Halal Signature Dinner", "Gentle Family Close", "Stay & Reflection Finish", "Calm Night Circuit"],
+    },
+    narrative: {
+      schedule: [
+        "Keep the routing comfortable, halal-food aware, and respectful of prayer timing and family ease.",
+        "This day works best when comfort, access, and atmosphere stay in balance.",
+      ],
+      ideas: [
+        "For a halal-friendly trip, let meal certainty and prayer-space access guide the flow instead of forcing detours later.",
+        "Family-comfort pacing usually creates a better day than trying to maximize the number of stops.",
+      ],
+    },
+  },
+  coastal: {
+    aliases: ["coastal", "beach"],
+    pace: "breezy",
+    placeBias: ["coastal", "food", "nature", "stay", "market"],
+    dayThemes: [
+      "Arrival & Sea-Breeze Orientation",
+      "Promenade & Beach Rhythm",
+      "Harbourfront, Boats & Open Water",
+      "Seafood, Sand & Slow Afternoons",
+      "Clifftop or Island Views",
+      "Coastal Culture & Boardwalk Life",
+      "Golden-Hour Waterfront Finale",
+      "Farewell Through the Shoreline",
+    ],
+    slotLabels: {
+      morning: ["Beach Opening Loop", "Promenade Start", "Waterfront Reset", "Sea-Breeze Walk"],
+      afternoon: ["Seafood Lunch Drift", "Harbour Discovery", "Boardwalk Session", "Coastal Midday Pause"],
+      evening: ["Sunset Shore Route", "Pier & Viewpoint Circuit", "Golden Hour Waterfront", "Seaside Wind-Down"],
+      night: ["Beachfront Dinner Finish", "Late Promenade Pause", "Coastal Stay Sequence", "After-Dark Sea View Close"],
+    },
+    narrative: {
+      schedule: [
+        "Coastal days improve when you let the shoreline set the tempo instead of racing inland and back.",
+        "Use the waterfront as the spine of the day and keep the transitions easy.",
+      ],
+      ideas: [
+        "A strong coastal day often blends one scenic walk, one good food pause, and one light change at the water.",
+        "Save enough energy for the evening edge of the coast; that is often when the place feels most itself.",
+      ],
+    },
+  },
+  balanced: {
+    aliases: ["balanced", "_default"],
+    pace: "balanced",
+    placeBias: ["culture", "coastal", "food", "market", "nature", "generic"],
+    dayThemes: [
+      "Arrival & First Impressions",
+      "Heritage & Culture",
+      "Hidden Gems & Local Life",
+      "Scenic Highlights",
+      "Adventure Day",
+      "Leisure & Relaxation",
+      "Food & Evening Atmosphere",
+      "Farewell Highlights",
+    ],
+    slotLabels: {
+      morning: ["Sunrise Heritage Circuit", "Temple & Landmark Trail", "Quiet Neighborhood Walk", "Gardens & Facades Start"],
+      afternoon: ["Museum & Culture Circuit", "Lunch Discovery Route", "Craft & Gallery Session", "Historic Core Deep Dive"],
+      evening: ["Golden Hour Walk", "Sunset Viewpoint Route", "Cultural Quarter Stroll", "Promenade & Cafe Loop"],
+      night: ["Signature Dinner Stop", "Boutique Stay Experience", "Skyline Night Circuit", "Heritage Hotel Wind-Down"],
+    },
+    narrative: {
+      schedule: [],
+      ideas: [],
+    },
+  },
+};
+
 function cleanDisplayText(value) {
   return String(value || "")
     .replace(/[^\x20-\x7E]/g, " ")
@@ -160,6 +436,51 @@ function hashSeed(value = "") {
   return String(value)
     .split("")
     .reduce((acc, ch, index) => ((acc * 33) + ch.charCodeAt(0) + index) >>> 0, 5381);
+}
+
+export function resolveStyleProfileKey(style = "") {
+  const normalized = cleanDisplayText(style).toLowerCase().replace(/[^a-z]/g, "");
+  if (!normalized) return "balanced";
+  const match = Object.entries(STYLE_TRAVEL_PROFILES).find(([, profile]) =>
+    [profile.aliases || [], [profile.aliases?.[0]], [normalized]].flat().filter(Boolean).some((alias) =>
+      normalized === String(alias).toLowerCase().replace(/[^a-z]/g, ""),
+    ));
+  return match?.[0] || "balanced";
+}
+
+export function getStyleTravelProfile(style = "") {
+  return STYLE_TRAVEL_PROFILES[resolveStyleProfileKey(style)] || STYLE_TRAVEL_PROFILES.balanced;
+}
+
+export function getTripPhase(dayNumber = 1, totalDays = 1) {
+  const day = Math.max(1, Number(dayNumber) || 1);
+  const total = Math.max(1, Number(totalDays) || 1);
+  if (day === 1) return "arrival";
+  if (day === total) return "finale";
+  if (total <= 4) return day === 2 ? "core" : "deep";
+  const progress = day / total;
+  if (progress <= 0.28) return "core";
+  if (progress <= 0.6) return "deep";
+  if (progress <= 0.82) return "reset";
+  return "finale-build";
+}
+
+export function buildStyleAwareDayTheme(style = "", dayNumber = 1, totalDays = 1) {
+  const profile = getStyleTravelProfile(style);
+  const phase = getTripPhase(dayNumber, totalDays);
+  const themes = Array.isArray(profile.dayThemes) && profile.dayThemes.length
+    ? profile.dayThemes
+    : STYLE_TRAVEL_PROFILES.balanced.dayThemes;
+  const base = themes[(Math.max(1, dayNumber) - 1) % themes.length] || `Day ${dayNumber}`;
+  const phaseSuffix = {
+    arrival: "",
+    core: "",
+    deep: "",
+    reset: " - Slower Chapter",
+    "finale-build": " - Closing Build",
+    finale: " - Grand Finish",
+  }[phase] || "";
+  return `${base}${phaseSuffix}`;
 }
 
 function pickOne(list = [], seed = 0, fallback = "") {
@@ -278,11 +599,14 @@ export function buildStreetFindChips(activityData = {}, fallbackContent = {}, co
   }));
 }
 
-export function generatePlaceCardFallbackContent(placeName = "", activity = "", destination = "", slotKey = "") {
+export function generatePlaceCardFallbackContent(placeName = "", activity = "", destination = "", slotKey = "", options = {}) {
   const place = resolvePlannedPlaceName(placeName || activity, destination, slotKey);
   const area = getAreaLabel(placeName, destination);
   const sourceText = `${placeName} ${activity}`.toLowerCase();
   const seed = hashSeed(`${place}|${slotKey}|${destination}|${activity}`);
+  const profileKey = resolveStyleProfileKey(options.travelStyle);
+  const styleProfile = getStyleTravelProfile(profileKey);
+  const tripPhase = getTripPhase(options.dayNumber, options.totalDays);
   const times = {
     morning: ["8:00 AM", "9:15 AM", "10:30 AM"],
     morningActivity: ["10:45 AM", "11:30 AM", "12:15 PM"],
@@ -589,17 +913,98 @@ export function generatePlaceCardFallbackContent(placeName = "", activity = "", 
   };
 
   const bank = banks[profile] || banks.generic;
+  const styleScheduleNudges = {
+    luxury: {
+      arrival: "Keep the first chapter polished and easy, with comfort and atmosphere doing more work than volume.",
+      core: "Let one premium highlight lead this stop rather than over-stacking secondary detours.",
+      deep: "Use the slower middle stretch for a more elevated or intimate version of the experience.",
+      reset: "Protect ease and recovery so the day still feels refined rather than crowded.",
+      finale: "Let the close feel memorable and polished rather than rushed.",
+      "finale-build": "Build gently toward the evening so the final chapter lands with atmosphere.",
+    },
+    cultural: {
+      arrival: "Treat this as an orientation stop that gives the wider story context for the days ahead.",
+      core: "Give your time to the strongest heritage layer instead of flattening every detail into one pace.",
+      deep: "Use the middle of the trip to notice quieter archive, ritual, or street-level details.",
+      reset: "Keep the rhythm thoughtful and absorb what the surrounding area adds to the main site.",
+      finale: "Close with one meaningful heritage or sacred detail that leaves a lasting story.",
+      "finale-build": "Let the day build through story, context, and a calmer final cultural note.",
+    },
+    adventure: {
+      arrival: "Front-load the energy while the body is fresh, then leave space to recover later.",
+      core: "Use this slot for forward motion and stronger outdoor payoff rather than lingering too long.",
+      deep: "Let the trip's middle days carry the most active or rewarding movement.",
+      reset: "Pull back slightly here so the next active chapter still feels exciting.",
+      finale: "Use the last chapter for one satisfying push followed by an easy scenic close.",
+      "finale-build": "Build momentum without burning too much energy before the final highlight.",
+    },
+    cinematic: {
+      arrival: "Let first impressions and changing light matter as much as the stop itself.",
+      core: "Give yourself enough time to catch both the obvious frame and the quieter second angle.",
+      deep: "Use the middle stretch for atmosphere, texture, and stronger visual storytelling.",
+      reset: "Keep this chapter visually soft and less rushed so the scenery can carry it.",
+      finale: "Save space for the final light or skyline moment to feel complete.",
+      "finale-build": "Let the visuals build gradually so the best frame lands later in the day.",
+    },
+    urban: {
+      arrival: "Let one district reveal multiple layers before you transfer again.",
+      core: "Use this stop to feel the city in motion rather than just passing through it.",
+      deep: "The middle of an urban trip is where side streets, design, and food usually open up best.",
+      reset: "Soften the pace slightly so the city still feels exciting instead of noisy.",
+      finale: "Close on a district with stronger night energy or skyline payoff.",
+      "finale-build": "Let the city build toward the evening rather than peaking too early.",
+    },
+    wellness: {
+      arrival: "Protect calm and spaciousness even if that means doing a little less here.",
+      core: "Let the restorative part of the stop matter more than coverage.",
+      deep: "Use the deeper middle days for nervous-system reset, nature, and softer rituals.",
+      reset: "Treat this as a deliberate exhale, not just a gap between bigger activities.",
+      finale: "Close with ease, comfort, and something you will actually remember as calming.",
+      "finale-build": "Keep the energy gentle so the final day still feels restorative.",
+    },
+    halal: {
+      arrival: "Keep the route easy, respectful, and comfortable from the start.",
+      core: "Let prayer-space access, halal dining, and family ease quietly guide the pace.",
+      deep: "The middle stretch is best for deeper cultural moments that still remain comfortable to navigate.",
+      reset: "Use this slot to protect comfort rather than maximizing the number of stops.",
+      finale: "Close in a way that feels calm, accessible, and easy to enjoy together.",
+      "finale-build": "Build the day carefully so the final evening stays smooth and welcoming.",
+    },
+    coastal: {
+      arrival: "Let the shoreline or sea-breeze setting establish the rhythm without forcing it.",
+      core: "Use this chapter to stay close to the water or its atmosphere rather than zig-zagging inland.",
+      deep: "The middle of a coastal trip works best when views, food, and slower walking blend together.",
+      reset: "Keep the movement airy and easy so the coast still feels relaxing.",
+      finale: "Save some energy for the final waterside light or evening edge.",
+      "finale-build": "Build slowly toward the strongest waterfront or sunset moment later on.",
+    },
+  };
   const schedule = buildUniqueLines([
     fillTemplate(pickOne(bank.scheduleOpen, seed), vars),
     fillTemplate(pickOne(bank.scheduleFocus, seed + 11), vars),
     fillTemplate(pickOne(bank.scheduleClose, seed + 23), vars),
+    styleScheduleNudges[profileKey]?.[tripPhase] || "",
+    pickOne(styleProfile.narrative?.schedule, seed + 67),
   ]);
   const streetFinds = buildUniqueLines(
     pickMany(bank.streetFinds, 4, seed + 31).map((item) => fillTemplate(item, vars)),
   ).slice(0, 6);
-  const ideas = buildUniqueLines(
-    pickMany(bank.ideas, 4, seed + 47).map((item) => fillTemplate(item, vars)),
-  ).slice(0, 6);
+  const ideas = buildUniqueLines([
+    ...pickMany(bank.ideas, 4, seed + 47).map((item) => fillTemplate(item, vars)),
+    pickOne(styleProfile.narrative?.ideas, seed + 79),
+    tripPhase === "arrival"
+      ? `Use this first chapter in ${vars.destination} to set the tone for the rest of the trip instead of trying to complete too much too early.`
+      : "",
+    tripPhase === "deep"
+      ? `This part of the trip is where ${vars.destination} should start feeling more layered, local, and less obvious.`
+      : "",
+    tripPhase === "reset"
+      ? "Let this stop function as a recovery or reflection pocket so the longer trip keeps its shape."
+      : "",
+    tripPhase === "finale"
+      ? `Make this one of the memories that feels like a proper close to your time in ${vars.destination}.`
+      : "",
+  ]).slice(0, 6);
 
   return {
     schedule,
