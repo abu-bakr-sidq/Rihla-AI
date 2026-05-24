@@ -2864,59 +2864,63 @@ export default function Planner() {
       setActiveTime('morning');
     }
 
-    // Auto-save to My Trips ONLY if it wasn't already saved by the AI generator
-    if (!tripId) {
-      try {
-        const savedResult = await createTripMutation.mutateAsync({
-          destination: formData.destination, startDate: formData.startDate, endDate: formData.endDate,
-          travelers: formData.travelers, budget: budgetCategory, currency: formData.currency,
-          travelStyle: formData.travelStyle, preferences: [],
-          interests: [],
-          specialRequirements: formData.specialRequirements, status: "planned",
-          itinerary: finalItin,
-          costBreakdown: finalCostInfo || plannerBudgetSummary.costBreakdown,
-          title: `${formData.travelStyle} trip to ${formData.destination}`,
-        });
-        tripId = savedResult?.id || savedResult?._id || null;
-      } catch (saveErr) {
-        console.warn("Auto-save failed (user may not be logged in):", saveErr.message);
-      }
-    }
-
-    if (tripId) {
-      try {
-        await updateTripMutation.mutateAsync({
-          id: tripId,
-          data: {
-            destination: formData.destination,
-            startDate: formData.startDate,
-            endDate: formData.endDate,
-            days: finalItin?.trip_overview?.total_days || Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)),
-            budget: String(budgetCategory || formData.budget || "moderate"),
-            currency: formData.currency,
-            travelStyle: formData.travelStyle,
-            travelers: formData.travelers,
-            interests: [],
-            status: "planned",
-            preferences: {
-              travelStyle: formData.travelStyle,
-              interests: [],
-              travelers: formData.travelers,
-              currency: formData.currency,
-              specialRequests: formData.specialRequirements || "",
-            },
-            itinerary: finalItin,
-            costBreakdown: finalCostInfo || finalItin?.total_budget || plannerBudgetSummary.costBreakdown,
-          }
-        });
-      } catch (syncErr) {
-        console.warn("Trip sync failed:", syncErr.message);
-      }
-
-      setGeneratedTripId(tripId);
-    }
-
     setStep(7);
+
+    // Persist in the background so a slow backend never blocks the itinerary UI.
+    (async () => {
+      let persistedTripId = tripId;
+
+      if (!persistedTripId) {
+        try {
+          const savedResult = await createTripMutation.mutateAsync({
+            destination: formData.destination, startDate: formData.startDate, endDate: formData.endDate,
+            travelers: formData.travelers, budget: budgetCategory, currency: formData.currency,
+            travelStyle: formData.travelStyle, preferences: [],
+            interests: [],
+            specialRequirements: formData.specialRequirements, status: "planned",
+            itinerary: finalItin,
+            costBreakdown: finalCostInfo || plannerBudgetSummary.costBreakdown,
+            title: `${formData.travelStyle} trip to ${formData.destination}`,
+          });
+          persistedTripId = savedResult?.id || savedResult?._id || null;
+        } catch (saveErr) {
+          console.warn("Auto-save failed (user may not be logged in):", saveErr.message);
+        }
+      }
+
+      if (persistedTripId) {
+        try {
+          await updateTripMutation.mutateAsync({
+            id: persistedTripId,
+            data: {
+              destination: formData.destination,
+              startDate: formData.startDate,
+              endDate: formData.endDate,
+              days: finalItin?.trip_overview?.total_days || Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)),
+              budget: String(budgetCategory || formData.budget || "moderate"),
+              currency: formData.currency,
+              travelStyle: formData.travelStyle,
+              travelers: formData.travelers,
+              interests: [],
+              status: "planned",
+              preferences: {
+                travelStyle: formData.travelStyle,
+                interests: [],
+                travelers: formData.travelers,
+                currency: formData.currency,
+                specialRequests: formData.specialRequirements || "",
+              },
+              itinerary: finalItin,
+              costBreakdown: finalCostInfo || finalItin?.total_budget || plannerBudgetSummary.costBreakdown,
+            }
+          });
+        } catch (syncErr) {
+          console.warn("Trip sync failed:", syncErr.message);
+        }
+
+        setGeneratedTripId(persistedTripId);
+      }
+    })();
   };
 
   useEffect(() => {
