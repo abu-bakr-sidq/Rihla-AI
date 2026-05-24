@@ -341,6 +341,7 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
   } = options;
 
   const slotKeys = ["morning", "morningActivity", "afternoon", "afternoonActivity", "evening", "eveningActivity", "night", "nightActivity"];
+  const compactSlotKeys = ["morning", "afternoon", "evening", "night"];
   const slotTimes = {
     morning: "08:00 AM",
     morningActivity: "10:00 AM",
@@ -356,8 +357,9 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
     const activities = Array.isArray(day?.activities) ? day.activities : [];
     const slots = {};
     let activityBudget = 0;
+    const activeSlotOrder = activities.length <= 4 ? compactSlotKeys : slotKeys;
 
-    slotKeys.forEach((slotKey, slotIndex) => {
+    activeSlotOrder.forEach((slotKey, slotIndex) => {
       const activity = activities[slotIndex];
       if (!activity) return;
 
