@@ -8,6 +8,7 @@ import { usePrayerTimes } from '@/hooks/usePrayerTimes';
 import { exportTripPDF, downloadTripPDF } from '@/services/exportTripPDF';
 import { useDeleteTrip } from '@/hooks/use-trips';
 import { useToast } from '@/hooks/use-toast';
+import { api, buildUrl, resolveApiUrl } from '@/lib/api-contract';
 import { buildActivityDisplayContent, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from '@/lib/trip-itinerary';
 import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerTimesCard, TripPreviewCard } from '@/components/trip/EnhancedPanels';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -780,8 +781,9 @@ export default function TripDetail() {
 
     const token = localStorage.getItem('auth_token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const tripUrl = resolveApiUrl(buildUrl(api.trips.get.path, { id }));
 
-    fetch(`/api/trips/${id}`, { headers, credentials: 'include' })
+    fetch(tripUrl, { headers, credentials: 'include' })
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
