@@ -1127,6 +1127,7 @@ function buildItinerary(fd) {
     const date = new Date(fd.startDate);
     date.setDate(date.getDate() + i);
     const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const dayTheme = FALLBACK_DAY_THEMES[(dNum - 1) % FALLBACK_DAY_THEMES.length] || `Day ${dNum} - ${fd.destination}`;
 
     const getAct = (slot) => {
       const pool = categoryPools[slot] || [];
@@ -1161,7 +1162,7 @@ function buildItinerary(fd) {
         nearbyHighlights: fallbackContent.streetFinds.slice(0, 3),
         exploreIdeas: fallbackContent.ideas,
         transportationTip: `Keep transfers around ${transferMinutes} minutes to protect the day's pacing.`,
-        culturalInsight: `This ${slot.replace(/Activity/, ' activity')} stop works best when treated as part of the wider ${theme.toLowerCase()} flow.`,
+        culturalInsight: `This ${slot.replace(/Activity/, ' activity')} stop works best when treated as part of the wider ${dayTheme.toLowerCase()} flow.`,
       };
       return acc;
     }, {});
@@ -1175,12 +1176,10 @@ function buildItinerary(fd) {
     };
     dailyBudget.total = dailyBudget.stay + dailyBudget.food + dailyBudget.transport + dailyBudget.activities;
 
-    const theme = FALLBACK_DAY_THEMES[(dNum - 1) % FALLBACK_DAY_THEMES.length] || `Day ${dNum} - ${fd.destination}`;
-
     return {
       day: dNum,
       date: dateStr,
-      theme,
+      theme: dayTheme,
       ...slots,
       budget: dailyBudget
     };
