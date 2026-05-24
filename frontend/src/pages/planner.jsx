@@ -2538,18 +2538,38 @@ export default function Planner() {
       const raw = sessionStorage.getItem("rihla_planner_state");
       if (!raw) return;
       const saved = JSON.parse(raw);
+      const requiresFreshGeneration = !!saved?.requiresFreshGeneration;
+      if (requiresFreshGeneration && !user) return;
+
       sessionStorage.removeItem("rihla_planner_state"); // consume once
+
+      const restoredFormData = {
+        ...formData,
+        ...(saved?.formData || {}),
+      };
+
+      setFormData(restoredFormData);
+      setSelectedDay(saved?.selectedDay || 1);
+      setActiveDay(saved?.activeDay || 0);
+      setActiveTime(saved?.activeTime || 'morning');
+
+      if (requiresFreshGeneration) {
+        setGeneratedResult(null);
+        setPlanFocusAct(null);
+        setStep(6);
+        setTimeout(() => {
+          handleGenerate(restoredFormData);
+        }, 0);
+        return;
+      }
+
       if (saved?.generatedResult?.days?.length) {
-        setFormData(prev => ({ ...prev, ...saved.formData }));
         setGeneratedResult(saved.generatedResult);
-        setSelectedDay(saved.selectedDay || 1);
-        setActiveDay(saved.activeDay || 0);
-        setActiveTime(saved.activeTime || 'morning');
         setStep(7); // go straight back to itinerary view
       }
     } catch (_) { }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
 
   useEffect(() => {
@@ -3030,7 +3050,11 @@ export default function Planner() {
 
   const handleNext = () => { if (step < 4) setStep(step + 1); else handleGenerate(); };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (overrideFormData = null) => {
+    const sourceFormData = overrideFormData
+      ? { ...formData, ...overrideFormData }
+      : formData;
+
     setStep(6);
     setLoadPct(0);
     setLoadStep(0);
@@ -3038,20 +3062,20 @@ export default function Planner() {
     let finalCostInfo = null;
     let tripId = null;
     const plannerBudgetSummary = buildBudgetSummary(
-      formData.destination,
-      Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)),
+      sourceFormData.destination,
+      Math.max(1, Math.ceil((new Date(sourceFormData.endDate) - new Date(sourceFormData.startDate)) / 86400000)),
       budgetCategory,
-      formData.travelers,
-      formData.currency
+      sourceFormData.travelers,
+      sourceFormData.currency
     );
-    const plannerPerfectItinerary = buildItinerary({ ...formData, budgetCategory });
+    const plannerPerfectItinerary = buildItinerary({ ...sourceFormData, budgetCategory });
 
     try {
       const result = await Promise.race([
         generateMutation.mutateAsync({
-          destination: formData.destination, startDate: formData.startDate, endDate: formData.endDate,
-          travelers: formData.travelers, budget: formData.budget, currency: formData.currency,
-          travelStyle: formData.travelStyle, preferences: [],
+          destination: sourceFormData.destination, startDate: sourceFormData.startDate, endDate: sourceFormData.endDate,
+          travelers: sourceFormData.travelers, budget: sourceFormData.budget, currency: sourceFormData.currency,
+          travelStyle: sourceFormData.travelStyle, preferences: [],
           interests: []
         }),
         new Promise((_, reject) => {
@@ -3059,15 +3083,15 @@ export default function Planner() {
         })
       ]);
 
-      const fallback = buildItinerary({ ...formData, budgetCategory });
+      const fallback = buildItinerary({ ...sourceFormData, budgetCategory });
       const normalizedBackendItinerary = Array.isArray(result?.itinerary)
         ? normalizeLegacyArrayItinerary(result.itinerary, {
-          destination: formData.destination,
-          startDate: formData.startDate,
-          endDate: formData.endDate,
-          travelers: formData.travelers,
-          travelStyle: formData.travelStyle,
-          currency: formData.currency,
+          destination: sourceFormData.destination,
+          startDate: sourceFormData.startDate,
+          endDate: sourceFormData.endDate,
+          travelers: sourceFormData.travelers,
+          travelStyle: sourceFormData.travelStyle,
+          currency: sourceFormData.currency,
           costBreakdown: result?.costBreakdown || plannerBudgetSummary.costBreakdown,
         })
         : null;
@@ -3081,10 +3105,10 @@ export default function Planner() {
       // If the backend only returns the thinner legacy array itinerary,
       // preserve the richer planner-built version so saved trips match the
       // high-quality planner result screen.
-      finalItin = backendRichItinerary || plannerPerfectItinerary || normalizedBackendItinerary || fallback;
+      finalItin = backendRichItinerary || normalizedBackendItinerary || plannerPerfectItinerary || fallback;
       finalCostInfo = backendRichItinerary
-        ? (result?.costBreakdown || result?.itinerary?.total_budget || result?.total_budget || plannerPerfectItinerary?.total_budget || plannerBudgetSummary.costBreakdown)
-        : (plannerPerfectItinerary?.total_budget || normalizedBackendItinerary?.total_budget || fallback.total_budget || plannerBudgetSummary.costBreakdown);
+        ? (result?.costBreakdown || result?.itinerary?.total_budget || result?.total_budget || normalizedBackendItinerary?.total_budget || plannerPerfectItinerary?.total_budget || plannerBudgetSummary.costBreakdown)
+        : (normalizedBackendItinerary?.total_budget || plannerPerfectItinerary?.total_budget || fallback.total_budget || plannerBudgetSummary.costBreakdown);
       tripId = result?.id || result?._id || null;
 
       setGeneratedResult(finalItin);
@@ -3093,7 +3117,7 @@ export default function Planner() {
     } catch (err) {
       console.error("Generation failed, using local fallback:", err);
       await new Promise(r => setTimeout(r, 2800));
-      finalItin = buildItinerary({ ...formData, budgetCategory });
+      finalItin = buildItinerary({ ...sourceFormData, budgetCategory });
       finalCostInfo = finalItin.total_budget || plannerBudgetSummary.costBreakdown;
       setGeneratedResult(finalItin);
       setActiveDay(0);
@@ -3109,14 +3133,14 @@ export default function Planner() {
       if (!persistedTripId) {
         try {
           const savedResult = await createTripMutation.mutateAsync({
-            destination: formData.destination, startDate: formData.startDate, endDate: formData.endDate,
-            travelers: formData.travelers, budget: budgetCategory, currency: formData.currency,
-            travelStyle: formData.travelStyle, preferences: [],
+            destination: sourceFormData.destination, startDate: sourceFormData.startDate, endDate: sourceFormData.endDate,
+            travelers: sourceFormData.travelers, budget: budgetCategory, currency: sourceFormData.currency,
+            travelStyle: sourceFormData.travelStyle, preferences: [],
             interests: [],
-            specialRequirements: formData.specialRequirements, status: "planned",
+            specialRequirements: sourceFormData.specialRequirements, status: "planned",
             itinerary: finalItin,
             costBreakdown: finalCostInfo || plannerBudgetSummary.costBreakdown,
-            title: `${formData.travelStyle} trip to ${formData.destination}`,
+            title: `${sourceFormData.travelStyle} trip to ${sourceFormData.destination}`,
           });
           persistedTripId = savedResult?.id || savedResult?._id || null;
         } catch (saveErr) {
@@ -3129,22 +3153,22 @@ export default function Planner() {
           await updateTripMutation.mutateAsync({
             id: persistedTripId,
             data: {
-              destination: formData.destination,
-              startDate: formData.startDate,
-              endDate: formData.endDate,
-              days: finalItin?.trip_overview?.total_days || Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)),
+              destination: sourceFormData.destination,
+              startDate: sourceFormData.startDate,
+              endDate: sourceFormData.endDate,
+              days: finalItin?.trip_overview?.total_days || Math.max(1, Math.ceil((new Date(sourceFormData.endDate) - new Date(sourceFormData.startDate)) / 86400000)),
               budget: String(budgetCategory || formData.budget || "moderate"),
-              currency: formData.currency,
-              travelStyle: formData.travelStyle,
-              travelers: formData.travelers,
+              currency: sourceFormData.currency,
+              travelStyle: sourceFormData.travelStyle,
+              travelers: sourceFormData.travelers,
               interests: [],
               status: "planned",
               preferences: {
-                travelStyle: formData.travelStyle,
+                travelStyle: sourceFormData.travelStyle,
                 interests: [],
-                travelers: formData.travelers,
-                currency: formData.currency,
-                specialRequests: formData.specialRequirements || "",
+                travelers: sourceFormData.travelers,
+                currency: sourceFormData.currency,
+                specialRequests: sourceFormData.specialRequirements || "",
               },
               itinerary: finalItin,
               costBreakdown: finalCostInfo || finalItin?.total_budget || plannerBudgetSummary.costBreakdown,
@@ -4508,7 +4532,7 @@ export default function Planner() {
                         // Save full planner state so we can restore it after login
                         try {
                           sessionStorage.setItem('rihla_planner_state', JSON.stringify({
-                            formData, generatedResult, selectedDay, activeDay, activeTime
+                            formData, generatedResult, selectedDay, activeDay, activeTime, requiresFreshGeneration: true
                           }));
                         } catch (_) { }
                         sessionStorage.setItem('rihla_redirect', '/planner');
