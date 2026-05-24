@@ -304,27 +304,176 @@ function getDestinationCurrencyMeta(dest = "") {
   };
 }
 
-function estimatePackageDailyUsd(dest, style = "") {
-  let base = getDestinationCurrencyMeta(dest).dailyUsd || 88;
-  const s = String(style || "").toLowerCase();
-  if (s === "luxury") base *= 1.35;
-  else if (s === "adventure") base *= 1.12;
-  else if (s === "nature") base *= 1.04;
-  else if (s === "relaxation") base *= 1.08;
-  else if (s === "cultural") base *= 0.98;
-  else if (s === "budget") base *= 0.72;
-  return Math.round(base);
+const ADMIN_DAILY_BENCHMARKS_INR = {
+  global: 9000,
+  india: 3837,
+  uae: 24325,
+  japan: 12350,
+  france: 25150,
+  uk: 20290,
+  italy: 18500,
+  spain: 16500,
+  greece: 15000,
+  netherlands: 22000,
+  usa: 19000,
+  canada: 16500,
+  australia: 17500,
+  thailand: 6200,
+  indonesia: 5200,
+  singapore: 15000,
+  malaysia: 6500,
+  turkey: 9000,
+  maldives: 30000,
+};
+
+const ADMIN_PLACE_DAILY_BENCHMARKS_INR = {
+  chennai: 2851,
+  ooty: 2400,
+  kodaikanal: 2500,
+  rameswaram: 2200,
+  pondicherry: 3200,
+  mahabalipuram: 2600,
+  bangalore: 4300,
+  mumbai: 5200,
+  delhi: 4500,
+  goa: 4800,
+  dubai: 28500,
+  "abu dhabi": 25000,
+  tokyo: 16000,
+  kyoto: 14000,
+  osaka: 13500,
+  paris: 25500,
+  london: 24500,
+  singapore: 17000,
+  bangkok: 7700,
+  bali: 6500,
+  "new york": 26000,
+  "los angeles": 22000,
+  chicago: 19000,
+  "san francisco": 25000,
+  miami: 21000,
+  toronto: 18000,
+  vancouver: 19000,
+  sydney: 20000,
+  melbourne: 19000,
+  istanbul: 9000,
+  cappadocia: 8500,
+};
+
+const ADMIN_BUDGET_COUNTRY_MATCHERS = {
+  india: ["india", "chennai", "ooty", "kodaikanal", "rameswaram", "pondicherry", "mahabalipuram", "bangalore", "mumbai", "delhi", "goa", "jaipur", "hyderabad", "kolkata"],
+  uae: ["uae", "dubai", "abu dhabi", "sharjah"],
+  japan: ["japan", "tokyo", "kyoto", "osaka", "nara", "hakone", "sapporo"],
+  france: ["france", "paris", "nice", "lyon"],
+  uk: ["uk", "united kingdom", "london", "manchester", "edinburgh"],
+  italy: ["italy", "rome", "venice", "florence", "milan", "amalfi"],
+  spain: ["spain", "barcelona", "madrid", "seville"],
+  greece: ["greece", "athens", "santorini"],
+  netherlands: ["netherlands", "amsterdam"],
+  usa: ["usa", "united states", "new york", "los angeles", "chicago", "san francisco", "miami"],
+  canada: ["canada", "toronto", "vancouver"],
+  australia: ["australia", "sydney", "melbourne"],
+  thailand: ["thailand", "bangkok", "phuket", "chiang mai"],
+  indonesia: ["indonesia", "bali", "jakarta", "ubud"],
+  singapore: ["singapore"],
+  malaysia: ["malaysia", "kuala lumpur", "langkawi"],
+  turkey: ["turkey", "istanbul", "cappadocia", "antalya"],
+  maldives: ["maldives"],
+};
+
+const ADMIN_BUDGET_CATEGORY_MULTIPLIERS = {
+  budget: 0.46,
+  moderate: 1,
+  premium: 1.55,
+  luxury: 2.35,
+};
+
+const ADMIN_BUDGET_SPLIT_RATIOS = {
+  budget: { stay: 0.34, food: 0.25, transport: 0.12, activities: 0.29 },
+  moderate: { stay: 0.38, food: 0.24, transport: 0.1, activities: 0.28 },
+  premium: { stay: 0.43, food: 0.22, transport: 0.09, activities: 0.26 },
+  luxury: { stay: 0.5, food: 0.18, transport: 0.08, activities: 0.24 },
+};
+
+const ADMIN_STYLE_TO_BUDGET_CATEGORY = {
+  cultural: "moderate",
+  adventure: "moderate",
+  nature: "moderate",
+  relaxation: "premium",
+  luxury: "luxury",
+};
+
+const ADMIN_CURRENCY_RATES = {
+  INR: 1, USD: 0.012, EUR: 0.011, GBP: 0.0095,
+  AED: 0.044, JPY: 1.8, THB: 0.44, IDR: 0.000077,
+  CAD: 0.016, AUD: 0.018, SGD: 0.016, CHF: 0.011,
+  MYR: 0.057, TRY: 0.39, KWD: 0.0037, QAR: 0.044,
+  SAR: 0.045, OMR: 0.0046, CNY: 0.087,
+};
+
+function getAdminBudgetCountry(destination = "") {
+  const text = String(destination || "").toLowerCase();
+  const matchedPlace = Object.keys(ADMIN_PLACE_DAILY_BENCHMARKS_INR).find((place) => text.includes(place));
+  if (matchedPlace) {
+    const matchedCountry = Object.entries(ADMIN_BUDGET_COUNTRY_MATCHERS).find(([, keys]) =>
+      keys.some((key) => matchedPlace.includes(key) || key.includes(matchedPlace)),
+    );
+    if (matchedCountry?.[0]) return matchedCountry[0];
+  }
+  const foundCountry = Object.entries(ADMIN_BUDGET_COUNTRY_MATCHERS).find(([, keys]) =>
+    keys.some((key) => text.includes(key)),
+  );
+  return foundCountry?.[0] || "global";
+}
+
+function convertAdminBudgetCurrency(amountINR, currency) {
+  const rate = ADMIN_CURRENCY_RATES[currency] ?? 1;
+  return Math.round(amountINR * rate);
+}
+
+function getAdminBudgetCategoryForStyle(style = "") {
+  return ADMIN_STYLE_TO_BUDGET_CATEGORY[String(style || "").toLowerCase()] || "moderate";
+}
+
+function buildAdminBudgetSummary(destination, days = 1, travelStyle = "cultural", currency = "USD") {
+  const safeDays = Math.max(1, Number(days) || 1);
+  const budgetCategory = getAdminBudgetCategoryForStyle(travelStyle);
+  const placeKey = Object.keys(ADMIN_PLACE_DAILY_BENCHMARKS_INR).find((place) =>
+    String(destination || "").toLowerCase().includes(place),
+  );
+  const countryKey = getAdminBudgetCountry(destination);
+  const dailyBenchmarkINR = placeKey
+    ? ADMIN_PLACE_DAILY_BENCHMARKS_INR[placeKey]
+    : (ADMIN_DAILY_BENCHMARKS_INR[countryKey] || ADMIN_DAILY_BENCHMARKS_INR.global);
+  const multiplier = ADMIN_BUDGET_CATEGORY_MULTIPLIERS[budgetCategory] || 1;
+  const ratios = ADMIN_BUDGET_SPLIT_RATIOS[budgetCategory] || ADMIN_BUDGET_SPLIT_RATIOS.moderate;
+  const tripLengthFactor = safeDays >= 10 ? 0.9 : safeDays >= 6 ? 0.95 : safeDays >= 4 ? 0.98 : 1;
+  const totalINR = Math.round(dailyBenchmarkINR * multiplier * safeDays * tripLengthFactor);
+  const stayINR = Math.round(totalINR * ratios.stay);
+  const foodINR = Math.round(totalINR * ratios.food);
+  const transportINR = Math.round(totalINR * ratios.transport);
+  const activitiesINR = Math.max(0, totalINR - stayINR - foodINR - transportINR);
+
+  const stay = convertAdminBudgetCurrency(stayINR, currency);
+  const food = convertAdminBudgetCurrency(foodINR, currency);
+  const transport = convertAdminBudgetCurrency(transportINR, currency);
+  const activities = convertAdminBudgetCurrency(activitiesINR, currency);
+  const total = stay + food + transport + activities;
+
+  return {
+    budgetCategory,
+    currency,
+    stay,
+    food,
+    transport,
+    activities,
+    total,
+    daily: Math.round(total / safeDays),
+  };
 }
 
 function getRecommendedPackageBudgetUsd(dest, days = 7, style = "") {
-  const safeDays = Math.max(1, Number(days) || 1);
-  const dailyUsd = estimatePackageDailyUsd(dest, style);
-  const shortTripOverhead = safeDays === 1
-    ? dailyUsd * 0.15
-    : Math.min(dailyUsd * 0.45, 45);
-  const total = Math.round((dailyUsd * safeDays) + shortTripOverhead);
-  const floor = Math.max(35, Math.round(dailyUsd * Math.min(0.95, 0.65 + safeDays * 0.05)));
-  return Math.max(floor, total);
+  return buildAdminBudgetSummary(dest, days, style, "USD").total;
 }
 
 function getBudgetSliderBounds(dest, days = 7, style = "") {
@@ -360,9 +509,17 @@ function AddPackageModal({ isOpen, onClose }) {
   const createTourPackage = useCreateTourPackage();
   const currencyMeta = getDestinationCurrencyMeta(form.destination);
   const displayBudget = formatDestinationMoneyFromUsd(form.budget, form.destination);
+  const plannerBudgetSummary = buildAdminBudgetSummary(form.destination, form.days, form.travelStyle, "USD");
   const budgetBounds = getBudgetSliderBounds(form.destination, form.days, form.travelStyle);
   const recommendedBudgetUsd = budgetBounds.recommended;
   const approxDailyBudgetUsd = Math.max(1, Math.round(recommendedBudgetUsd / Math.max(1, form.days)));
+  const budgetScale = recommendedBudgetUsd > 0 ? form.budget / recommendedBudgetUsd : 1;
+  const liveBudgetBreakdown = {
+    stay: Math.max(0, Math.round(plannerBudgetSummary.stay * budgetScale)),
+    transport: Math.max(0, Math.round(plannerBudgetSummary.transport * budgetScale)),
+    food: Math.max(0, Math.round(plannerBudgetSummary.food * budgetScale)),
+    activities: Math.max(0, Math.round(plannerBudgetSummary.activities * budgetScale)),
+  };
 
   useEffect(() => {
     if (!form.destination || budgetTouched) return;
@@ -652,7 +809,7 @@ function AddPackageModal({ isOpen, onClose }) {
                     <div className="px-2 py-1 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/40 text-[#D4AF37] font-black text-[10px] shadow-[0_0_15px_rgba(212,175,55,0.2)] self-start sm:self-auto">
                       {displayBudget}
                       <span className="ml-2 text-[9px] text-white/35">
-                        ({currencyMeta.code} · ${form.budget.toLocaleString()})
+                        ({currencyMeta.code} - ${form.budget.toLocaleString()})
                       </span>
                     </div>
                   </div>
@@ -667,17 +824,22 @@ function AddPackageModal({ isOpen, onClose }) {
                   />
                   {!!form.destination && !budgetTouched && (
                     <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-white/35">
-                      Smart baseline for {form.days} {form.days === 1 ? "day" : "days"} · {form.travelStyle} · about {formatDestinationMoneyFromUsd(approxDailyBudgetUsd, form.destination)} per day
+                      Smart baseline for {form.days} {form.days === 1 ? "day" : "days"} - {plannerBudgetSummary.budgetCategory} - about {formatDestinationMoneyFromUsd(approxDailyBudgetUsd, form.destination)} per day
                     </p>
                   )}
 
                   {/* Budget Split */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
-                    {[{ l: "Stay", p: 0.35, c: "from-emerald-500/20" }, { l: "Travel", p: 0.25, c: "from-blue-500/20" }, { l: "Food", p: 0.30, c: "from-orange-500/20" }, { l: "Misc", p: 0.10, c: "from-yellow-500/20" }].map(b => (
+                    {[
+                      { l: "Stay", value: liveBudgetBreakdown.stay, c: "from-emerald-500/20" },
+                      { l: "Travel", value: liveBudgetBreakdown.transport, c: "from-blue-500/20" },
+                      { l: "Food", value: liveBudgetBreakdown.food, c: "from-orange-500/20" },
+                      { l: "Experiences", value: liveBudgetBreakdown.activities, c: "from-yellow-500/20" },
+                    ].map(b => (
                       <div key={b.l} className="bg-white/[0.03] border border-[#D4AF37]/10 rounded-xl p-2 relative overflow-hidden group hover:border-[#D4AF37]/40 transition-colors">
                         <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${b.c} to-transparent group-hover:h-full group-hover:opacity-10 transition-all`} />
                         <div className="text-[8px] font-black uppercase tracking-widest text-[#D4AF37]/70 mb-0.5">{b.l}</div>
-                        <div className="text-sm font-black text-white">{formatDestinationMoneyFromUsd(Math.round(form.budget * b.p), form.destination)}</div>
+                        <div className="text-sm font-black text-white">{formatDestinationMoneyFromUsd(b.value, form.destination)}</div>
                       </div>
                     ))}
                   </div>
