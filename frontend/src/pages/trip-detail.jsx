@@ -677,16 +677,15 @@ function MapWidget({ destination, isLight = false }) {
             <p className={`truncate text-[12px] font-semibold ${isLight ? 'text-slate-700' : 'text-white/72'}`}>{destination}</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-          }}
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination)}`}
+          target="_blank"
+          rel="noreferrer"
           className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] transition-all hover:-translate-y-0.5 ${isLight ? 'border-emerald-300/70 bg-emerald-50 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-100' : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300 hover:border-emerald-300/45 hover:bg-emerald-400/16 hover:text-emerald-200'}`}
         >
           Explore
           <ChevronRight size={12} />
-        </button>
+        </a>
       </div>
     </div>
   );

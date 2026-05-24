@@ -290,11 +290,10 @@ function MapWidget({ destination, isLight = false }) {
             <p className={cn("truncate text-[12px] font-semibold", isLight ? "text-slate-700" : "text-white/72")}>{destination}</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-          }}
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination)}`}
+          target="_blank"
+          rel="noreferrer"
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] transition-all hover:-translate-y-0.5",
             isLight
@@ -304,7 +303,7 @@ function MapWidget({ destination, isLight = false }) {
         >
           Explore
           <ChevronRight size={12} />
-        </button>
+        </a>
       </div>
     </div>
   );
