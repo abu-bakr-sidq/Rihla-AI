@@ -2370,7 +2370,8 @@ export default function Planner() {
   const [selectedDay, setSelectedDay] = useState(1);     // day-nav pill selection
   const [actImgCache, setActImgCache] = useState({});    // activity images: query ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ url
   const [loginGateOpen, setLoginGateOpen] = useState(false); // login popup for locked days
-  const [exporting, setExporting] = useState(false);          // PDF export loading state
+  const [exportingPreview, setExportingPreview] = useState(false);          // PDF preview loading state
+  const [downloadingPdf, setDownloadingPdf] = useState(false);              // PDF download loading state
 
 
 
@@ -3980,45 +3981,45 @@ export default function Planner() {
                               <div className="flex flex-wrap items-center justify-center xl:justify-end gap-2">
                               <button
                                 onClick={async () => {
-                                  if (exporting) return;
-                                  setExporting(true);
+                                  if (exportingPreview || downloadingPdf) return;
+                                  setExportingPreview(true);
                                   try {
                                     await exportTripPDF(tripLike, null, null);
                                   } catch (e) { console.error('PDF export failed:', e); }
-                                  finally { setExporting(false); }
+                                  finally { setExportingPreview(false); }
                                 }}
-                                disabled={exporting}
+                                disabled={exportingPreview || downloadingPdf}
                                 className="flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all"
                                 style={{
-                                  background: exporting ? 'rgba(212,175,55,0.1)' : 'linear-gradient(135deg,#D4AF37,#b8942e)',
-                                  color: exporting ? 'rgba(212,175,55,0.5)' : '#000',
-                                  boxShadow: exporting ? 'none' : '0 4px 20px rgba(212,175,55,0.3)',
+                                  background: exportingPreview ? 'rgba(212,175,55,0.1)' : 'linear-gradient(135deg,#D4AF37,#b8942e)',
+                                  color: exportingPreview ? 'rgba(212,175,55,0.5)' : '#000',
+                                  boxShadow: exportingPreview ? 'none' : '0 4px 20px rgba(212,175,55,0.3)',
                                   border: '1px solid rgba(212,175,55,0.25)',
                                 }}
                               >
-                                {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-                                {exporting ? 'Opening...' : 'Export PDF'}
+                                {exportingPreview ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                                {exportingPreview ? 'Opening...' : 'Export PDF'}
                               </button>
                               <button
                                 onClick={async () => {
-                                  if (exporting) return;
-                                  setExporting(true);
+                                  if (exportingPreview || downloadingPdf) return;
+                                  setDownloadingPdf(true);
                                   try {
                                     await downloadTripPDF(tripLike, null, null);
                                   } catch (e) { console.error('PDF download failed:', e); }
-                                  finally { setExporting(false); }
+                                  finally { setDownloadingPdf(false); }
                                 }}
-                                disabled={exporting}
+                                disabled={exportingPreview || downloadingPdf}
                                 className="flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all"
                                 style={{
                                   background: isLightPlannerResult ? 'rgba(255,255,255,0.82)' : 'rgba(17,26,36,0.9)',
-                                  color: exporting ? 'rgba(212,175,55,0.45)' : '#D4AF37',
+                                  color: downloadingPdf ? 'rgba(212,175,55,0.45)' : '#D4AF37',
                                   boxShadow: isLightPlannerResult ? '0 8px 24px rgba(148,163,184,0.14)' : '0 4px 20px rgba(0,0,0,0.18)',
                                   border: isLightPlannerResult ? '1px solid rgba(148,163,184,0.24)' : '1px solid rgba(212,175,55,0.25)',
                                 }}
                               >
-                                {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-                                {exporting ? 'Preparing...' : 'Download PDF'}
+                                {downloadingPdf ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                                {downloadingPdf ? 'Preparing...' : 'Download PDF'}
                               </button>
                               </div>
                             </div>

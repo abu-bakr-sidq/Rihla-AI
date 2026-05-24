@@ -34,6 +34,36 @@ function escapeHtml(value = '') {
     .replace(/'/g, '&#39;');
 }
 
+function chunkItems(items = [], size = 4) {
+  const safe = Array.isArray(items) ? items : [];
+  const chunks = [];
+  for (let index = 0; index < safe.length; index += size) {
+    chunks.push(safe.slice(index, index + size));
+  }
+  return chunks;
+}
+
+function createPdfPlaceholder(label = 'Rihla AI', tone = '#0f172a') {
+  const safeLabel = String(label || 'Rihla AI').slice(0, 48);
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+      <defs>
+        <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+          <stop offset="0%" stop-color="${tone}" />
+          <stop offset="100%" stop-color="#060b14" />
+        </linearGradient>
+      </defs>
+      <rect width="1200" height="800" fill="url(#bg)" />
+      <circle cx="980" cy="160" r="140" fill="rgba(212,175,55,0.10)" />
+      <circle cx="210" cy="650" r="180" fill="rgba(56,189,248,0.08)" />
+      <text x="100" y="140" fill="#D4AF37" font-size="28" font-family="Arial, sans-serif" font-weight="700" letter-spacing="8">RIHLA AI</text>
+      <text x="100" y="380" fill="#F8FAFC" font-size="64" font-family="Arial, sans-serif" font-weight="800">${safeLabel.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>
+      <text x="100" y="450" fill="#94A3B8" font-size="28" font-family="Arial, sans-serif">Curated itinerary snapshot</text>
+    </svg>
+  `;
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
 function normalizeDayPlans(dayData) {
   const slots = ['morning', 'morningActivity', 'afternoon', 'afternoonActivity', 'evening', 'eveningActivity', 'night', 'nightActivity'];
   if (Array.isArray(dayData?.plans)) {
@@ -158,6 +188,28 @@ async function fetchPlaceImageUrl(place, destination, photoIndex = 0) {
   }
 }
 
+async function toDataUrl(url) {
+  try {
+    const res = await fetch(url, { credentials: 'omit', mode: 'cors' });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function buildPdfImageSource(url, fallbackLabel, tone = '#0f172a') {
+  if (!url) return createPdfPlaceholder(fallbackLabel, tone);
+  const embedded = await toDataUrl(url);
+  return embedded || createPdfPlaceholder(fallbackLabel, tone);
+}
+
 async function fetchPrayerTimes(destination) {
   try {
     const now = new Date();
@@ -200,7 +252,8 @@ async function buildPrintableTrip(trip, prayerTimesArg, hijriDateArg) {
     ? { times: prayerTimesArg, hijriDate: hijriDateArg || '' }
     : await fetchPrayerTimes(destination);
 
-  const coverImage = await fetchPlaceImageUrl(destination, destination, 0);
+  const coverImageUrl = await fetchPlaceImageUrl(destination, destination, 0);
+  const coverImage = await buildPdfImageSource(coverImageUrl, destination, '#10203a');
   const printableDays = [];
 
   for (const day of days) {
@@ -208,7 +261,11 @@ async function buildPrintableTrip(trip, prayerTimesArg, hijriDateArg) {
     const planCards = await Promise.all(
       plans.map(async (plan, index) => ({
         ...plan,
-        image: await fetchPlaceImageUrl(plan.place, destination, index),
+        image: await buildPdfImageSource(
+          await fetchPlaceImageUrl(plan.place, destination, index),
+          plan.place,
+          index % 2 === 0 ? '#10203a' : '#1b2434',
+        ),
         timeline: buildTimelineSteps(plan),
       }))
     );
@@ -263,42 +320,47 @@ function renderTimeline(plan) {
   '</div>';
 }
 
+function renderPlanCard(plan, index, currency = 'USD') {
+  return '<article class="plan-card">' +
+    '<div class="plan-image-wrap">' +
+      (plan.image ? '<img class="plan-image" src="' + escapeHtml(plan.image) + '" alt="' + escapeHtml(plan.place) + '" />' : '<div class="plan-image placeholder"></div>') +
+      '<div class="plan-overlay"></div>' +
+      '<div class="plan-meta-top">' +
+        '<span class="plan-count">' + (index + 1) + '</span>' +
+        '<span class="plan-badge">' + escapeHtml(SLOT_CFG[plan.slotKey]?.label || 'Stop') + '</span>' +
+      '</div>' +
+      '<div class="plan-meta-bottom">' +
+        '<span class="plan-time">' + escapeHtml(plan.time) + '</span>' +
+        '<h3>' + escapeHtml(plan.place) + '</h3>' +
+      '</div>' +
+    '</div>' +
+    '<div class="plan-body">' +
+      '<a class="plan-link" href="' + escapeHtml(plan.locationLink) + '" target="_blank" rel="noreferrer">Open Place Link</a>' +
+      '<p class="plan-desc">' + escapeHtml(plan.description || '') + '</p>' +
+      renderTimeline(plan) +
+      '<div class="plan-cost">' + escapeHtml(plan.cost > 0 ? fmtBudget(plan.cost, currency) : 'Included') + '</div>' +
+    '</div>' +
+  '</article>';
+}
+
 function renderDay(day, currency = 'USD') {
   const plans = Array.isArray(day.plans) ? day.plans : [];
-  return '<section class="day-page">' +
+  const chunks = chunkItems(plans, 4);
+  return chunks.map((chunk, chunkIndex) =>
+    '<section class="day-page">' +
       '<div class="day-head">' +
         '<div>' +
-          '<div class="day-kicker">Day ' + escapeHtml(day.day || '') + '</div>' +
+          '<div class="day-kicker">Day ' + escapeHtml(day.day || '') + (chunks.length > 1 ? ' · Part ' + escapeHtml(chunkIndex + 1) : '') + '</div>' +
           '<h2 class="day-title">' + escapeHtml(day.title || day.theme || 'Planned Day') + '</h2>' +
           '<div class="day-date">' + escapeHtml(day.date || '') + '</div>' +
         '</div>' +
       '</div>' +
-      renderDayAtGlance(day) +
+      (chunkIndex === 0 ? renderDayAtGlance(day) : '') +
       '<div class="plans-grid">' +
-        plans.map((plan, index) =>
-          '<article class="plan-card">' +
-            '<div class="plan-image-wrap">' +
-              (plan.image ? '<img class="plan-image" src="' + escapeHtml(plan.image) + '" alt="' + escapeHtml(plan.place) + '" />' : '<div class="plan-image placeholder"></div>') +
-              '<div class="plan-overlay"></div>' +
-              '<div class="plan-meta-top">' +
-                '<span class="plan-count">' + (index + 1) + '</span>' +
-                '<span class="plan-badge">' + escapeHtml(SLOT_CFG[plan.slotKey]?.label || 'Stop') + '</span>' +
-              '</div>' +
-              '<div class="plan-meta-bottom">' +
-                '<span class="plan-time">' + escapeHtml(plan.time) + '</span>' +
-                '<h3>' + escapeHtml(plan.place) + '</h3>' +
-              '</div>' +
-            '</div>' +
-            '<div class="plan-body">' +
-              '<a class="plan-link" href="' + escapeHtml(plan.locationLink) + '" target="_blank" rel="noreferrer">Open Place Link</a>' +
-              '<p class="plan-desc">' + escapeHtml(plan.description || '') + '</p>' +
-              renderTimeline(plan) +
-              '<div class="plan-cost">' + escapeHtml(plan.cost > 0 ? fmtBudget(plan.cost, currency) : 'Included') + '</div>' +
-            '</div>' +
-          '</article>'
-        ).join('') +
+        chunk.map((plan, index) => renderPlanCard(plan, (chunkIndex * 4) + index, currency)).join('') +
       '</div>' +
-    '</section>';
+    '</section>'
+  ).join('');
 }
 
 function buildHtml(trip, printable) {
@@ -309,7 +371,7 @@ function buildHtml(trip, printable) {
   return '<!doctype html><html><head><meta charset="utf-8" />' +
   '<title>Rihla AI PDF</title>' +
   '<style>' +
-  '@page{size:A4;margin:12mm;}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:#060b14;color:#fff;}*{box-sizing:border-box}a{text-decoration:none}.doc{display:flex;flex-direction:column;gap:18px;align-items:center;padding:0}.cover,.day-page{width:186mm;min-height:273mm;page-break-after:always;border:1px solid rgba(212,175,55,.18);border-radius:22px;overflow:hidden;background:linear-gradient(180deg,#09111d,#060b14)}.cover:last-child,.day-page:last-child{page-break-after:auto}.cover-hero{height:76mm;position:relative;background:#101826}.cover-hero img{width:100%;height:100%;object-fit:cover}.cover-hero .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,11,20,.1),rgba(6,11,20,.82))}.cover-body{padding:14mm}.brand{font-size:10px;letter-spacing:.5em;color:#d4af37;font-weight:800;text-transform:uppercase}.dest{font-size:34px;line-height:1;margin:10px 0 8px;font-weight:900}.meta{color:#94a3b8;font-size:11px;display:flex;gap:10px;flex-wrap:wrap}.budget{margin-top:14px}.budget .label{font-size:10px;letter-spacing:.25em;color:#94a3b8;text-transform:uppercase}.budget .value{font-size:26px;color:#d4af37;font-weight:900;margin-top:6px}.prayer-box{margin-top:16px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:#0f1623;padding:12px}.prayer-title{font-size:11px;letter-spacing:.3em;color:#10b981;text-transform:uppercase;font-weight:800;margin-bottom:10px}.prayer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.prayer-pill{border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px;background:rgba(255,255,255,.02)}.prayer-pill span{display:block;color:#94a3b8;font-size:11px}.prayer-pill strong{display:block;color:#fff;font-size:14px;margin-top:5px}.hijri{margin-top:10px;color:#94a3b8;font-size:11px}.day-head{padding:12mm 12mm 6mm;border-bottom:1px solid rgba(255,255,255,.06)}.day-kicker{font-size:11px;letter-spacing:.3em;color:#d4af37;text-transform:uppercase;font-weight:800}.day-title{font-size:24px;line-height:1.15;margin:8px 0 6px;font-weight:900}.day-date{color:#94a3b8;font-size:12px}.glance-wrap{padding:10mm 10mm 0}.section-kicker{font-size:11px;letter-spacing:.3em;color:#d4af37;text-transform:uppercase;font-weight:800;margin-bottom:10px}.glance-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.glance-pill{border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;background:#0f1623}.glance-time{font-size:11px;color:#d4af37;font-weight:800}.glance-place{margin-top:6px;font-size:11px;color:#e5edf6;line-height:1.45}.plans-grid{padding:10mm;display:grid;grid-template-columns:1fr 1fr;gap:8mm}.plan-card{border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;background:#0f1623}.plan-image-wrap{position:relative;height:64mm;background:#101826}.plan-image{width:100%;height:100%;object-fit:cover}.plan-image.placeholder{background:linear-gradient(135deg,#122033,#0b1422)}.plan-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.68))}.plan-meta-top,.plan-meta-bottom{position:absolute;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}.plan-meta-top{top:12px}.plan-meta-bottom{bottom:12px;align-items:flex-end}.plan-count,.plan-badge,.plan-time{background:rgba(6,11,20,.82);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800}.plan-meta-bottom h3{margin:0;font-size:21px;line-height:1.1;max-width:72%;font-weight:900}.plan-body{padding:12px 14px 14px}.plan-link{display:inline-block;margin-bottom:10px;color:#38bdf8;font-size:11px;font-weight:800}.plan-desc{margin:0 0 12px;color:#dbe4ee;font-size:12px;line-height:1.6}.timeline-block{border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:10px;background:rgba(255,255,255,.02);margin-bottom:12px}.timeline-title{font-size:10px;letter-spacing:.22em;color:#d4af37;text-transform:uppercase;font-weight:800;margin-bottom:8px}.timeline-row{display:grid;grid-template-columns:74px 1fr;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}.timeline-row:last-child{border-bottom:none}.timeline-time{color:#10b981;font-size:11px;font-weight:800}.timeline-text{color:#eef4fb;font-size:11px;line-height:1.5}.plan-cost{color:#d4af37;font-weight:900;font-size:12px}.footer-note{padding:0 12mm 12mm;color:#64748b;font-size:10px}.empty{padding:12mm;color:#94a3b8}.prayer-empty{color:#94a3b8;font-size:12px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.doc{align-items:stretch}.cover,.day-page{width:auto;min-height:auto}}' +
+  '@page{size:A4;margin:12mm;}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:#060b14;color:#fff;}*{box-sizing:border-box}a{text-decoration:none}.doc{display:flex;flex-direction:column;gap:18px;align-items:center;padding:0}.cover,.day-page{width:186mm;min-height:273mm;page-break-after:always;border:1px solid rgba(212,175,55,.18);border-radius:22px;overflow:hidden;background:linear-gradient(180deg,#09111d,#060b14)}.cover:last-child,.day-page:last-child{page-break-after:auto}.cover-hero{height:76mm;position:relative;background:#101826}.cover-hero img{width:100%;height:100%;object-fit:cover}.cover-hero .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,11,20,.1),rgba(6,11,20,.82))}.cover-body{padding:14mm}.brand{font-size:10px;letter-spacing:.5em;color:#d4af37;font-weight:800;text-transform:uppercase}.dest{font-size:34px;line-height:1;margin:10px 0 8px;font-weight:900}.meta{color:#94a3b8;font-size:11px;display:flex;gap:10px;flex-wrap:wrap}.budget{margin-top:14px}.budget .label{font-size:10px;letter-spacing:.25em;color:#94a3b8;text-transform:uppercase}.budget .value{font-size:26px;color:#d4af37;font-weight:900;margin-top:6px}.prayer-box{margin-top:16px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:#0f1623;padding:12px}.prayer-title{font-size:11px;letter-spacing:.3em;color:#10b981;text-transform:uppercase;font-weight:800;margin-bottom:10px}.prayer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.prayer-pill{border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px;background:rgba(255,255,255,.02)}.prayer-pill span{display:block;color:#94a3b8;font-size:11px}.prayer-pill strong{display:block;color:#fff;font-size:14px;margin-top:5px}.hijri{margin-top:10px;color:#94a3b8;font-size:11px}.day-head{padding:10mm 10mm 6mm;border-bottom:1px solid rgba(255,255,255,.06)}.day-kicker{font-size:11px;letter-spacing:.3em;color:#d4af37;text-transform:uppercase;font-weight:800}.day-title{font-size:24px;line-height:1.15;margin:8px 0 6px;font-weight:900}.day-date{color:#94a3b8;font-size:12px}.glance-wrap{padding:8mm 8mm 0}.section-kicker{font-size:11px;letter-spacing:.3em;color:#d4af37;text-transform:uppercase;font-weight:800;margin-bottom:8px}.glance-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.glance-pill{border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px;background:#0f1623}.glance-time{font-size:10px;color:#d4af37;font-weight:800}.glance-place{margin-top:4px;font-size:10px;color:#e5edf6;line-height:1.35}.plans-grid{padding:8mm;display:grid;grid-template-columns:1fr 1fr;gap:6mm}.plan-card{border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;background:#0f1623;break-inside:avoid}.plan-image-wrap{position:relative;height:52mm;background:#101826}.plan-image{width:100%;height:100%;object-fit:cover}.plan-image.placeholder{background:linear-gradient(135deg,#122033,#0b1422)}.plan-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.68))}.plan-meta-top,.plan-meta-bottom{position:absolute;left:10px;right:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}.plan-meta-top{top:10px}.plan-meta-bottom{bottom:10px;align-items:flex-end}.plan-count,.plan-badge,.plan-time{background:rgba(6,11,20,.88);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800}.plan-meta-bottom h3{margin:0;font-size:17px;line-height:1.08;max-width:72%;font-weight:900;text-shadow:0 2px 10px rgba(0,0,0,.45)}.plan-body{padding:10px 12px 12px}.plan-link{display:inline-block;margin-bottom:8px;color:#38bdf8;font-size:10px;font-weight:800}.plan-desc{margin:0 0 10px;color:#dbe4ee;font-size:10px;line-height:1.45}.timeline-block{border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:8px;background:rgba(255,255,255,.02);margin-bottom:10px}.timeline-title{font-size:9px;letter-spacing:.22em;color:#d4af37;text-transform:uppercase;font-weight:800;margin-bottom:6px}.timeline-row{display:grid;grid-template-columns:58px 1fr;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}.timeline-row:last-child{border-bottom:none}.timeline-time{color:#10b981;font-size:10px;font-weight:800}.timeline-text{color:#eef4fb;font-size:10px;line-height:1.35}.plan-cost{color:#d4af37;font-weight:900;font-size:11px}.footer-note{padding:0 12mm 12mm;color:#64748b;font-size:10px}.empty{padding:12mm;color:#94a3b8}.prayer-empty{color:#94a3b8;font-size:12px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.doc{align-items:stretch}.cover,.day-page{width:auto;min-height:auto}}' +
   '</style></head><body><div class="doc">' +
     '<section class="cover">' +
       '<div class="cover-hero">' +

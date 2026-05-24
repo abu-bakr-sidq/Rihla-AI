@@ -756,7 +756,8 @@ export default function TripDetail() {
   const [heroImage, setHeroImage] = useState('');
   const [planFocusAct, setPlanFocusAct] = useState(null);
   const [focusImage, setFocusImage] = useState('');
-  const [exporting, setExporting] = useState(false);
+  const [exportingPreview, setExportingPreview] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [detailTheme, setDetailTheme] = useState(() => {
     if (typeof window === 'undefined') return 'dark';
@@ -964,43 +965,43 @@ export default function TripDetail() {
                 <div className="flex flex-wrap items-center justify-center xl:justify-end gap-2">
                   <button
                     onClick={async () => {
-                      if (exporting) return;
-                      setExporting(true);
+                      if (exportingPreview || downloadingPdf) return;
+                      setExportingPreview(true);
                       try { await exportTripPDF(trip, null, null); }
                       catch (e) { console.error('PDF preview failed:', e); }
-                      finally { setExporting(false); }
+                      finally { setExportingPreview(false); }
                     }}
-                    disabled={exporting}
+                    disabled={exportingPreview || downloadingPdf}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
                     style={{
-                      background: exporting ? 'rgba(212,175,55,0.1)' : 'linear-gradient(135deg,#D4AF37,#b8942e)',
-                      color: exporting ? 'rgba(212,175,55,0.5)' : '#000',
-                      boxShadow: exporting ? 'none' : '0 8px 30px rgba(212,175,55,0.28)',
+                      background: exportingPreview ? 'rgba(212,175,55,0.1)' : 'linear-gradient(135deg,#D4AF37,#b8942e)',
+                      color: exportingPreview ? 'rgba(212,175,55,0.5)' : '#000',
+                      boxShadow: exportingPreview ? 'none' : '0 8px 30px rgba(212,175,55,0.28)',
                       border: '1px solid rgba(212,175,55,0.25)',
                     }}
                   >
-                    {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-                    {exporting ? 'Opening...' : 'Export PDF'}
+                    {exportingPreview ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                    {exportingPreview ? 'Opening...' : 'Export PDF'}
                   </button>
                   <button
                     onClick={async () => {
-                      if (exporting) return;
-                      setExporting(true);
+                      if (exportingPreview || downloadingPdf) return;
+                      setDownloadingPdf(true);
                       try { await downloadTripPDF(trip, null, null); }
                       catch (e) { console.error('PDF download failed:', e); }
-                      finally { setExporting(false); }
+                      finally { setDownloadingPdf(false); }
                     }}
-                    disabled={exporting}
+                    disabled={exportingPreview || downloadingPdf}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
                     style={{
                       background: 'rgba(17,26,36,0.78)',
-                      color: exporting ? 'rgba(212,175,55,0.45)' : '#D4AF37',
+                      color: downloadingPdf ? 'rgba(212,175,55,0.45)' : '#D4AF37',
                       boxShadow: '0 10px 32px rgba(0,0,0,0.15)',
                       border: '1px solid rgba(212,175,55,0.25)',
                     }}
                   >
-                    {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-                    {exporting ? 'Preparing...' : 'Download PDF'}
+                    {downloadingPdf ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                    {downloadingPdf ? 'Preparing...' : 'Download PDF'}
                   </button>
                   <button
                     onClick={() => {
