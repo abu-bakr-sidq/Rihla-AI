@@ -288,9 +288,18 @@ function MapWidget({ destination, isLight = false }) {
             <p className={cn("truncate text-[12px] font-semibold", isLight ? "text-slate-700" : "text-white/72")}>{destination}</p>
           </div>
         </div>
-        <span className={cn("rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em]", isLight ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600" : "border-emerald-400/15 bg-emerald-400/8 text-emerald-300/80")}>
+        <a
+          href={`/explore?query=${encodeURIComponent(destination)}`}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] transition-all hover:-translate-y-0.5",
+            isLight
+              ? "border-emerald-400/50 bg-emerald-50 text-emerald-700 hover:border-emerald-500 hover:bg-emerald-100"
+              : "border-emerald-400/25 bg-emerald-400/10 text-emerald-300 hover:border-emerald-300/45 hover:bg-emerald-400/16 hover:text-emerald-200"
+          )}
+        >
           Explore
-        </span>
+          <ChevronRight size={12} />
+        </a>
       </div>
     </div>
   );
