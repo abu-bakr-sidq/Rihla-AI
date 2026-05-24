@@ -1892,43 +1892,83 @@ const _hashQuery = (str) => {
 // Smart location extractor: "Sunrise Yoga at Marina Beach" -> "Marina Beach Chennai"
 const _extractLocationQuery = extractPlaceImageQuery;
 
-const _fetchActivityImage = async (query, cardIndex) => {
-  const cacheKey = `${query}__ci${cardIndex || 0}`;
+const _normalizeImageQuery = (value) =>
+  String(value || "")
+    .replace(/[^\w\s,-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const _buildPlannerImageQueries = ({ place = "", activity = "", destination = "", details = {} }) => {
+  const rawCandidates = [
+    details?.imageQuery,
+    details?.location,
+    details?.title,
+    place,
+    activity,
+    extractPlaceImageQuery(place, destination),
+    extractPlaceImageQuery(details?.location || details?.title || activity, destination),
+    `${_normalizeImageQuery(place)} ${_normalizeImageQuery(destination)}`.trim(),
+  ];
+
+  const genericPattern =
+    /\b(activity|experience|stroll|walk|tour|hidden gems|local life|first impressions|opening|closing|sunset vistas|culinary stopover|deep dive|highlight|stopover|vibes|atmospheric|adventure|discovery)\b/i;
+
+  const seen = new Set();
+  const queries = [];
+
+  for (const candidate of rawCandidates) {
+    const normalized = _normalizeImageQuery(candidate);
+    if (!normalized || normalized.length < 4) continue;
+    if (genericPattern.test(normalized) && !_normalizeImageQuery(destination)) continue;
+    const withDestination =
+      destination && !normalized.toLowerCase().includes(String(destination).toLowerCase())
+        ? `${normalized} ${_normalizeImageQuery(destination)}`.trim()
+        : normalized;
+    const finalQuery = genericPattern.test(normalized) ? withDestination : normalized;
+    const key = finalQuery.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    queries.push(finalQuery);
+  }
+
+  if (!queries.length && destination) {
+    queries.push(_normalizeImageQuery(destination));
+  }
+
+  return queries.slice(0, 4);
+};
+
+const _fetchActivityImage = async (queryInput, cardIndex) => {
+  const queries = Array.isArray(queryInput) ? queryInput.filter(Boolean) : [queryInput].filter(Boolean);
+  const cacheKey = `${queries.join("||")}__ci${cardIndex || 0}`;
   if (_imgCache[cacheKey]) return _imgCache[cacheKey];
 
-  try {
-    const r = await fetch(
-      resolveApiUrl(`/api/place-image?query=${encodeURIComponent(query)}&photoIndex=${cardIndex || 0}&onlyGoogle=1`),
-      { signal: AbortSignal.timeout(8000) }
-    );
-    if (r.ok) {
-      const d = await r.json();
-      if (d?.url) {
-        _imgCache[cacheKey] = d.url;
-        return d.url;
+  for (const query of queries) {
+    try {
+      const r = await fetch(
+        resolveApiUrl(`/api/place-image?query=${encodeURIComponent(query)}&photoIndex=${cardIndex || 0}&onlyGoogle=1`),
+        { signal: AbortSignal.timeout(4500) }
+      );
+      if (r.ok) {
+        const d = await r.json();
+        if (d?.url) {
+          _imgCache[cacheKey] = d.url;
+          _imgCache[`${query}__ci${cardIndex || 0}`] = d.url;
+          return d.url;
+        }
       }
-    }
-  } catch (_) {}
+    } catch (_) {}
+  }
 
   return null;
 };
 
-const _activityImageFallbacks = (query, cardIndex = 0) => {
-  const cleaned = String(query || "travel destination scenic")
-    .replace(/[^\w\s,-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  const featuredQuery = encodeURIComponent(`${cleaned || "travel destination"} scenic landmark`);
-  const staticFallbacks = [
-    "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=1200",
-    "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=80&w=1200",
-    "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=1200",
-    "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&q=80&w=1200",
-  ];
-  return [
-    `https://images.unsplash.com/featured/1200x800/?${featuredQuery}`,
-    staticFallbacks[Math.abs(cardIndex) % staticFallbacks.length],
-  ];
+const _activityImageFallbacks = (queries = []) => {
+  return (Array.isArray(queries) ? queries : [queries])
+    .map((query) => _normalizeImageQuery(query))
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((query) => `https://images.unsplash.com/featured/1200x800/?${encodeURIComponent(query)}`);
 };
 
 function HiddenSpotThumb({ query, cardIndex = 0 }) {
@@ -2151,24 +2191,27 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
   const [expanded, setExpanded] = useState(false);
 
   // Extract real location from activity name ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ precise Google Places query
-  const query = _extractLocationQuery(place, destination);
+    const imageQueries = _buildPlannerImageQueries({ place, activity, destination, details });
+    const query = imageQueries[0] || _extractLocationQuery(place, destination);
+    const queryKey = imageQueries.join("||");
   const accentColor = PLAN_SLOT_COLORS[slotKey] || slotColor || '#D4AF37';
   const fallbackContent = generatePlaceCardFallbackContent(place, activity, destination, slotKey);
   const { schedule, streetFinds, ideas } = buildActivityDisplayContent(details, fallbackContent);
 
   useEffect(() => {
     let alive = true;
-    _fetchActivityImage(query, cardIndex).then(url => {
-      if (alive && url) setImgSrc(url);
-    });
-    return () => { alive = false; };
-  }, [query, cardIndex]);
+      setImgSrc('');
+      _fetchActivityImage(imageQueries, cardIndex).then(url => {
+        if (alive && url) setImgSrc(url);
+      });
+      return () => { alive = false; };
+    }, [queryKey, cardIndex]);
 
   useEffect(() => {
     setImgFallbackIndex(0);
-  }, [imgSrc, query, cardIndex]);
+    }, [imgSrc, queryKey, cardIndex]);
 
-  const fallbackImages = _activityImageFallbacks(query, cardIndex);
+    const fallbackImages = _activityImageFallbacks(imageQueries);
   const activeImageSrc = imgSrc || fallbackImages[imgFallbackIndex] || "";
 
   return (
@@ -2202,6 +2245,31 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
             style={{ objectPosition: 'center 40%' }}
             alt={place}
           />
+        )}
+        {!activeImageSrc && (
+          <div
+            className={cn(
+              "absolute inset-0 flex flex-col items-center justify-center px-6 text-center",
+              isLight
+                ? "bg-[radial-gradient(circle_at_top,rgba(212,175,55,0.12),transparent_50%),linear-gradient(180deg,#f8fafc_0%,#e2e8f0_100%)] text-slate-700"
+                : "bg-[radial-gradient(circle_at_top,rgba(212,175,55,0.16),transparent_45%),linear-gradient(180deg,#0f172a_0%,#111827_100%)] text-white/80"
+            )}
+          >
+            <div
+              className={cn(
+                "mb-3 inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em]",
+                isLight ? "border-slate-300/80 bg-white/70 text-slate-500" : "border-white/10 bg-white/5 text-white/45"
+              )}
+            >
+              Rihla Verified Stop
+            </div>
+            <div className={cn("max-w-[280px] text-lg font-black leading-tight", isLight ? "text-slate-900" : "text-white")}>
+              {place}
+            </div>
+            <div className={cn("mt-2 max-w-[260px] text-xs leading-relaxed", isLight ? "text-slate-500" : "text-white/45")}>
+              Live place photo unavailable right now. We kept this stop accurate instead of showing the wrong location.
+            </div>
+          </div>
         )}
         <div className={cn("absolute inset-0", isLight ? "bg-gradient-to-br from-white/8 via-transparent to-slate-200/8" : "bg-gradient-to-br from-white/[0.01] via-transparent to-black/6")} />
         <div className={cn("absolute top-0 inset-x-0 h-16", isLight ? "bg-gradient-to-b from-white/22 to-transparent" : "bg-gradient-to-b from-[#0E1520]/42 to-transparent")} />
