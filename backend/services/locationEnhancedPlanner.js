@@ -373,7 +373,7 @@ function buildDailyInsights(destination, travelStyle, interests, day = 1, slotIn
   const destinationLabel = formatDisplayName(destination) || destination;
   const interestText = interests.length ? interests.join(", ") : "general sightseeing";
   const placeLabel = formatDisplayName(String(placeTitle || destinationLabel).trim()) || destinationLabel;
-  const slotName = ["morning", "afternoon", "evening"][slotIndex] || "daytime";
+  const slotName = ["morning", "morning", "afternoon", "afternoon", "evening", "evening", "night", "night"][slotIndex] || "daytime";
   const daySeed = day * 17 + slotIndex * 31 + placeLabel.length;
   const districts = rotateUnique([
     "old quarter", "riverfront zone", "cultural belt", "central district",
@@ -465,6 +465,28 @@ function activitySummaryByInterest(interests, seed = 0) {
   return chooseVariant(["Balanced city highlights.", "Designed for broad city coverage.", "Combines key local highlights."], seed);
 }
 
+const SLOT_TIME_LABELS = [
+  "Morning",
+  "Morning Activity",
+  "Afternoon",
+  "Afternoon Activity",
+  "Evening",
+  "Evening Activity",
+  "Night",
+  "Night Activity",
+];
+
+const SLOT_ACTIVITY_FOCUS = [
+  "Begin the day with a scenic orientation and easy local discovery.",
+  "Dive deeper with a guided route or hands-on cultural stop.",
+  "Use the midday window for signature food, museum, or landmark coverage.",
+  "Keep momentum with a second focused stop in the same district.",
+  "Slow into golden-hour viewpoints and calmer public spaces.",
+  "Shift toward local atmosphere, dining, and social energy.",
+  "Use the night window for mood, lights, and premium evening pacing.",
+  "Close the day with a relaxed final stop or stay experience.",
+];
+
 function makePlaceActivity(place, destination, budget, slotIndex, travelStyle, interests, day = 1) {
   const destinationLabel = formatDisplayName(destination) || destination;
   const concise = normalizePlaceDescription(place.description, destination);
@@ -472,9 +494,9 @@ function makePlaceActivity(place, destination, budget, slotIndex, travelStyle, i
   const revisitCount = Number(place.revisitCount || 1);
   const title = revisitCount > 1 ? `${place.title} (Visit ${revisitCount})` : place.title;
   return {
-    time: ["Morning", "Afternoon", "Evening"][slotIndex] || "Anytime",
+    time: SLOT_TIME_LABELS[slotIndex] || "Anytime",
     title,
-    description: `${concise}${concise.endsWith(".") ? "" : "."} ${activitySummaryByInterest(interests, day * 13 + slotIndex * 7 + title.length)} Day ${day} focus.`,
+    description: `${concise}${concise.endsWith(".") ? "" : "."} ${SLOT_ACTIVITY_FOCUS[slotIndex] || "Enjoy a well-paced city moment."} ${activitySummaryByInterest(interests, day * 13 + slotIndex * 7 + title.length)} Day ${day} focus.`,
     location: `${place.title}, ${destinationLabel}`,
     lat: place.lat,
     lng: place.lng,
@@ -504,7 +526,16 @@ function isInsideBoundingBox(place, boundingBox) {
 
 function makeSyntheticPlace(destination, day, slot, fallbackBase) {
   const destinationLabel = formatDisplayName(destination) || destination;
-  const slotName = ["Neighborhood Walk", "Local Culture Circuit", "Food & Market Trail"][slot] || "City Exploration";
+  const slotName = [
+    "Sunrise Orientation",
+    "Heritage Walk",
+    "Local Lunch Discovery",
+    "Museum Or Craft Session",
+    "Golden Hour Viewpoint",
+    "Neighborhood Food Trail",
+    "Night Lights Route",
+    "Stay Wind-Down",
+  ][slot] || "City Exploration";
   return {
     title: `${destinationLabel} Route ${day} - ${slotName}`,
     description: `A curated ${slotName.toLowerCase()} in ${destinationLabel}.`,
@@ -552,7 +583,7 @@ export async function createCityItinerary(destination, days, budget, travelStyle
     const dayPlans = [];
     for (let day = 1; day <= days; day++) {
       const activities = [];
-      for (let slot = 0; slot < 3; slot++) {
+      for (let slot = 0; slot < 8; slot++) {
         const place = places[placeCursor % places.length] || makeSyntheticPlace(destination, day, slot, fallbackBase);
         const key = normalizeToken(place.title);
         placeUsage.set(key, (placeUsage.get(key) || 0) + 1);

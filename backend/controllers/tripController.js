@@ -107,6 +107,43 @@ function buildFallbackItinerary({ destination, days, budget, travelStyle, intere
   };
 }
 
+function buildRichFallbackItinerary({ destination, days, budget }) {
+  const slotTemplates = [
+    { time: "Morning", title: "Sunrise Orientation", description: `Begin with a scenic introduction to ${destination}.` },
+    { time: "Morning Activity", title: "Heritage Walk", description: `Explore historic corners and local character in ${destination}.` },
+    { time: "Afternoon", title: "Local Cuisine", description: `Enjoy signature daytime food experiences in ${destination}.` },
+    { time: "Afternoon Activity", title: "Museum Or Craft Stop", description: `Spend the mid-afternoon on culture, craft, or a landmark session in ${destination}.` },
+    { time: "Evening", title: "Sunset Views", description: `Catch the golden-hour highlights and best evening scenery in ${destination}.` },
+    { time: "Evening Activity", title: "Neighborhood Stroll", description: `Walk a lively district and experience the local evening rhythm in ${destination}.` },
+    { time: "Night", title: "Dining Experience", description: `Settle into a more atmospheric dinner or lounge moment in ${destination}.` },
+    { time: "Night Activity", title: "Stay Wind-Down", description: `Close the day with a calmer final stop or stay experience in ${destination}.` },
+  ];
+
+  const dayPlans = [];
+  for (let d = 1; d <= Number(days); d++) {
+    dayPlans.push({
+      day: d,
+      title: `Day ${d} in ${destination}`,
+      theme: "City Exploration",
+      activities: slotTemplates.map((slot, idx) => ({
+        time: slot.time,
+        title: `${destination} - ${slot.title}`,
+        description: `${slot.description} Day ${d} focus.`,
+        location: `${destination} ${slot.title}`,
+        lat: 0,
+        lng: 0,
+        cost: `$${budget === "luxury" ? 80 + idx * 20 : budget === "moderate" ? 20 + idx * 10 : 10 + idx * 5}-${budget === "luxury" ? 150 + idx * 25 : budget === "moderate" ? 40 + idx * 12 : 25 + idx * 6}`,
+      })),
+    });
+  }
+  const perDay = budget === "luxury" ? 400 : budget === "moderate" ? 180 : 80;
+  return {
+    itinerary: dayPlans,
+    costBreakdown: { total: perDay * days, currency: "USD", source: "fallback" },
+    routeCoordinates: [],
+  };
+}
+
 // ─── MAIN: createTrip ────────────────────────────────────────────────────────
 
 export const createTrip = async (req, res) => {
@@ -222,7 +259,7 @@ export const createTrip = async (req, res) => {
       // Fallback 2: synthetic itinerary
       if (!generatedPayload) {
         console.warn("[AI Architect] Using fallback synthetic itinerary");
-        generatedPayload = buildFallbackItinerary({
+        generatedPayload = buildRichFallbackItinerary({
           destination, days: normDays, budget: normBudget, travelStyle: normTravelStyle, interests: normInterests,
         });
       }

@@ -377,6 +377,13 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
     nightActivity: "10:30 PM",
   };
 
+  const companionNarratives = {
+    morningActivity: "Take a deeper guided look around",
+    afternoonActivity: "Continue with a focused cultural stop near",
+    eveningActivity: "Shift into the local evening rhythm around",
+    nightActivity: "Wind down the day with a calmer final experience near",
+  };
+
   const createCompanionSlot = (activity = {}, basePlace = "", slotKey = "", cost = 0) => {
     const slotSeed =
       slotKeys.indexOf(slotKey) >= 0 ? slotKeys.indexOf(slotKey) : compactSlotKeys.indexOf(getSlotBucket(slotKey));
@@ -388,9 +395,10 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
     ) || "Local stop";
     const companionPlace = normalizedPlace;
     const seedContent = generatePlaceCardFallbackContent(normalizedPlace, activity.description || activity.title || "", destination, slotKey);
+    const fallbackActivityLine = `${companionNarratives[slotKey] || "Continue exploring"} ${normalizedPlace}.`;
     return {
       place: companionPlace,
-      activity: activity.description || activity.title || `Continue exploring ${normalizedPlace}.`,
+      activity: fallbackActivityLine,
       title: companionPlace,
       cost: Math.max(0, Math.round(cost * 0.45)),
       travel: activity.travelSuggestion || slotTimes[slotKey],
@@ -423,7 +431,7 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
       return {
         place,
         activity: activity.description || activity.title || "",
-        title: activity.title || "",
+        title: place,
         cost,
         travel: activity.travelSuggestion || slotTimes[slotKey],
         duration: activity.duration || "1-2h",
