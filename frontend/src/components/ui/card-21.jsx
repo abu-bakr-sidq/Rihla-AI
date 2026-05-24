@@ -9,13 +9,24 @@ import { sanitizeTextList, sanitizeVisibleText } from "@/lib/display-text";
  * themeColor: HSL values e.g. "150 50% 25%"
  */
 const DestinationCard = React.forwardRef(
-  ({ className = "", imageUrl, location, country, flag, stats, score, tags, plannerHref, themeColor = "212 75% 20%", ...props }, ref) => {
+  ({ className = "", imageUrl, imageFallbacks = [], location, country, flag, stats, score, tags, plannerHref, themeColor = "212 75% 20%", ...props }, ref) => {
     const safeLocation = sanitizeVisibleText(location, "Destination");
     const safeCountry = sanitizeVisibleText(country);
     const safeFlag = sanitizeVisibleText(flag);
     const safeStats = sanitizeVisibleText(stats);
     const safeTags = sanitizeTextList(tags);
     const safeScore = Number.isFinite(Number(score)) ? Number(score) : null;
+    const fallbackChain = React.useMemo(
+      () => [imageUrl, ...(Array.isArray(imageFallbacks) ? imageFallbacks : [])].filter(Boolean),
+      [imageUrl, imageFallbacks],
+    );
+    const [imageIndex, setImageIndex] = React.useState(0);
+
+    React.useEffect(() => {
+      setImageIndex(0);
+    }, [imageUrl, imageFallbacks]);
+
+    const activeImage = fallbackChain[imageIndex] || null;
 
     return (
       <div
@@ -31,12 +42,23 @@ const DestinationCard = React.forwardRef(
           style={{
             boxShadow: `0 0 40px -15px hsl(${themeColor} / 0.45)`,
           }}
-        >
+          >
           {/* Background image with zoom on hover */}
-          <div
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-in-out group-hover:scale-110"
-            style={{ backgroundImage: `url(${imageUrl})` }}
-          />
+          {activeImage ? (
+            <img
+              src={activeImage}
+              alt={safeLocation}
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
+              onError={() => {
+                setImageIndex((prev) => (prev < fallbackChain.length - 1 ? prev + 1 : prev));
+              }}
+            />
+          ) : (
+            <div
+              className="absolute inset-0 transition-transform duration-700 ease-in-out group-hover:scale-110"
+              style={{ background: `linear-gradient(135deg, hsl(${themeColor} / 0.58), rgba(6,11,20,0.96))` }}
+            />
+          )}
 
           {/* Themed gradient overlay — bottom-heavy */}
           <div

@@ -204,10 +204,16 @@ function ExploreDestCard({ dest }) {
     ? dest.photo
     : `https://images.unsplash.com/photo-${dest.photo}?auto=format&fit=crop&q=82&w=720`;
   const imgUrl = src || fallbackImg;
+  const imageFallbacks = [
+    fallbackImg,
+    `https://images.unsplash.com/featured/1200x800/?${encodeURIComponent(`${dest.name} ${dest.country} travel landmark scenic`)}`,
+    "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=80&w=1200",
+  ];
 
   return (
     <DestinationCard
       imageUrl={imgUrl}
+      imageFallbacks={imageFallbacks}
       location={dest.name}
       country={dest.country}
       score={dest.score}
