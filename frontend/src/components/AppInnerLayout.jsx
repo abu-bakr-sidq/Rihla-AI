@@ -68,8 +68,8 @@ export default function AppInnerLayout({ children, noPadding = false, transparen
       >
         <div className={`w-full transition-all duration-700 border-b border-white/[0.05] ${
           scrolled
-            ? "bg-[#06111f]/96 backdrop-blur-[32px] shadow-[0_10px_40px_rgba(0,0,0,0.3)]"
-            : "bg-[#06111f]/96 backdrop-blur-[28px] shadow-[0_8px_28px_rgba(0,0,0,0.22)]"
+            ? "bg-[#08111d] backdrop-blur-[32px] shadow-[0_10px_40px_rgba(0,0,0,0.3)]"
+            : "bg-[#08111d] backdrop-blur-[28px] shadow-[0_8px_28px_rgba(0,0,0,0.22)]"
         }`}>
         {/* COMMAND BAR */}
         <div className="flex items-center justify-between px-4 sm:px-5 md:px-7 xl:px-9 h-16 relative z-50">
