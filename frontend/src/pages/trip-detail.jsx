@@ -119,8 +119,11 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
         <div className="absolute top-3 right-3 backdrop-blur-xl px-3 py-1.5 rounded-full shadow-lg" style={{ background: isLight ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(148,163,184,0.22)' : '1px solid rgba(255,255,255,0.1)' }}>
           <span className={`text-[10px] font-black tracking-wider ${isLight ? 'text-slate-700' : 'text-white/90'}`}>{slotTime}</span>
         </div>
-        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 backdrop-blur-xl px-3 py-1.5 rounded-[10px] shadow-lg" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.25)' }}>
-          <span className="text-[11px] font-bold text-[#D4AF37]">{cost ? fmtCur(cost, currency) : 'Free'}</span>
+        <div
+          className="absolute bottom-3 right-3 flex items-center gap-1.5 backdrop-blur-xl px-3 py-1.5 rounded-[10px] shadow-lg"
+          style={{ background: 'rgba(10,15,24,0.84)', border: '1px solid rgba(212,175,55,0.42)', boxShadow: '0 10px 24px rgba(0,0,0,0.26)' }}
+        >
+          <span className="text-[11px] font-black text-[#F8E08B] drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]">{cost ? fmtCur(cost, currency) : 'Free'}</span>
         </div>
       </div>
 
