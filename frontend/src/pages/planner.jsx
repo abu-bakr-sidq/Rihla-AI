@@ -1079,19 +1079,15 @@ function buildItinerary(fd) {
   const travelers = Math.max(1, Number(fd.travelers || fd.groupSize) || 1);
   const category = typeof fd.budgetCategory === "string"
     ? fd.budgetCategory
-    : typeof fd.budget === "string"
+      : typeof fd.budget === "string"
       ? fd.budget
       : "moderate";
   const budgetSummary = buildBudgetSummary(fd.destination, daysNum, category, travelers, fd.currency || "USD");
-  const baseDayWeights = buildDayBudgetWeights(daysNum, fd.destination, fd.travelStyle);
-  const stayWeights = baseDayWeights.map((weight, index) => Math.max(0.85, 0.96 + (weight - 1) * 0.28 + (index === 0 ? -0.03 : 0)));
-  const foodWeights = baseDayWeights.map((weight, index) => Math.max(0.78, 0.88 + (weight - 1) * 0.72 + (index % 2 === 1 ? 0.03 : 0)));
-  const transportWeights = baseDayWeights.map((weight, index) => Math.max(0.76, 0.84 + (weight - 1) * 0.6 + (index === 0 ? 0.07 : 0) + (index === daysNum - 1 ? 0.04 : 0)));
-  const activityWeights = baseDayWeights.map((weight, index) => Math.max(0.74, 0.8 + (weight - 1) * 1.1 + (index % 3 === 1 ? 0.05 : 0)));
-  const dayStay = splitByWeights(budgetSummary.costBreakdown.stay, stayWeights);
-  const dayFood = splitByWeights(budgetSummary.costBreakdown.food, foodWeights);
-  const dayTransport = splitByWeights(budgetSummary.costBreakdown.transport, transportWeights);
-  const dayActivities = splitByWeights(budgetSummary.costBreakdown.activities, activityWeights);
+  const dayBudgetProfiles = buildDayBudgetProfiles(daysNum, fd.destination, fd.travelStyle);
+  const dayStay = splitByWeights(budgetSummary.costBreakdown.stay, dayBudgetProfiles.map((profile) => profile.stayWeight));
+  const dayFood = splitByWeights(budgetSummary.costBreakdown.food, dayBudgetProfiles.map((profile) => profile.foodWeight));
+  const dayTransport = splitByWeights(budgetSummary.costBreakdown.transport, dayBudgetProfiles.map((profile) => profile.transportWeight));
+  const dayActivities = splitByWeights(budgetSummary.costBreakdown.activities, dayBudgetProfiles.map((profile) => profile.activityWeight));
   const destName = fd.destination || 'Unknown Destination';
 
   const countryCityMap = {
@@ -1133,6 +1129,7 @@ function buildItinerary(fd) {
     date.setDate(date.getDate() + i);
     const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const dayTheme = FALLBACK_DAY_THEMES[(dNum - 1) % FALLBACK_DAY_THEMES.length] || `Day ${dNum} - ${fd.destination}`;
+    const dayBudgetProfile = dayBudgetProfiles[i] || buildDayBudgetProfile(dayTheme, i, daysNum, fd.destination, fd.travelStyle);
 
     const getAct = (slot) => {
       const pool = categoryPools[slot] || [];
@@ -1144,7 +1141,7 @@ function buildItinerary(fd) {
 
     const fullSlotsList = ['morning', 'morningActivity', 'afternoon', 'afternoonActivity', 'evening', 'eveningActivity', 'night', 'nightActivity'];
     const baseCat = ['morning', 'morning', 'afternoon', 'afternoon', 'evening', 'evening', 'night', 'night'];
-    const slotWeights = [0.08, 0.14, 0.1, 0.16, 0.12, 0.2, 0.06, 0.14];
+    const slotWeights = dayBudgetProfile.slotWeights;
     const slotCosts = splitByWeights(dayActivities[i] || 0, slotWeights);
     const slots = fullSlotsList.reduce((acc, slotKey, si) => {
       const slot = baseCat[si];
@@ -1647,33 +1644,107 @@ const splitByWeights = (total, weights = []) => {
   return values;
 };
 
-const buildDayBudgetWeights = (days, destination = "", travelStyle = "") => {
-  const safeDays = Math.max(1, Number(days) || 1);
-  const destSeed = String(destination || "").length;
+const buildDayBudgetProfile = (theme = "", index = 0, totalDays = 1, destination = "", travelStyle = "") => {
+  const normalizedTheme = String(theme || "").toLowerCase();
   const style = String(travelStyle || "").toLowerCase();
+  const destSeed = Array.from(String(destination || "")).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const seedDrift = ((destSeed + index * 17) % 9) * 0.02;
+  const profile = {
+    stayWeight: 1,
+    foodWeight: 1,
+    transportWeight: 1,
+    activityWeight: 1,
+    slotWeights: [0.09, 0.16, 0.11, 0.14, 0.13, 0.16, 0.08, 0.13],
+  };
 
-  return Array.from({ length: safeDays }, (_, index) => {
-    const theme = String(FALLBACK_DAY_THEMES[index % FALLBACK_DAY_THEMES.length] || "").toLowerCase();
-    let weight = 1;
+  if (/arrival|first impressions/.test(normalizedTheme)) {
+    profile.stayWeight += 0.42;
+    profile.foodWeight -= 0.08;
+    profile.transportWeight += 0.38;
+    profile.activityWeight -= 0.26;
+    profile.slotWeights = [0.05, 0.12, 0.08, 0.12, 0.11, 0.17, 0.14, 0.21];
+  }
+  if (/heritage|culture|monument|gallery/.test(normalizedTheme)) {
+    profile.foodWeight += 0.04;
+    profile.transportWeight -= 0.06;
+    profile.activityWeight += 0.32;
+    profile.slotWeights = [0.12, 0.17, 0.14, 0.17, 0.12, 0.14, 0.05, 0.09];
+  }
+  if (/hidden gems|local|markets|flavors|street/.test(normalizedTheme)) {
+    profile.foodWeight += 0.22;
+    profile.transportWeight += 0.07;
+    profile.activityWeight += 0.16;
+    profile.slotWeights = [0.08, 0.12, 0.13, 0.16, 0.14, 0.17, 0.08, 0.12];
+  }
+  if (/coastal|nature|scenic|waterfront|landscape/.test(normalizedTheme)) {
+    profile.foodWeight -= 0.04;
+    profile.transportWeight += 0.18;
+    profile.activityWeight += 0.24;
+    profile.slotWeights = [0.11, 0.16, 0.1, 0.15, 0.14, 0.16, 0.07, 0.11];
+  }
+  if (/sunset|night|after dark|dining|finale|farewell|signature/.test(normalizedTheme)) {
+    profile.stayWeight -= 0.06;
+    profile.foodWeight += 0.3;
+    profile.transportWeight -= 0.02;
+    profile.activityWeight += 0.2;
+    profile.slotWeights = [0.07, 0.11, 0.09, 0.12, 0.14, 0.18, 0.12, 0.17];
+  }
 
-    if (/arrival|first impressions/.test(theme)) weight += 0.06;
-    if (/heritage|culture|monument|gallery/.test(theme)) weight += 0.16;
-    if (/coastal|nature|landscape|waterfront/.test(theme)) weight += 0.12;
-    if (/markets|flavors|street|shopping/.test(theme)) weight += 0.09;
-    if (/sunset|night|after dark|dining/.test(theme)) weight += 0.11;
-    if (/grand finale|farewell|signature/.test(theme)) weight += 0.15;
+  if (index === 0) {
+    profile.transportWeight += 0.12;
+    profile.activityWeight -= 0.06;
+  }
+  if (index === totalDays - 1) {
+    profile.foodWeight += 0.12;
+    profile.activityWeight += 0.08;
+  }
 
-    if (index === 0) weight -= 0.08;
-    if (index === safeDays - 1) weight -= 0.04;
+  if (style === "luxury") {
+    profile.stayWeight += 0.26;
+    profile.foodWeight += 0.11 + (index % 2 === 0 ? 0 : 0.06);
+    profile.activityWeight += index % 2 === 0 ? 0.09 : 0.18;
+    profile.slotWeights = profile.slotWeights.map((weight, slotIndex) => weight + (slotIndex >= 4 ? 0.015 : 0));
+  } else if (style === "adventure") {
+    profile.transportWeight += 0.18;
+    profile.activityWeight += 0.24;
+    profile.slotWeights = profile.slotWeights.map((weight, slotIndex) => weight + (slotIndex <= 3 ? 0.018 : 0.008));
+  } else if (style === "relaxation") {
+    profile.stayWeight += 0.15;
+    profile.foodWeight += 0.09;
+    profile.transportWeight -= 0.05;
+    profile.slotWeights = profile.slotWeights.map((weight, slotIndex) => weight + (slotIndex >= 4 ? 0.02 : -0.005));
+  } else if (style === "nature") {
+    profile.transportWeight += 0.12;
+    profile.activityWeight += 0.16;
+    profile.slotWeights = profile.slotWeights.map((weight, slotIndex) => weight + (slotIndex === 1 || slotIndex === 3 || slotIndex === 5 ? 0.015 : 0));
+  }
 
-    if (style === "luxury") weight += index % 2 === 0 ? 0.05 : 0.11;
-    else if (style === "adventure") weight += index % 2 === 0 ? 0.12 : 0.03;
-    else if (style === "nature") weight += /coastal|nature/.test(theme) ? 0.09 : 0.02;
-    else if (style === "relaxation") weight += /night|coastal|sunset/.test(theme) ? 0.08 : 0.01;
+  profile.stayWeight += seedDrift * 0.9;
+  profile.foodWeight += seedDrift * 0.75 + (index % 2 === 1 ? 0.05 : 0);
+  profile.transportWeight += seedDrift * 0.55;
+  profile.activityWeight += seedDrift * 1.1 + (index % 3 === 1 ? 0.08 : 0);
+  profile.slotWeights = profile.slotWeights.map((weight, slotIndex) => Math.max(0.04, Number((weight + (((destSeed + index * 5 + slotIndex * 7) % 5) - 2) * 0.006).toFixed(4))));
 
-    weight += ((destSeed + index * 13) % 7) * 0.015;
-    return Math.max(0.72, Number(weight.toFixed(3)));
-  });
+  return {
+    stayWeight: Math.max(0.7, Number(profile.stayWeight.toFixed(3))),
+    foodWeight: Math.max(0.68, Number(profile.foodWeight.toFixed(3))),
+    transportWeight: Math.max(0.64, Number(profile.transportWeight.toFixed(3))),
+    activityWeight: Math.max(0.62, Number(profile.activityWeight.toFixed(3))),
+    slotWeights: profile.slotWeights,
+  };
+};
+
+const buildDayBudgetProfiles = (days, destination = "", travelStyle = "") => {
+  const safeDays = Math.max(1, Number(days) || 1);
+  return Array.from({ length: safeDays }, (_, index) => (
+    buildDayBudgetProfile(
+      FALLBACK_DAY_THEMES[index % FALLBACK_DAY_THEMES.length] || `Day ${index + 1}`,
+      index,
+      safeDays,
+      destination,
+      travelStyle,
+    )
+  ));
 };
 
 const buildBudgetSummary = (destination, days, category, travelers = 1, currency = "USD") => {
@@ -2151,8 +2222,8 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
 
         {/* Cost badge */}
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 backdrop-blur-xl px-3 py-1.5 rounded-[10px] shadow-lg"
-          style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.25)' }}>
-          <span className="text-[11px] font-bold text-[#D4AF37]">{cost ? fmtCur(cost, currency) : 'Free'}</span>
+          style={{ background: 'rgba(13,19,31,0.78)', border: '1px solid rgba(212,175,55,0.42)', boxShadow: '0 10px 24px rgba(0,0,0,0.24)' }}>
+          <span className="text-[11px] font-black text-[#F6D978] drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]">{cost ? fmtCur(cost, currency) : 'Free'}</span>
         </div>
       </div>
 
@@ -4046,7 +4117,16 @@ export default function Planner() {
                                   <h2 className={cn("text-[18px] font-display font-black uppercase tracking-wide", isLightPlannerResult ? "text-slate-950" : "text-white")}>{activeDay.theme}</h2>
                                   <p className={cn("text-[10px] font-mono mt-0.5", isLightPlannerResult ? "text-slate-500" : "text-white/35")}>{activeDay.date}</p>
                                 </div>
-                                <span className={cn("text-sm font-black flex-shrink-0", isLightPlannerResult ? "text-slate-600" : "text-white/45")}>{fmtCur(activeDay.budget?.total || 0, formData.currency)}</span>
+                                <span
+                                  className={cn(
+                                    "text-sm font-black flex-shrink-0 px-3 py-1.5 rounded-full border shadow-lg",
+                                    isLightPlannerResult
+                                      ? "bg-white border-slate-200 text-slate-900"
+                                      : "bg-[#111827]/85 border-[#D4AF37]/35 text-[#F6D978]",
+                                  )}
+                                >
+                                  {fmtCur(activeDay.budget?.total || 0, formData.currency)}
+                                </span>
                               </div>
                               {/* Functional Day Timeline (Clickable) */}
                               <PlannerDayTimeline slots={activeDay.slots} slotCfg={SLOT_CFG} isLight={isLightPlannerResult} />
