@@ -235,7 +235,8 @@ export const createTrip = async (req, res) => {
 
     // ── 2. Check cache ────────────────────────────────────────────────────────
     const cacheKey = buildCacheKey(destination, normDays, normBudget, normTravelStyle);
-    const cached = await TripCache.findOne({ cacheKey }).lean();
+    const shouldUseCache = !itinerary;
+    const cached = shouldUseCache ? await TripCache.findOne({ cacheKey }).lean() : null;
 
     if (cached) {
       console.log(`[TripCache] HIT for "${destination}" — serving instantly`);

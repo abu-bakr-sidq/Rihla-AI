@@ -31,10 +31,11 @@ const tripCacheSchema = new mongoose.Schema({
 
 // Build a deterministic cache key
 export function buildCacheKey(destination, days, budget, travelStyle) {
+  const engineVersion = "v2";
   const d = String(destination || "").toLowerCase().trim().replace(/\s+/g, "_");
   const b = String(budget || "moderate").toLowerCase().replace(/[^a-z]/g, "");
   const s = String(travelStyle || "balanced").toLowerCase().replace(/[^a-z]/g, "");
-  return `${d}::${Number(days) || 7}::${b}::${s}`;
+  return `${engineVersion}::${d}::${Number(days) || 7}::${b}::${s}`;
 }
 
 export const TripCache = mongoose.models.TripCache || mongoose.model("TripCache", tripCacheSchema);
