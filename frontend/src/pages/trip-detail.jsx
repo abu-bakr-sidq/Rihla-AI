@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useUser } from '@/hooks/use-auth';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,50 +28,6 @@ const PLAN_SLOT_COLORS = {
   night: '#8B5CF6',
   nightActivity: '#7C3AED',
 };
-
-const CLIMATE_BACKDROPS = {
-  nature: [
-    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=82',
-    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=82',
-    'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1800&q=82',
-    'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1800&q=82',
-  ],
-  adventure: [
-    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1800&q=82',
-    'https://images.unsplash.com/photo-1521335629791-ce4aec67dd53?auto=format&fit=crop&w=1800&q=82',
-    'https://images.unsplash.com/photo-1464820453369-31d2c0b651af?auto=format&fit=crop&w=1800&q=82',
-  ],
-  luxury: [
-    'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1800&q=82',
-    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1800&q=82',
-    'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1800&q=82',
-  ],
-  cultural: [
-    'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1800&q=82',
-    'https://images.unsplash.com/photo-1539650116574-75c0c6d73f41?auto=format&fit=crop&w=1800&q=82',
-    'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1800&q=82',
-  ],
-  coastal: [
-    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1800&q=82',
-    'https://images.unsplash.com/photo-1493558103817-58b2924bce98?auto=format&fit=crop&w=1800&q=82',
-    'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=1800&q=82',
-  ],
-  default: [
-    'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1800&q=82',
-    'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1800&q=82',
-    'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1800&q=82',
-  ],
-};
-
-function getClimateBackdropKey(travelStyle = '', destination = '') {
-  const value = `${travelStyle} ${destination}`.toLowerCase();
-  if (value.includes('nature') || value.includes('forest') || value.includes('mountain')) return 'nature';
-  if (value.includes('adventure') || value.includes('trek') || value.includes('hike') || value.includes('wild')) return 'adventure';
-  if (value.includes('luxury') || value.includes('premium') || value.includes('honeymoon')) return 'luxury';
-  if (value.includes('beach') || value.includes('coast') || value.includes('island') || value.includes('sea')) return 'coastal';
-  if (value.includes('culture') || value.includes('heritage') || value.includes('history') || value.includes('city')) return 'cultural';
-  return 'default';
-}
 
 function PlannerDetailTimeline({ slots, slotCfg, isLight = false }) {
   if (!slots?.length) return null;
@@ -790,7 +746,6 @@ export default function TripDetail() {
   const [heroImage, setHeroImage] = useState('');
   const [planFocusAct, setPlanFocusAct] = useState(null);
   const [focusImage, setFocusImage] = useState('');
-  const [backgroundIndex, setBackgroundIndex] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [detailTheme, setDetailTheme] = useState(() => {
@@ -901,65 +856,32 @@ export default function TripDetail() {
   const tripDatesLabel = trip.startDate && trip.endDate
     ? `${new Date(trip.startDate).toLocaleDateString('en-US')} - ${new Date(trip.endDate).toLocaleDateString('en-US')}`
     : ov.dates || 'Dates TBD';
-  const backgroundSlides = useMemo(() => {
-    const backdropKey = getClimateBackdropKey(trip?.travelStyle, trip?.destination);
-    const styleSlides = CLIMATE_BACKDROPS[backdropKey] || CLIMATE_BACKDROPS.default;
-    return [...new Set([focusImage, heroImage, ...styleSlides].filter(Boolean))].slice(0, 6);
-  }, [focusImage, heroImage, trip?.travelStyle, trip?.destination]);
+  const backgroundSlides = [...new Set([focusImage, heroImage].filter(Boolean))].slice(0, 2);
 
   const AI_GEMS = res.ai_suggestions?.hidden_gems || [];
   const AI_TIPS = res.ai_suggestions?.tips || [];
-
-  useEffect(() => {
-    setBackgroundIndex(0);
-  }, [backgroundSlides]);
-
-  useEffect(() => {
-    if (backgroundSlides.length < 2) return undefined;
-    const timer = window.setInterval(() => {
-      setBackgroundIndex((current) => (current + 1) % backgroundSlides.length);
-    }, 9000);
-    return () => window.clearInterval(timer);
-  }, [backgroundSlides]);
 
   return (
     <AppInnerLayout>
       <div className={`trip-detail-shell ${isLightDetail ? 'detail-light' : 'detail-dark'} relative w-full min-h-screen pb-10 overflow-hidden`}>
         <div className="fixed inset-0 -z-10 overflow-hidden">
           {backgroundSlides.length > 0 ? (
-            <>
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={backgroundSlides[backgroundIndex]}
-                  className="absolute inset-0"
-                  initial={{ opacity: 0, scale: 1.08, filter: 'blur(5px) saturate(0.92)' }}
-                  animate={{ opacity: 0.62, scale: 1.02, filter: 'blur(0px) saturate(1)' }}
-                  exit={{ opacity: 0, scale: 1.04, filter: 'blur(4px) saturate(0.95)' }}
-                  transition={{ duration: 1.6, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <motion.div
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${backgroundSlides[backgroundIndex]})` }}
-                    animate={{ scale: [1.02, 1.1, 1.02], x: [0, -18, 0], y: [0, 14, 0] }}
-                    transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-                  />
-                </motion.div>
-              </AnimatePresence>
-
+            backgroundSlides.map((src, index) => (
               <motion.div
+                key={src}
                 className="absolute inset-0"
-                animate={{ opacity: [0.16, 0.28, 0.16] }}
-                transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: index === 0 ? 0.56 : 0.28,
+                  scale: [1.04, 1.11, 1.04],
+                  x: index === 0 ? [0, -18, 0] : [0, 16, 0],
+                  y: index === 0 ? [0, 12, 0] : [0, -14, 0],
+                }}
+                transition={{ duration: index === 0 ? 24 : 28, repeat: Infinity, ease: "easeInOut" }}
               >
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      'radial-gradient(circle at 18% 22%, rgba(151, 245, 255, 0.18), transparent 20%), radial-gradient(circle at 82% 18%, rgba(255, 209, 102, 0.18), transparent 18%), radial-gradient(circle at 50% 78%, rgba(74, 222, 128, 0.12), transparent 22%)',
-                  }}
-                />
+                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${src})` }} />
               </motion.div>
-            </>
+            ))
           ) : (
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_34%),linear-gradient(180deg,#0b1728_0%,#07111d_100%)]" />
           )}
@@ -975,11 +897,6 @@ export default function TripDetail() {
             className={`absolute top-[18%] right-[10%] h-[240px] w-[240px] rounded-full blur-[82px] ${isLightDetail ? 'bg-[#D4AF37]/8' : 'bg-[#D4AF37]/10'}`}
             animate={{ x: [0, -32, 0], y: [0, 24, 0], scale: [1, 1.08, 1] }}
             transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className={`absolute bottom-[8%] left-[16%] h-[220px] w-[360px] rounded-full blur-[96px] ${isLightDetail ? 'bg-emerald-300/10' : 'bg-emerald-400/10'}`}
-            animate={{ x: [0, 26, 0], y: [0, -18, 0], scale: [1, 1.12, 1] }}
-            transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
           />
         </div>
 
