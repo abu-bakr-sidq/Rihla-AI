@@ -311,9 +311,12 @@ export const createTrip = async (req, res) => {
     }
 
     // ── 5. Write to cache ─────────────────────────────────────────────────────
+    const effectiveItinerary = itinerary || generatedPayload?.itinerary || [];
+    const effectiveCostBreakdown = costBreakdown || generatedPayload?.costBreakdown || {};
+
     const cacheData = {
-      itinerary: generatedPayload?.itinerary || [],
-      costBreakdown: generatedPayload?.costBreakdown || costBreakdown || {},
+      itinerary: effectiveItinerary,
+      costBreakdown: effectiveCostBreakdown,
       routeCoordinates: generatedPayload?.routeCoordinates || [],
       climate: weather || {},
       realPlaces: realPlaces || {},
@@ -347,8 +350,8 @@ export const createTrip = async (req, res) => {
       status,
       climate: weather || {},
       realPlaces: realPlaces || {},
-      itinerary: itinerary || generatedPayload?.itinerary || [],
-      costBreakdown: costBreakdown || generatedPayload?.costBreakdown || {},
+      itinerary: effectiveItinerary,
+      costBreakdown: effectiveCostBreakdown,
       routeCoordinates: generatedPayload?.routeCoordinates || [],
       preferences: {
         travelStyle: normTravelStyle,

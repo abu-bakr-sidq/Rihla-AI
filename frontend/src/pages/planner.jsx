@@ -2782,6 +2782,7 @@ export default function Planner() {
       formData.travelers,
       formData.currency
     );
+    const plannerPerfectItinerary = buildItinerary({ ...formData, budgetCategory });
 
     try {
       const result = await generateMutation.mutateAsync({
@@ -2804,13 +2805,19 @@ export default function Planner() {
         })
         : null;
 
-      // Prefer exact backend/generated trip data. Only fall back locally if nothing usable came back.
-      finalItin = result?.itinerary?.trip_overview
+      const backendRichItinerary = result?.itinerary?.trip_overview
         ? result.itinerary
         : result?.trip_overview
           ? result
-          : normalizedBackendItinerary || fallback;
-      finalCostInfo = result?.costBreakdown || result?.itinerary?.total_budget || result?.total_budget || normalizedBackendItinerary?.total_budget || fallback.total_budget || plannerBudgetSummary.costBreakdown;
+          : null;
+
+      // If the backend only returns the thinner legacy array itinerary,
+      // preserve the richer planner-built version so saved trips match the
+      // high-quality planner result screen.
+      finalItin = backendRichItinerary || plannerPerfectItinerary || normalizedBackendItinerary || fallback;
+      finalCostInfo = backendRichItinerary
+        ? (result?.costBreakdown || result?.itinerary?.total_budget || result?.total_budget || plannerPerfectItinerary?.total_budget || plannerBudgetSummary.costBreakdown)
+        : (plannerPerfectItinerary?.total_budget || normalizedBackendItinerary?.total_budget || fallback.total_budget || plannerBudgetSummary.costBreakdown);
       tripId = result?.id || result?._id || null;
 
       setGeneratedResult(finalItin);
