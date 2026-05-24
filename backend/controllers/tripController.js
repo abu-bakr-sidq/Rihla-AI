@@ -26,6 +26,17 @@ function getDayCount(startDate, endDate) {
   return Math.max(1, Math.ceil((new Date(endDate) - new Date(startDate)) / 86400000));
 }
 
+function withTimeout(promise, ms, label = "Operation") {
+  let timer = null;
+  const timeoutPromise = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
 function pickScalar(raw, fallback = "") {
   if (typeof raw === "string") return raw;
   if (typeof raw === "number" && Number.isFinite(raw)) return raw;
@@ -445,8 +456,102 @@ export const updateTrip = async (req, res) => {
 
 // ─── generateAITrip (legacy endpoint support) ────────────────────────────────
 export const generateAITrip = async (req, res) => {
-  // Just delegate to createTrip — they do the same thing now
-  return createTrip(req, res);
+  try {
+    const {
+      destination,
+      startDate,
+      endDate,
+      days,
+      travelers = 1,
+      budget = "moderate",
+      currency = "USD",
+      travelStyle = "balanced",
+      interests = [],
+      preferences = {},
+    } = req.body || {};
+
+    if (!destination) {
+      return res.status(400).json({ message: "Destination is required" });
+    }
+
+    const normBudget = normalizeBudget(budget);
+    const normDays = Number(days) || getDayCount(startDate, endDate) || 7;
+    const normInterests = Array.isArray(interests) ? interests : [];
+    const normTravelers = Number(travelers) || 1;
+
+    let geoCoords = null;
+    try {
+      geoCoords = await withTimeout(geocodeCity(destination), 5000, "Destination geocoding");
+    } catch (geoErr) {
+      console.warn("[generateAITrip] geocoding skipped:", geoErr.message);
+    }
+
+    const [weatherResult, placesResult, userDNAResult] = await Promise.allSettled([
+      geoCoords
+        ? withTimeout(getWeatherForDestination(destination, geoCoords.lat, geoCoords.lng), 5000, "Weather fetch")
+        : withTimeout(getWeatherForDestination(destination), 5000, "Weather fetch"),
+      geoCoords
+        ? withTimeout(getTopPlaces(geoCoords.lat, geoCoords.lng, destination), 7000, "Places fetch")
+        : Promise.resolve(null),
+      withTimeout(getUserDNA(req.user?._id || req.user?.id), 3000, "User DNA fetch"),
+    ]);
+
+    const weather = weatherResult.status === "fulfilled" ? weatherResult.value : null;
+    const realPlaces = placesResult.status === "fulfilled" ? placesResult.value : null;
+    const userDNA = userDNAResult.status === "fulfilled" ? userDNAResult.value : [];
+
+    let generatedPayload = null;
+
+    try {
+      generatedPayload = await withTimeout(generateEnrichedItinerary({
+        destination,
+        days: normDays,
+        budget: normBudget,
+        travelStyle,
+        interests: normInterests,
+        preferences: { ...preferences, travelers: normTravelers },
+        weather,
+        realPlaces,
+        userDNA,
+      }), 20000, "AI itinerary generation");
+    } catch (llmErr) {
+      console.warn("[generateAITrip] AI generation fallback:", llmErr.message);
+      try {
+        generatedPayload = await withTimeout(
+          createCityItinerary(destination, normDays, normBudget, travelStyle, normInterests),
+          8000,
+          "Location itinerary fallback"
+        );
+      } catch (fallbackErr) {
+        console.warn("[generateAITrip] location fallback failed:", fallbackErr.message);
+      }
+    }
+
+    if (!generatedPayload) {
+      generatedPayload = buildRichFallbackItinerary({
+        destination,
+        days: normDays,
+        budget: normBudget,
+        travelStyle,
+        interests: normInterests,
+      });
+    }
+
+    return res.status(200).json({
+      destination,
+      days: normDays,
+      travelers: normTravelers,
+      currency,
+      itinerary: generatedPayload?.itinerary || generatedPayload,
+      costBreakdown: generatedPayload?.costBreakdown || {},
+      routeCoordinates: generatedPayload?.routeCoordinates || [],
+      climate: weather || {},
+      realPlaces: realPlaces || {},
+    });
+  } catch (err) {
+    console.error("[generateAITrip ERROR]", err.message, err.errors);
+    return res.status(500).json({ message: "Failed to generate trip", error: err.message });
+  }
 };
 
 // ─── getCacheStats (admin utility) ───────────────────────────────────────────
