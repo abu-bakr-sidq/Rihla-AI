@@ -1085,19 +1085,7 @@ function buildVariantActivity(category, variantIndex, fd) {
 }
 
 function buildExpandedActivityPool(items, category, needed, fd) {
-  const generic = getGenericCityData(fd.destination || 'Destination');
-  const baseItems = Array.isArray(items) && items.length ? items : (generic[category] || []);
-  const pool = [];
-
-  for (let index = 0; index < needed; index += 1) {
-    if (index < baseItems.length) {
-      pool.push(baseItems[index]);
-    } else {
-      pool.push(buildVariantActivity(category, index - baseItems.length, fd));
-    }
-  }
-
-  return pool;
+  return Array.from({ length: needed }, (_, index) => buildVariantActivity(category, index, fd));
 }
 
 function buildItinerary(fd) {
@@ -1115,38 +1103,12 @@ function buildItinerary(fd) {
   const dayFood = splitByWeights(budgetSummary.costBreakdown.food, dayBudgetProfiles.map((profile) => profile.foodWeight));
   const dayTransport = splitByWeights(budgetSummary.costBreakdown.transport, dayBudgetProfiles.map((profile) => profile.transportWeight));
   const dayActivities = splitByWeights(budgetSummary.costBreakdown.activities, dayBudgetProfiles.map((profile) => profile.activityWeight));
-  const destName = fd.destination || 'Unknown Destination';
-
-  const countryCityMap = {
-    france: 'Paris',
-    uk: 'London', 'united kingdom': 'London', england: 'London',
-    italy: 'Rome',
-    japan: 'Kyoto',
-    uae: 'Dubai', 'united arab emirates': 'Dubai',
-    india: 'Chennai',
-  };
-
-  const specific = Object.keys(DESTINATION_ACTIVITIES).find(k => destName.toLowerCase().includes(k.toLowerCase()));
-
-  let cityData;
-  if (specific) {
-    cityData = DESTINATION_ACTIVITIES[specific];
-  } else {
-    const dLower = destName.toLowerCase();
-    const countryMatch = Object.keys(countryCityMap).find(k => dLower === k || dLower.includes(k));
-    if (countryMatch) {
-      cityData = DESTINATION_ACTIVITIES[countryCityMap[countryMatch]];
-    } else {
-      cityData = getGenericCityData(destName);
-    }
-  }
-
   const categoryNeeds = { morning: daysNum * 2, afternoon: daysNum * 2, evening: daysNum * 2, night: daysNum * 2 };
   const categoryPools = {
-    morning: buildExpandedActivityPool(cityData.morning, 'morning', categoryNeeds.morning, fd),
-    afternoon: buildExpandedActivityPool(cityData.afternoon, 'afternoon', categoryNeeds.afternoon, fd),
-    evening: buildExpandedActivityPool(cityData.evening, 'evening', categoryNeeds.evening, fd),
-    night: buildExpandedActivityPool(cityData.night, 'night', categoryNeeds.night, fd),
+    morning: buildExpandedActivityPool([], 'morning', categoryNeeds.morning, fd),
+    afternoon: buildExpandedActivityPool([], 'afternoon', categoryNeeds.afternoon, fd),
+    evening: buildExpandedActivityPool([], 'evening', categoryNeeds.evening, fd),
+    night: buildExpandedActivityPool([], 'night', categoryNeeds.night, fd),
   };
   const categoryCursors = { morning: 0, afternoon: 0, evening: 0, night: 0 };
 
