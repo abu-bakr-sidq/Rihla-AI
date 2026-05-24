@@ -8,7 +8,6 @@ import { usePrayerTimes } from '@/hooks/usePrayerTimes';
 import { exportTripPDF, downloadTripPDF } from '@/services/exportTripPDF';
 import { useDeleteTrip } from '@/hooks/use-trips';
 import { useToast } from '@/hooks/use-toast';
-import { resolveApiUrl } from '@/lib/api-contract';
 import { buildActivityDisplayContent, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from '@/lib/trip-itinerary';
 import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerTimesCard, TripPreviewCard } from '@/components/trip/EnhancedPanels';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -65,13 +64,13 @@ function PlannerDetailTimeline({ slots, slotCfg, isLight = false }) {
                   <Icon size={16} style={{ color }} strokeWidth={2} />
                 </div>
                 <span
-                  className={`text-[11px] font-black tracking-[0.05em] py-0.5 px-2 rounded-md mb-1.5 shadow-sm transition-all duration-500 ${isLight ? 'bg-slate-900/90 border border-slate-700/80 text-white' : 'bg-black/40 border border-white/5'}`}
+                  className={`text-[11px] font-black tracking-[0.05em] py-0.5 px-2 rounded-md mb-1.5 shadow-sm transition-all duration-500 ${isLight ? 'bg-white/85 border border-slate-300/70' : 'bg-black/40 border border-white/5'}`}
                   style={{ color }}
                 >
                   {cfg.time.replace(' AM', '').replace(' PM', '')}
                 </span>
                 <div className="flex items-start justify-center w-full px-1 mt-1">
-                  <span className={`text-[9px] sm:text-[10px] font-bold text-center leading-tight ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{sanitizeVisibleText(act.place, cfg.label)}</span>
+                  <span className={`text-[9px] sm:text-[10px] font-bold text-center leading-tight ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{act.place}</span>
                 </div>
               </div>
             );
@@ -85,17 +84,12 @@ function PlannerDetailTimeline({ slots, slotCfg, isLight = false }) {
 function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slotColor, slotTime, cost, destination, cardIndex, currency, onClick, isSelected, details, isLight = false }) {
   const [imgSrc, setImgSrc] = useState('');
   const [expanded, setExpanded] = useState(false);
-  const displayPlace = sanitizeVisibleText(resolvePlannedPlaceName(place, destination, slotKey, cardIndex), 'Planned stop');
-  const safeActivity = sanitizeVisibleText(activity, 'Curated activity');
-  const query = extractLocationQuery(displayPlace, destination, safeActivity, details?.title || "");
+  const displayPlace = resolvePlannedPlaceName(place, destination, slotKey, cardIndex);
+  const query = extractLocationQuery(displayPlace, destination);
   const accentColor = PLAN_SLOT_COLORS[slotKey] || slotColor || '#D4AF37';
-  const fallbackContent = generatePlaceCardFallbackContent(displayPlace, safeActivity, destination, slotKey);
+  const fallbackContent = generatePlaceCardFallbackContent(displayPlace, activity, destination, slotKey);
   const { schedule, ideas } = buildActivityDisplayContent(details, fallbackContent);
-  const streetFinds = buildStreetFindChips(details, fallbackContent, { placeName: displayPlace, destination, slotKey, fallbackIndex: cardIndex }).map((item) => ({
-    ...item,
-    label: sanitizeVisibleText(item.label, 'Local find'),
-    query: sanitizeVisibleText(item.query, item.label || 'Local find'),
-  }));
+  const streetFinds = buildStreetFindChips(details, fallbackContent, { placeName: displayPlace, destination, slotKey, fallbackIndex: cardIndex });
 
   useEffect(() => {
     let alive = true;
@@ -121,8 +115,8 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
           {SlotIcon ? <SlotIcon size={12} strokeWidth={2.5} style={{ color: accentColor }} /> : null}
           <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: accentColor }}>{slotLabel}</span>
         </div>
-        <div className="absolute top-3 right-3 backdrop-blur-xl px-3 py-1.5 rounded-full shadow-lg" style={{ background: isLight ? 'rgba(15,23,42,0.92)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(51,65,85,0.55)' : '1px solid rgba(255,255,255,0.1)' }}>
-          <span className={`text-[10px] font-black tracking-wider ${isLight ? 'text-white' : 'text-white/90'}`}>{slotTime}</span>
+        <div className="absolute top-3 right-3 backdrop-blur-xl px-3 py-1.5 rounded-full shadow-lg" style={{ background: isLight ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(148,163,184,0.22)' : '1px solid rgba(255,255,255,0.1)' }}>
+          <span className={`text-[10px] font-black tracking-wider ${isLight ? 'text-slate-700' : 'text-white/90'}`}>{slotTime}</span>
         </div>
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 backdrop-blur-xl px-3 py-1.5 rounded-[10px] shadow-lg" style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.25)' }}>
           <span className="text-[11px] font-bold text-[#D4AF37]">{cost ? fmtCur(cost, currency) : 'Free'}</span>
@@ -131,7 +125,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
 
       <div className="p-5 flex flex-col gap-0 flex-1">
         <h3 className={`text-[17px] font-black leading-tight mb-2 tracking-wide transition-colors ${isLight ? 'text-slate-900 group-hover:text-sky-600' : 'text-white group-hover:text-[#38BDF8]'}`}>{displayPlace}</h3>
-        <p className={`text-[12px] leading-relaxed mb-4 line-clamp-3 ${isLight ? 'text-slate-600' : 'text-white/55'}`}>{safeActivity}</p>
+        <p className={`text-[12px] leading-relaxed mb-4 line-clamp-3 ${isLight ? 'text-slate-600' : 'text-white/55'}`}>{activity}</p>
 
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
@@ -145,7 +139,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
                   <div className="absolute inset-0 rounded-full blur-[2px]" style={{ background: accentColor, opacity: 0.6 }} />
                   <div className="relative w-1.5 h-1.5 rounded-full z-10" style={{ background: accentColor }} />
                 </div>
-                <p className={`text-[11.5px] leading-relaxed font-medium ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{sanitizeVisibleText(step, 'Planned step')}</p>
+                <p className={`text-[11.5px] leading-relaxed font-medium ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{step}</p>
               </div>
             ))}
           </div>
@@ -165,7 +159,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
                 className={`text-[10px] px-2.5 py-1 rounded-[6px] font-bold tracking-wide hover:scale-[1.02] transition-transform ${isLight ? 'hover:bg-sky-50' : ''}`}
                 style={{ background: isLight ? 'rgba(255,255,255,0.82)' : 'rgba(56,189,248,0.06)', border: isLight ? '1px solid rgba(56,189,248,0.22)' : '1px solid rgba(56,189,248,0.2)', color: isLight ? '#0284C7' : '#7DD3FC' }}
               >
-                {sanitizeVisibleText(s.label, 'Local find')}
+                {s.label}
               </a>
             ))}
           </div>
@@ -187,7 +181,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
             {ideas.slice(0, expanded ? ideas.length : 2).map((idea, i) => (
               <div key={i} className={`flex gap-2.5 items-start p-2.5 rounded-xl border ${isLight ? 'bg-white/70 border-slate-300/45' : 'bg-white/[0.02] border-white/[0.02]'}`}>
                 <span className="text-[12px] shrink-0 font-bold" style={{ color: '#10B981' }}>-</span>
-                <p className={`text-[11.5px] leading-relaxed italic ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{sanitizeVisibleText(idea, 'Curated idea')}</p>
+                <p className={`text-[11.5px] leading-relaxed italic ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{idea}</p>
               </div>
             ))}
           </div>
@@ -235,7 +229,7 @@ const _fetchActivityImage = async (query, globalIndex) => {
 
   try {
     const r = await fetch(
-      resolveApiUrl(`/api/place-image?query=${encodeURIComponent(query)}&photoIndex=${globalIndex || 0}&onlyGoogle=1`),
+      `/api/place-image?query=${encodeURIComponent(query)}&photoIndex=${globalIndex || 0}&onlyGoogle=1`,
       { signal: AbortSignal.timeout(8000) }
     );
     if (r.ok) {
@@ -464,9 +458,8 @@ function ActivityVerticalCard({ place, activity, slotLabel, slotIcon: SlotIcon, 
   const [imgSrc, setImgSrc] = useState('');
   const [expanded, setExpanded] = useState(false);
   const displayPlace = resolvePlannedPlaceName(place, destination, slotKey, globalIndex);
-  const safeActivity = sanitizeVisibleText(activity, 'Curated activity');
-  const query = extractLocationQuery(displayPlace, destination, safeActivity, details?.title || "");
-  const fallbackContent = generatePlaceCardFallbackContent(displayPlace, safeActivity, destination, slotKey);
+  const query = extractLocationQuery(displayPlace, destination);
+  const fallbackContent = generatePlaceCardFallbackContent(displayPlace, activity, destination, slotKey);
   const { schedule, ideas } = buildActivityDisplayContent(details, fallbackContent);
   const streetFinds = buildStreetFindChips(details, fallbackContent, { placeName: displayPlace, destination, slotKey, fallbackIndex: globalIndex });
 
@@ -669,13 +662,9 @@ function MapWidget({ destination, isLight = false }) {
             <p className={`truncate text-[12px] font-semibold ${isLight ? 'text-slate-700' : 'text-white/72'}`}>{destination}</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination)}`, "_blank", "noopener,noreferrer")}
-          className={`rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] transition-all hover:scale-[1.03] ${isLight ? 'border-emerald-300/70 bg-emerald-50 text-emerald-700 hover:border-emerald-400' : 'border-emerald-400/25 bg-emerald-400/8 text-emerald-300/90 hover:border-emerald-400/45 hover:bg-emerald-400/14'}`}
-        >
+        <span className={`rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] ${isLight ? 'border-emerald-300/70 bg-emerald-50 text-emerald-700' : 'border-emerald-400/15 bg-emerald-400/8 text-emerald-300/80'}`}>
           Explore
-        </button>
+        </span>
       </div>
     </div>
   );
@@ -785,7 +774,7 @@ export default function TripDetail() {
     const token = localStorage.getItem('auth_token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    fetch(resolveApiUrl(`/api/trips/${id}`), { headers, credentials: 'include' })
+    fetch(`/api/trips/${id}`, { headers, credentials: 'include' })
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -866,7 +855,7 @@ export default function TripDetail() {
   const tripDatesLabel = trip.startDate && trip.endDate
     ? `${new Date(trip.startDate).toLocaleDateString('en-US')} - ${new Date(trip.endDate).toLocaleDateString('en-US')}`
     : ov.dates || 'Dates TBD';
-  const backgroundSlides = heroImage ? [heroImage] : [];
+  const backgroundSlides = [...new Set([focusImage, heroImage].filter(Boolean))].slice(0, 2);
 
   const AI_GEMS = res.ai_suggestions?.hidden_gems || [];
   const AI_TIPS = res.ai_suggestions?.tips || [];
