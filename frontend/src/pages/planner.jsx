@@ -1027,10 +1027,33 @@ function buildVariantActivity(category, variantIndex, fd) {
   const variantLabel = FALLBACK_SLOT_VARIANTS[category]?.[variantIndex % FALLBACK_SLOT_VARIANTS[category].length] || 'Curated Stop';
   const theme = FALLBACK_DAY_THEMES[variantIndex % FALLBACK_DAY_THEMES.length];
   const style = fd.travelStyle || 'balanced';
+  const slotNarratives = {
+    morning: [
+      `Start in ${district} with a gentler introduction to ${destination}, keeping the first stop easy to enter and rewarding on foot.`,
+      `Use ${district} as a calm opening chapter in ${destination}, with space to notice architecture, people, and slower local rhythm.`,
+      `Begin around ${district} in ${destination} while the city still feels fresh and easier to navigate.`
+    ],
+    afternoon: [
+      `Move into ${district} for a fuller midday experience in ${destination}, where culture, lunch, and walkable discoveries work well together.`,
+      `Use the afternoon to settle deeper into ${district}, balancing one stronger stop with nearby local texture in ${destination}.`,
+      `Anchor the middle of the day in ${district} so ${destination} feels more lived-in and less rushed.`
+    ],
+    evening: [
+      `Let ${district} carry the golden-hour mood in ${destination}, with softer light and a more scenic pace.`,
+      `Shift toward ${district} as ${destination} eases into evening, giving this stop a stronger atmosphere and better photo moments.`,
+      `Use ${district} for the transition into dusk so ${destination} feels more cinematic and less crowded.`
+    ],
+    night: [
+      `Close the day through ${district}, where ${destination} feels calmer, more intimate, and easier to enjoy without rushing.`,
+      `Keep the final stretch in ${district} relaxed, using it as a softer night close to your time in ${destination}.`,
+      `End around ${district} so ${destination} finishes with comfort, ambience, and a lighter late-night pace.`
+    ]
+  };
+  const desc = slotNarratives[category]?.[variantIndex % slotNarratives[category].length] || `Explore ${district} in ${destination}.`;
 
   return {
     name: `${district} ${variantLabel}`,
-    desc: `Explore ${district} in ${destination} through a ${variantLabel.toLowerCase()} tailored for your ${style} travel style. This stop supports the day's ${theme.toLowerCase()} mood with a fresh angle and distinct local rhythm.`,
+    desc: `${desc} This stop is tuned for your ${style} travel style and supports the day's ${theme.toLowerCase()} mood with a more distinct local angle.`,
     id: null,
   };
 }
@@ -1121,6 +1144,8 @@ function buildItinerary(fd) {
       const slot = baseCat[si];
       const act = getAct(slot);
       const knownId = act.id && act.id.length >= 10 && !act.id.includes(' ');
+      const fallbackContent = generatePlaceCardFallbackContent(act.name, act.desc, fd.destination, slotKey);
+      const transferMinutes = 14 + ((dNum * 11 + si * 7) % 18);
       acc[slotKey] = {
         place: act.name,
         activity: act.desc,
@@ -1128,9 +1153,15 @@ function buildItinerary(fd) {
         imageQuery: _extractLocationQuery(act.name, fd.destination),
         knownId,
         cost: slotCosts[si] || 0,
-        travel: `${15 + Math.floor(Math.random() * 20)}m ${Math.random() > 0.5 ? 'Cab' : 'Metro'}`,
+        travel: `about ${transferMinutes} min from the previous stop`,
         duration: slot === 'night' ? '1-2h' : slot === 'morning' ? '3h' : '2-3h',
         reason: `Best suited for ${slot === 'morning' ? 'an energetic start' : slot === 'evening' ? 'a scenic wind-down' : slot === 'night' ? 'an intimate close' : 'full afternoon immersion'} - aligns with your ${fd.travelStyle || 'travel'} style${fd.preferences?.length ? ` and ${fd.preferences[si % fd.preferences.length]} preference.` : '.'}`,
+        timePlan: fallbackContent.schedule,
+        streetFinds: fallbackContent.streetFinds,
+        nearbyHighlights: fallbackContent.streetFinds.slice(0, 3),
+        exploreIdeas: fallbackContent.ideas,
+        transportationTip: `Keep transfers around ${transferMinutes} minutes to protect the day's pacing.`,
+        culturalInsight: `This ${slot.replace(/Activity/, ' activity')} stop works best when treated as part of the wider ${theme.toLowerCase()} flow.`,
       };
       return acc;
     }, {});

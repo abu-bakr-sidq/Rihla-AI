@@ -1,8 +1,13 @@
 function parseCost(value) {
   if (value == null) return 0;
   if (typeof value === "number" && Number.isFinite(value)) return value;
-  const cleaned = String(value).replace(/[^0-9.]/g, "");
-  return Number(cleaned) || 0;
+  const text = String(value).trim();
+  const parts = [...text.matchAll(/\d+(?:\.\d+)?/g)].map((match) => Number(match[0])).filter(Number.isFinite);
+  if (!parts.length) return 0;
+  if (parts.length >= 2 && /[-–to]/i.test(text)) {
+    return Math.round(parts.reduce((sum, part) => sum + part, 0) / parts.length);
+  }
+  return parts[0] || 0;
 }
 
 const DESTINATION_PLACE_LIBRARY = {

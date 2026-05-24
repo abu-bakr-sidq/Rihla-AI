@@ -546,6 +546,15 @@ function makeSyntheticPlace(destination, day, slot, fallbackBase) {
   };
 }
 
+const CITY_ITINERARY_DAY_THEMES = [
+  "Historic Core",
+  "Markets & Culture",
+  "Green & Scenic",
+  "Modern Local Flow",
+  "Food & Evening Atmosphere",
+  "Neighborhood Discovery",
+];
+
 export async function createCityItinerary(destination, days, budget, travelStyle, interests) {
   try {
     const curatedCenter = getCuratedCityCenter(destination);
@@ -583,16 +592,25 @@ export async function createCityItinerary(destination, days, budget, travelStyle
     const dayPlans = [];
     for (let day = 1; day <= days; day++) {
       const activities = [];
+      const dayTheme = CITY_ITINERARY_DAY_THEMES[(day - 1) % CITY_ITINERARY_DAY_THEMES.length];
+      const rotatedPlaces = rotateUnique(places, day * 7 + destination.length, Math.max(places.length, 8));
       for (let slot = 0; slot < 8; slot++) {
-        const place = places[placeCursor % places.length] || makeSyntheticPlace(destination, day, slot, fallbackBase);
+        const themedIndex = (slot * 2 + day - 1) % Math.max(rotatedPlaces.length || 1, 1);
+        const place = rotatedPlaces[themedIndex] || makeSyntheticPlace(destination, day, slot, fallbackBase);
         const key = normalizeToken(place.title);
         placeUsage.set(key, (placeUsage.get(key) || 0) + 1);
         placeCursor++;
         
         const images = placeImageCache.get(key) || [createStaticMapImageUrl(place.lat, place.lng, 14, place.title)];
-        activities.push(makePlaceActivity({ ...place, imageUrl: images[0], imageAlternatives: images.slice(1) }, destination, budget, slot, travelStyle, interests, day));
+        activities.push(makePlaceActivity({
+          ...place,
+          title: `${formatDisplayName(place.title)} - ${dayTheme}`,
+          description: `${normalizePlaceDescription(place.description, destination)} This stop supports the day's ${dayTheme.toLowerCase()} rhythm.`,
+          imageUrl: images[0],
+          imageAlternatives: images.slice(1)
+        }, destination, budget, slot, travelStyle, interests, day));
       }
-      dayPlans.push({ day, title: `Day ${day} in ${destination}`, activities });
+      dayPlans.push({ day, title: `Day ${day} in ${destination}`, theme: dayTheme, activities });
     }
 
     const total = (budget === "luxury" ? 340 : budget === "moderate" ? 180 : 95) * days;
