@@ -1145,13 +1145,15 @@ function buildItinerary(fd) {
       const slot = baseCat[si];
       const act = getAct(slot);
       const knownId = act.id && act.id.length >= 10 && !act.id.includes(' ');
-      const fallbackContent = generatePlaceCardFallbackContent(act.name, act.desc, fd.destination, slotKey);
+      const fallbackIndex = i * fullSlotsList.length + si;
+      const resolvedPlace = resolvePlannedPlaceName(act.name, fd.destination, slotKey, fallbackIndex);
+      const fallbackContent = generatePlaceCardFallbackContent(resolvedPlace, act.desc, fd.destination, slotKey, fallbackIndex);
       const transferMinutes = 14 + ((dNum * 11 + si * 7) % 18);
       acc[slotKey] = {
-        place: act.name,
+        place: resolvedPlace,
         activity: act.desc,
-        image: act.id || act.name,
-        imageQuery: _extractLocationQuery(act.name, fd.destination),
+        image: act.id || resolvedPlace,
+        imageQuery: _extractLocationQuery(resolvedPlace, fd.destination),
         knownId,
         cost: slotCosts[si] || 0,
         travel: `about ${transferMinutes} min from the previous stop`,

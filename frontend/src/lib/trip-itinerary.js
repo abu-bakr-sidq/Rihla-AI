@@ -216,8 +216,8 @@ export function buildStreetFindChips(activityData = {}, fallbackContent = {}, co
   }));
 }
 
-export function generatePlaceCardFallbackContent(placeName = "", activity = "", destination = "", slotKey = "") {
-  const place = resolvePlannedPlaceName(placeName || activity, destination, slotKey);
+export function generatePlaceCardFallbackContent(placeName = "", activity = "", destination = "", slotKey = "", fallbackIndex = 0) {
+  const place = resolvePlannedPlaceName(placeName || activity, destination, slotKey, fallbackIndex);
   const area = getAreaLabel(placeName, destination);
   const sourceText = `${placeName} ${activity}`.toLowerCase();
   const times = {
@@ -324,11 +324,41 @@ export function generatePlaceCardFallbackContent(placeName = "", activity = "", 
     ];
   }
 
-  const schedule = buildUniqueLines([
-    `${times[0]} Arrive at ${place} and get your bearings around the main approach`,
-    `${times[1]} Focus on the signature stretch of ${place} and its most interesting details`,
-    `${times[2]} Step into the nearby lanes around ${place} for smaller shops and local rhythm`,
-  ]);
+  const scheduleVariants = [
+    [
+      `${times[0]} Arrive at ${place} and get your bearings around the main approach`,
+      `${times[1]} Focus on the signature stretch of ${place} and its most interesting details`,
+      `${times[2]} Step into the nearby lanes around ${place} for smaller shops and local rhythm`,
+    ],
+    [
+      `${times[0]} Enter through the quieter side of ${place} and settle into the local pace`,
+      `${times[1]} Spend your main window on the most photogenic corner of ${place}`,
+      `${times[2]} Use the final stretch to uncover nearby details around ${area}`,
+    ],
+    [
+      `${times[0]} Open this stop with a slow first pass through ${place}`,
+      `${times[1]} Anchor your time around one standout pocket of ${place}`,
+      `${times[2]} Finish by drifting into the surrounding streets for a more local feel`,
+    ],
+  ];
+  const schedule = buildUniqueLines(scheduleVariants[Math.abs(fallbackIndex) % scheduleVariants.length]);
+
+  const slotIdeaLead = {
+    morning: "Keep the start gentle and observant",
+    morningActivity: "Turn the late morning into a deeper discovery",
+    afternoon: "Let the midday energy carry the experience",
+    afternoonActivity: "Use this follow-up stop for a more focused local angle",
+    evening: "Lean into atmosphere and softer light",
+    eveningActivity: "Treat this hour as the character-building part of the evening",
+    night: "Use the night stop to slow the pace and absorb ambience",
+    nightActivity: "Close out with a more intimate final layer of the neighborhood",
+  }[slotKey] || "Explore this stop with a slower local lens";
+
+  ideas = buildUniqueLines([
+    `${slotIdeaLead} around ${place}, instead of trying to rush every corner at once.`,
+    ...ideas,
+    `If ${place} feels busy, move one street over and compare how ${area} changes in mood.`,
+  ]).slice(0, 6);
 
   return {
     schedule,
