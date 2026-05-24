@@ -1,41 +1,42 @@
 import express from "express";
 import { TourPackage } from "../models/TourPackage.js";
-import { requireAuth, ensureAdmin } from "../middleware/auth.js";
+import { ensureAdmin } from "../middleware/auth.js";
+import { createCityItinerary } from "../services/locationEnhancedPlanner.js";
 
 const router = express.Router();
 
 const CURRENCY_SYMBOLS = {
   USD: "$",
-  EUR: "€",
-  GBP: "£",
-  JPY: "¥",
-  INR: "₹",
-  KRW: "₩",
-  THB: "฿",
+  EUR: "EUR ",
+  GBP: "GBP ",
+  JPY: "JPY ",
+  INR: "INR ",
+  KRW: "KRW ",
+  THB: "THB ",
   AED: "AED ",
-  IDR: "Rp",
-  TRY: "₺",
+  IDR: "IDR ",
+  TRY: "TRY ",
   MAD: "MAD ",
   JOD: "JOD ",
   EGP: "EGP ",
   PEN: "PEN ",
-  BRL: "R$",
-  ZAR: "R",
+  BRL: "BRL ",
+  ZAR: "ZAR ",
   XPF: "XPF ",
   CHF: "CHF ",
-  SGD: "S$",
-  MYR: "RM ",
-  VND: "₫",
+  SGD: "SGD ",
+  MYR: "MYR ",
+  VND: "VND ",
   SAR: "SAR ",
   QAR: "QAR ",
   OMR: "OMR ",
   KWD: "KWD ",
   BHD: "BHD ",
-  CNY: "¥",
-  HKD: "HK$",
-  AUD: "A$",
-  NZD: "NZ$",
-  CAD: "C$",
+  CNY: "CNY ",
+  HKD: "HKD ",
+  AUD: "AUD ",
+  NZD: "NZD ",
+  CAD: "CAD ",
 };
 
 const DESTINATION_PRESETS = [
@@ -179,7 +180,165 @@ function buildBudgetBreakdown(localBudget, travelStyle, currencyCode) {
   };
 }
 
-// GET all active tour packages (Public or logged-in users)
+function getPackageDays(pkg) {
+  if (Number.isFinite(Number(pkg?.days)) && Number(pkg.days) > 0) {
+    return Math.max(1, Math.round(Number(pkg.days)));
+  }
+  const start = new Date(pkg?.startDate || Date.now());
+  const end = new Date(pkg?.endDate || Date.now());
+  const diff = Math.round((end - start) / 86400000);
+  return Math.max(1, diff || 1);
+}
+
+function inferBudgetTier(destination, days, budgetUsd, travelStyle) {
+  const safeDays = Math.max(1, Number(days) || 1);
+  const meta = getPackageCurrencyMeta(destination);
+  const perDay = budgetUsd / safeDays;
+  const expected = meta.dailyUsd || 88;
+  if (String(travelStyle || "").toLowerCase() === "luxury" || perDay >= expected * 1.45) return "luxury";
+  if (perDay <= expected * 0.78) return "budget";
+  return "moderate";
+}
+
+function extractDisplayPlace(activity = {}, fallback = "") {
+  const fromLocation = String(activity.location || "").split(",")[0].trim();
+  const fromTitle = String(activity.title || "").split(" - ")[0].trim();
+  return fromLocation || fromTitle || fallback;
+}
+
+function cleanActivityTitle(activity = {}, fallback = "") {
+  return String(activity.title || "").replace(/\s+-\s+.+$/, "").trim() || fallback;
+}
+
+function buildPreviewDayBudgetWeights(dayPlans, travelStyle) {
+  const style = String(travelStyle || "").toLowerCase();
+  return (Array.isArray(dayPlans) ? dayPlans : []).map((dayPlan, index, arr) => {
+    const theme = String(dayPlan?.theme || dayPlan?.title || "").toLowerCase();
+    const isFirst = index === 0;
+    const isLast = index === arr.length - 1;
+    let weight = 1;
+
+    if (/arrival|orientation|first impressions/.test(theme)) weight += 0.1;
+    if (/signature|finale|grand finish|closing|farewell/.test(theme)) weight += 0.18;
+    if (/food|dining|atmosphere|night|shopping/.test(theme)) weight += 0.08;
+    if (/scenic|coastal|waterfront|adventure|active/.test(theme)) weight += 0.06;
+    if (/reset|slower|wellness|calm|reflection/.test(theme)) weight -= 0.05;
+
+    if (style === "luxury") weight += 0.12;
+    if (style === "adventure" || style === "nature") weight += 0.06;
+    if (style === "relaxation" || style === "wellness") weight -= 0.02;
+    if (isFirst || isLast) weight += 0.04;
+
+    return Math.max(0.72, Number(weight.toFixed(2)));
+  });
+}
+
+function splitBudgetByWeights(total, weights) {
+  const safeTotal = Math.max(0, Math.round(Number(total) || 0));
+  const safeWeights = (Array.isArray(weights) ? weights : []).map((weight) => Math.max(0.01, Number(weight) || 0.01));
+  if (!safeWeights.length) return [safeTotal];
+  const totalWeight = safeWeights.reduce((sum, value) => sum + value, 0) || 1;
+  let allocated = 0;
+  return safeWeights.map((weight, index) => {
+    if (index === safeWeights.length - 1) return Math.max(0, safeTotal - allocated);
+    const value = Math.round((safeTotal * weight) / totalWeight);
+    allocated += value;
+    return value;
+  });
+}
+
+function inferBestTime(destination = "") {
+  const key = String(destination || "").toLowerCase();
+  if (/(dubai|abu dhabi|uae|doha|qatar|saudi|riyadh|jeddah|oman|kuwait|bahrain|egypt|morocco|jordan)/.test(key)) {
+    return "November - March";
+  }
+  if (/(chennai|pondicherry|kanyakumari|goa|kerala|bali|phuket|thailand|singapore|malaysia)/.test(key)) {
+    return "October - March";
+  }
+  if (/(london|paris|rome|amsterdam|barcelona|switzerland|canada)/.test(key)) {
+    return "April - June, September - October";
+  }
+  if (/(tokyo|kyoto|japan|seoul|korea)/.test(key)) {
+    return "March - May or October - November";
+  }
+  if (/(sydney|melbourne|australia|new zealand)/.test(key)) {
+    return "September - November or March - May";
+  }
+  return "Best in the region's shoulder season";
+}
+
+function buildPreviewTips(destination, travelStyle, preferences = []) {
+  const style = String(travelStyle || "").toLowerCase();
+  const prefs = (Array.isArray(preferences) ? preferences : []).filter(Boolean);
+  const destinationLabel = String(destination || "").split(",")[0].trim() || "this destination";
+  const styleTip =
+    style === "luxury"
+      ? `Reserve signature dining and premium timed experiences in ${destinationLabel} ahead of peak evening hours.`
+      : style === "adventure" || style === "nature"
+        ? "Keep the most active chapter earlier in the day and leave a lighter recovery block for late afternoon."
+        : style === "cultural"
+          ? "Visit heritage-heavy stops early, then use the afternoon for museums, food, and slower neighborhood context."
+          : style === "relaxation" || style === "wellness"
+            ? "Protect one slower window each day so the route stays restorative rather than crowded."
+            : `Group nearby stops together to keep transfers low and the local rhythm stronger in ${destinationLabel}.`;
+  const preferenceTip = prefs.length
+    ? `Use the ${prefs.slice(0, 2).join(" + ")} preference mix as your tie-breaker when choosing between similar stops.`
+    : `Lean into one district at a time so ${destinationLabel} feels curated instead of over-packed.`;
+  return [
+    styleTip,
+    preferenceTip,
+    `Keep one flexible slot open in ${destinationLabel} for weather, local recommendations, or spontaneous standout finds.`,
+  ];
+}
+
+function buildPreviewOverview(pkg, days, dayPlans) {
+  const destinationLabel = String(pkg.destination || "").trim();
+  const style = String(pkg.travelStyle || "curated").toLowerCase();
+  const visibleThemes = (Array.isArray(dayPlans) ? dayPlans : [])
+    .slice(0, 3)
+    .map((dayPlan) => String(dayPlan?.theme || dayPlan?.title || "").trim())
+    .filter(Boolean);
+  const themeLine = visibleThemes.length ? ` Expect chapters like ${visibleThemes.join(", ")}.` : "";
+  return `${destinationLabel} is shaped here as a ${style} journey across ${days} ${days === 1 ? "day" : "days"}, balancing signature highlights with stronger local pacing.${themeLine}`;
+}
+
+function buildPreviewDays(dayPlans, dayBudgets, currencyCode) {
+  return (Array.isArray(dayPlans) ? dayPlans : []).map((dayPlan, index) => {
+    const activities = Array.isArray(dayPlan?.activities) ? dayPlan.activities : [];
+    const morning = activities[0] || {};
+    const afternoon = activities[2] || activities[3] || activities[1] || {};
+    const evening = activities[4] || activities[5] || activities[6] || {};
+    const dayBudget = Math.max(0, dayBudgets[index] || 0);
+    const sessionBudgets = splitBudgetByWeights(dayBudget, [0.28, 0.4, 0.22]);
+    const tipSource = evening.tips || afternoon.tips || morning.tips || "";
+
+    return {
+      day: dayPlan?.day || index + 1,
+      title: dayPlan?.theme || dayPlan?.title || `Day ${index + 1}`,
+      morning: {
+        activity: cleanActivityTitle(morning, "Morning Discovery"),
+        place: extractDisplayPlace(morning, "Local Landmark"),
+        cost: formatLocalMoney(sessionBudgets[0] || 0, currencyCode),
+        duration: "2-3 hrs",
+      },
+      afternoon: {
+        activity: cleanActivityTitle(afternoon, "Afternoon Discovery"),
+        place: extractDisplayPlace(afternoon, "City Quarter"),
+        cost: formatLocalMoney(sessionBudgets[1] || 0, currencyCode),
+        duration: "3-4 hrs",
+      },
+      evening: {
+        activity: cleanActivityTitle(evening, "Evening Discovery"),
+        place: extractDisplayPlace(evening, "Evening District"),
+        cost: formatLocalMoney(sessionBudgets[2] || 0, currencyCode),
+        duration: "2-3 hrs",
+      },
+      dayTotal: formatLocalMoney(dayBudget, currencyCode),
+      tip: String(tipSource || "").trim() || "Keep one lighter transition between districts so the day still feels curated.",
+    };
+  });
+}
+
 router.get("/", async (req, res) => {
   try {
     const packages = await TourPackage.find({ status: "active" }).sort({ createdAt: -1 });
@@ -190,7 +349,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET specific tour package
 router.get("/:id", async (req, res) => {
   try {
     const pkg = await TourPackage.findById(req.params.id);
@@ -201,122 +359,103 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// GET rich AI preview plan for a package card
 router.get("/:id/preview", async (req, res) => {
   try {
     const pkg = await TourPackage.findById(req.params.id);
     if (!pkg) return res.status(404).json({ message: "Package not found" });
 
-    const days = Math.max(1, Math.round((new Date(pkg.endDate) - new Date(pkg.startDate)) / 86400000));
-    const prefs = (pkg.preferences || []).join(", ") || "local attractions";
-    const places = (pkg.description || "").split(",").map(p => p.trim()).filter(Boolean);
+    const days = getPackageDays(pkg);
+    const destinationMeta = getPackageCurrencyMeta(pkg.destination);
     const budgetUsd = normalizePackageBudgetUsd(pkg, days);
+    const budgetTier = inferBudgetTier(pkg.destination, days, budgetUsd, pkg.travelStyle);
+    const generated = await createCityItinerary(
+      pkg.destination,
+      days,
+      budgetTier,
+      pkg.travelStyle,
+      pkg.preferences || []
+    );
+    const localBudget = Math.round(budgetUsd * (destinationMeta.rate || 1));
+    const budgetBreakdown = buildBudgetBreakdown(localBudget, pkg.travelStyle, destinationMeta.code);
 
-    // Try Grok AI first
-    try {
-      const { getGrokClient } = await import("../services/aiPlannerService.js");
-      const ai = getGrokClient();
-
-      const prompt = `You are a professional travel planner. Create a detailed ${days}-day itinerary for ${pkg.destination} in ${pkg.travelStyle} travel style.
-Total budget: $${budgetUsd} USD. Key places: ${places.join(", ") || prefs}.
-
-Return ONLY a JSON object with this exact schema (no extra text):
-{
-  "overview": "2-sentence trip overview",
-  "bestTime": "best season to visit",
-  "currency": "local currency code (e.g. INR, EUR, JPY)",
-  "currencySymbol": "currency symbol (e.g. ₹, €, ¥)",
-  "exchangeRate": number (units of local currency per 1 USD),
-  "days": [
-    {
-      "day": 1,
-      "title": "Day theme title",
-      "morning": { "activity": "what to do", "place": "specific location name", "cost": "cost in local currency", "duration": "e.g. 2 hrs" },
-      "afternoon": { "activity": "what to do", "place": "specific location name", "cost": "cost in local currency", "duration": "e.g. 3 hrs" },
-      "evening": { "activity": "what to do", "place": "specific location name", "cost": "cost in local currency", "duration": "e.g. 2 hrs" },
-      "dayTotal": "total cost for the day in local currency",
-      "tip": "one insider tip for this day"
-    }
-  ],
-  "budgetBreakdown": {
-    "accommodation": "amount in local currency",
-    "food": "amount in local currency",
-    "transport": "amount in local currency",
-    "activities": "amount in local currency",
-    "misc": "amount in local currency",
-    "total": "total in local currency"
-  },
-  "tips": ["tip 1", "tip 2", "tip 3"]
-}`;
-
-      const resp = await ai.chat.completions.create({
-        model: "grok-3-mini",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 2000,
-        response_format: { type: "json_object" }
+    if (generated?.itinerary?.length) {
+      const allDayPlans = generated.itinerary;
+      const previewDayCount = Math.min(allDayPlans.length, 6);
+      const allDayBudgets = splitBudgetByWeights(localBudget, buildPreviewDayBudgetWeights(allDayPlans, pkg.travelStyle));
+      return res.json({
+        overview: buildPreviewOverview(pkg, days, allDayPlans),
+        bestTime: inferBestTime(pkg.destination),
+        currency: destinationMeta.code,
+        currencySymbol: destinationMeta.symbol || destinationMeta.code,
+        exchangeRate: destinationMeta.rate || 1,
+        days: buildPreviewDays(
+          allDayPlans.slice(0, previewDayCount),
+          allDayBudgets.slice(0, previewDayCount),
+          destinationMeta.code
+        ),
+        budgetBreakdown,
+        tips: buildPreviewTips(pkg.destination, pkg.travelStyle, pkg.preferences),
       });
-      return res.json(JSON.parse(resp.choices[0].message.content));
-
-    } catch (aiErr) {
-      // Rich template fallback matching same schema
-      const destinationMeta = getPackageCurrencyMeta(pkg.destination);
-      const SYMS = { INR: "₹", EUR: "€", GBP: "£", JPY: "¥", KRW: "₩", THB: "฿", AED: "AED ", IDR: "Rp", TRY: "₺", MAD: "MAD ", JOD: "JOD ", EGP: "EGP ", PEN: "PEN ", BRL: "R$", ZAR: "R", XPF: "XPF ", CHF: "CHF " };
-      const CURR_MAP = { india: "INR", pondicherry: "INR", chennai: "INR", kanyakumari: "INR", japan: "JPY", kyoto: "JPY", korea: "KRW", seoul: "KRW", bali: "IDR", indonesia: "IDR", thailand: "THB", phuket: "THB", london: "GBP", uk: "GBP", france: "EUR", paris: "EUR", italy: "EUR", rome: "EUR", venice: "EUR", amalfi: "EUR", spain: "EUR", barcelona: "EUR", greece: "EUR", santorini: "EUR", netherlands: "EUR", amsterdam: "EUR", swiss: "CHF", switzerland: "CHF", turkey: "TRY", istanbul: "TRY", dubai: "AED", uae: "AED", morocco: "MAD", marrakech: "MAD", egypt: "EGP", cairo: "EGP", jordan: "JOD", petra: "JOD", peru: "PEN", machu: "PEN", brazil: "BRL", rio: "BRL", "cape town": "ZAR", "south africa": "ZAR", "bora bora": "XPF", polynesia: "XPF" };
-      const d = pkg.destination.toLowerCase();
-      const currKey = Object.keys(CURR_MAP).find(k => d.includes(k));
-      const currency = destinationMeta.code;
-      const sym = destinationMeta.symbol || "$";
-      const rate = destinationMeta.rate || 1;
-      const localBudget = Math.round(budgetUsd * rate);
-      const perDay = Math.round(localBudget / days);
-      const fmtN = (n) => formatLocalMoney(n, currency);
-      const breakdown = buildBudgetBreakdown(localBudget, pkg.travelStyle, currency);
-
-      const sessions = ["morning", "afternoon", "evening"];
-      const acts = ["Sightseeing & Exploration", "Cultural Experience & Local Cuisine", "Sunset & Evening Leisure"];
-
-      const preview = {
-        overview: `${pkg.destination} offers a wonderful ${pkg.travelStyle} experience over ${days} days. Explore iconic landmarks, savor local cuisine, and immerse in the vibrant culture.`,
-        bestTime: "October – March",
-        currency,
-        currencySymbol: sym,
-        exchangeRate: rate,
-        days: Array.from({ length: Math.min(days, 5) }, (_, i) => ({
-          day: i + 1,
-          title: `Day ${i + 1}: ${places[i] || `Explore ${pkg.destination.split(",")[0]}`}`,
-          morning:   { activity: acts[0], place: places[i * 3]     || pkg.destination.split(",")[0], cost: fmtN(Math.round(perDay * 0.25)), duration: "2–3 hrs" },
-          afternoon: { activity: acts[1], place: places[i * 3 + 1] || "Local Market", cost: fmtN(Math.round(perDay * 0.40)), duration: "3–4 hrs" },
-          evening:   { activity: acts[2], place: places[i * 3 + 2] || "City Centre", cost: fmtN(Math.round(perDay * 0.20)), duration: "2 hrs" },
-          dayTotal: fmtN(perDay),
-          tip: `Book your ${places[i] || "entry tickets"} in advance for best rates.`
-        })),
-        budgetBreakdown: breakdown,
-        tips: [
-          `Carry ${sym} cash for local markets and small eateries.`,
-          `Best local transport: auto-rickshaws or ride-hailing apps.`,
-          `Visit major attractions early morning to avoid crowds.`
-        ]
-      };
-      return res.json(preview);
     }
+
+    const fallbackBudgets = splitBudgetByWeights(
+      localBudget,
+      Array.from({ length: days }, (_, index) => 1 + (index === 0 || index === days - 1 ? 0.08 : 0))
+    );
+    const destinationLabel = String(pkg.destination || "").split(",")[0].trim() || "Destination";
+    const fallbackDays = Array.from({ length: Math.min(days, 5) }, (_, index) => {
+      const dayBudget = fallbackBudgets[index] || Math.round(localBudget / Math.max(1, days));
+      const sessionBudgets = splitBudgetByWeights(dayBudget, [0.28, 0.4, 0.22]);
+      return {
+        day: index + 1,
+        title: `${String(pkg.travelStyle || "Curated")} in ${destinationLabel}`,
+        morning: {
+          activity: `Morning discovery through ${destinationLabel}`,
+          place: destinationLabel,
+          cost: formatLocalMoney(sessionBudgets[0] || 0, destinationMeta.code),
+          duration: "2-3 hrs",
+        },
+        afternoon: {
+          activity: "Midday local culture and food chapter",
+          place: `${destinationLabel} local district`,
+          cost: formatLocalMoney(sessionBudgets[1] || 0, destinationMeta.code),
+          duration: "3-4 hrs",
+        },
+        evening: {
+          activity: "Evening atmosphere and signature close",
+          place: `${destinationLabel} evening zone`,
+          cost: formatLocalMoney(sessionBudgets[2] || 0, destinationMeta.code),
+          duration: "2-3 hrs",
+        },
+        dayTotal: formatLocalMoney(dayBudget, destinationMeta.code),
+        tip: "Use this preview as the sample flow, then switch to Plan Now for the full personalized trip build.",
+      };
+    });
+
+    return res.json({
+      overview: buildPreviewOverview(pkg, days, fallbackDays),
+      bestTime: inferBestTime(pkg.destination),
+      currency: destinationMeta.code,
+      currencySymbol: destinationMeta.symbol || destinationMeta.code,
+      exchangeRate: destinationMeta.rate || 1,
+      days: fallbackDays,
+      budgetBreakdown,
+      tips: buildPreviewTips(pkg.destination, pkg.travelStyle, pkg.preferences),
+    });
   } catch (err) {
+    console.error("GET /tour-packages/:id/preview error:", err);
     res.status(500).json({ message: "Failed to generate preview" });
   }
 });
 
-
-// POST to create a new tour package (Admin only)
 router.post("/", ensureAdmin, async (req, res) => {
   try {
     const { destination, days, budget, budgetBreakdown, travelStyle, preferences } = req.body;
 
-    // Basic validation
     if (!destination || !days || !budget || !travelStyle) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Attempt AI Generation
     const { generatePackageDescription } = await import("../services/aiPlannerService.js");
     let description = "";
     try {
@@ -327,11 +466,11 @@ router.post("/", ensureAdmin, async (req, res) => {
 
     const start = new Date();
     const end = new Date();
-    end.setDate(end.getDate() + parseInt(days));
+    end.setDate(end.getDate() + parseInt(days, 10));
 
     const newPackage = new TourPackage({
       destination,
-      days: parseInt(days),
+      days: parseInt(days, 10),
       startDate: start,
       endDate: end,
       budget,
@@ -340,7 +479,7 @@ router.post("/", ensureAdmin, async (req, res) => {
       travelStyle,
       preferences: preferences || [],
       createdBy: req.user._id,
-      status: "active"
+      status: "active",
     });
 
     const savedPackage = await newPackage.save();
@@ -351,7 +490,6 @@ router.post("/", ensureAdmin, async (req, res) => {
   }
 });
 
-// PUT to update a tour package (Admin only)
 router.put("/:id", ensureAdmin, async (req, res) => {
   try {
     const updatedPackage = await TourPackage.findByIdAndUpdate(
@@ -366,7 +504,6 @@ router.put("/:id", ensureAdmin, async (req, res) => {
   }
 });
 
-// DELETE a tour package (Admin only)
 router.delete("/:id", ensureAdmin, async (req, res) => {
   try {
     const deletedPackage = await TourPackage.findByIdAndDelete(req.params.id);
