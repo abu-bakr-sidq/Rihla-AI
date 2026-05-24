@@ -740,6 +740,8 @@ export default function Admin() {
   const [confirmDeleteUser, setConfirmDeleteUser] = useState(null); // stores userId
   const [confirmUpdateStatus, setConfirmUpdateStatus] = useState(null); // stores { userId, status }
   const [confirmDeleteTrip, setConfirmDeleteTrip] = useState(null); // stores tripId
+  const [confirmDeletePackage, setConfirmDeletePackage] = useState(null); // stores package object
+  const [packagesRefreshing, setPackagesRefreshing] = useState(false);
 
   const updateProfile = useUpdateProfile();
   const updatePassword = useUpdatePassword();
@@ -749,7 +751,12 @@ export default function Admin() {
   const deleteTrip = useDeleteTrip();
   const fileInputRef = useRef(null);
 
-  const { data: tourPackages = [], isLoading: packagesLoading, refetch: refetchPackages } = useTourPackages();
+  const {
+    data: tourPackages = [],
+    isLoading: packagesLoading,
+    isFetching: packagesFetching,
+    refetch: refetchPackages,
+  } = useTourPackages();
   const createTourPackage = useCreateTourPackage();
   const deleteTourPackage = useDeleteTourPackage();
   const [packageModalOpen, setPackageModalOpen] = useState(false);
@@ -852,6 +859,44 @@ export default function Admin() {
 
   const handleLogout = () => {
     logout.mutate(undefined, { onSuccess: () => { window.location.href = "/"; } });
+  };
+
+  const handleRefreshPackages = async () => {
+    setPackagesRefreshing(true);
+    try {
+      const result = await refetchPackages();
+      if (result.error) throw result.error;
+      toast({
+        title: "Packages refreshed",
+        description: `${Array.isArray(result.data) ? result.data.length : tourPackages.length} packages loaded.`,
+        variant: "success",
+      });
+    } catch (err) {
+      toast({
+        title: "Refresh failed",
+        description: err?.message || "Could not refresh packages right now.",
+        variant: "destructive",
+      });
+    } finally {
+      setPackagesRefreshing(false);
+    }
+  };
+
+  const handleDeletePackage = async (pkg) => {
+    try {
+      await deleteTourPackage.mutateAsync(pkg?._id);
+      toast({
+        title: "Package deleted",
+        description: `${pkg?.destination || "Tour package"} has been removed.`,
+        variant: "success",
+      });
+    } catch (err) {
+      toast({
+        title: "Delete failed",
+        description: err?.message || "Failed to delete package.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCreatePackage = async (e) => {
@@ -1186,8 +1231,12 @@ export default function Admin() {
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-black">All Packages <span className="text-xs font-normal text-[var(--admin-text-muted)] ml-2">({tourPackages.length})</span></h2>
             <div className="flex items-center gap-2">
-              <button onClick={() => refetchPackages()} className="text-[11px] tracking-widest font-black uppercase px-4 py-2.5 rounded-lg transition-all border border-white/10 hover:border-cyan-500/50 text-[var(--admin-text-muted)] hover:text-cyan-400 flex items-center gap-2">
-                <RefreshCw className="w-3.5 h-3.5" /> Refresh
+              <button
+                onClick={handleRefreshPackages}
+                disabled={packagesRefreshing || packagesFetching}
+                className="text-[11px] tracking-widest font-black uppercase px-4 py-2.5 rounded-lg transition-all border border-white/10 hover:border-cyan-500/50 text-[var(--admin-text-muted)] hover:text-cyan-400 flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${(packagesRefreshing || packagesFetching) ? "animate-spin" : ""}`} /> Refresh
               </button>
               <button onClick={() => setPackageModalOpen(true)} className="bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] tracking-widest font-black uppercase px-6 py-2.5 rounded-lg transition-all shadow-lg flex items-center gap-2">
                 <PlusCircle className="w-4 h-4" /> Add New Package
@@ -1218,9 +1267,14 @@ export default function Admin() {
                       <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs">{new Date(p.startDate).toLocaleDateString()}</td>
                       <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs">{new Date(p.endDate).toLocaleDateString()}</td>
                       <td className="px-5 py-3.5 text-[var(--admin-text-muted)] text-xs font-bold">{p.destination}</td>
-                      <td className="px-5 py-3.5 flex items-center gap-2">
-                        <button onClick={() => deleteTourPackage.mutate(p._id)} className="p-1.5 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-400/10 transition-colors">
+                      <td className="px-5 py-3.5">
+                        <button
+                          onClick={() => setConfirmDeletePackage(p)}
+                          className="inline-flex items-center gap-2 rounded-lg border border-red-400/20 bg-red-400/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-red-300 transition-colors hover:bg-red-400/10 hover:text-red-200"
+                          title={`Delete ${p.destination}`}
+                        >
                           <Trash2 className="w-3.5 h-3.5" />
+                          Delete
                         </button>
                       </td>
                     </tr>
@@ -1626,6 +1680,18 @@ export default function Admin() {
         }}
         title="Cancel Trip Plan?"
         description="This will remove the generated itinerary and itinerary data."
+      />
+
+      <ConfirmDialog
+        open={!!confirmDeletePackage}
+        onOpenChange={(open) => !open && setConfirmDeletePackage(null)}
+        onConfirm={() => {
+          handleDeletePackage(confirmDeletePackage);
+          setConfirmDeletePackage(null);
+        }}
+        title="Delete Tour Package?"
+        description={`This will permanently remove ${confirmDeletePackage?.destination || "this package"} from the packages list.`}
+        confirmText="Delete Package"
       />
 
       {/* Password Reset Modal */}
