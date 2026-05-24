@@ -122,7 +122,10 @@ export const getStats = async (req, res) => {
 // @desc    Get activity logs
 export const getActivity = async (req, res) => {
     try {
-        const recentTrips = await Trip.find({}).sort({ createdAt: -1 }).limit(10).populate("userId", "email username");
+        const recentTrips = await Trip.find({})
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .populate("userId", "email username profilePicture googleId role");
 
         const activity = recentTrips.map(trip => ({
             id: trip._id.toString(),
@@ -130,6 +133,17 @@ export const getActivity = async (req, res) => {
             text: `${trip.userId ? trip.userId.username : "A user"} generated a new trip to ${trip.destination}`,
             color: "text-violet-400",
             timestamp: trip.createdAt,
+            destination: trip.destination,
+            travelStyle: trip.travelStyle || "curated",
+            budget: trip.budget || null,
+            days: trip.days || null,
+            user: trip.userId ? {
+                username: trip.userId.username,
+                email: trip.userId.email,
+                profilePicture: trip.userId.profilePicture || null,
+                googleId: trip.userId.googleId || null,
+                role: trip.userId.role || "user",
+            } : null,
         }));
 
         res.json(activity);

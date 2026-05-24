@@ -429,6 +429,20 @@ function getAdminBudgetCountry(destination = "") {
   return foundCountry?.[0] || "global";
 }
 
+function formatRelativeAdminTime(value) {
+  if (!value) return "Just now";
+  const then = new Date(value).getTime();
+  if (!Number.isFinite(then)) return "Just now";
+  const diffMs = Date.now() - then;
+  const diffMin = Math.max(0, Math.floor(diffMs / 60000));
+  if (diffMin < 1) return "Just now";
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr} hr${diffHr === 1 ? "" : "s"} ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  return `${diffDay} day${diffDay === 1 ? "" : "s"} ago`;
+}
+
 function convertAdminBudgetCurrency(amountINR, currency) {
   const rate = ADMIN_CURRENCY_RATES[currency] ?? 1;
   return Math.round(amountINR * rate);
@@ -1240,15 +1254,64 @@ export default function Admin() {
           <div className="p-4 rounded-xl admin-panel">
             <h3 className="font-black mb-4">Recent Activity</h3>
             <div className="space-y-2">
-              {logs.slice(0, 2).map((a, i) => (
-                <Link prefetch="false" href={`/trips/${a.id}`} key={i} className="flex items-center gap-3 p-3 rounded-lg hover:bg-[var(--admin-hover-bg)] transition-colors border border-white/[0.02]">
-                  <span className="text-lg">{a.icon}</span>
-                  <span className={`text-sm font-medium flex-1 ${a.color}`}>{a.text}</span>
-                  <span className="text-[10px] text-[var(--admin-text-muted)] whitespace-nowrap">
-                    {new Date(a.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                </Link>
-              ))}
+              {logs.slice(0, 3).map((a, i) => {
+                const activityUser = a.user || {};
+                const accountLabel = activityUser.googleId ? "Google account" : "Email account";
+                const avatarLetter = (activityUser.username || "U")[0]?.toUpperCase?.() || "U";
+                return (
+                  <Link
+                    prefetch="false"
+                    href={`/trips/${a.id}`}
+                    key={i}
+                    className="flex items-center gap-3 rounded-xl border border-white/[0.04] p-3 hover:bg-[var(--admin-hover-bg)] transition-colors"
+                  >
+                    <div
+                      className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl"
+                      style={{ background: "linear-gradient(135deg,#7c3aed,#0ea5e9)" }}
+                    >
+                      <span className="absolute inset-0 flex items-center justify-center text-sm font-black text-white">{avatarLetter}</span>
+                      {activityUser.profilePicture ? (
+                        <img
+                          src={activityUser.profilePicture}
+                          alt={activityUser.username || "User"}
+                          className="relative z-10 h-full w-full object-cover"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => { e.currentTarget.style.display = "none"; }}
+                        />
+                      ) : null}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-black text-foreground">
+                          {activityUser.username || "Unknown User"}
+                        </span>
+                        <PlatformIcon user={activityUser} />
+                        <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.18em] text-[var(--admin-text-muted)]">
+                          {accountLabel}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-[var(--admin-text-muted)]">
+                        Planned <span className="font-black text-foreground">{a.destination || "a trip"}</span>
+                        {a.travelStyle ? (
+                          <span className="ml-1 capitalize text-violet-400">{a.travelStyle}</span>
+                        ) : null}
+                        {a.days ? <span className="ml-1">· {a.days}d</span> : null}
+                      </p>
+                      <p className="mt-1 truncate text-[11px] text-[var(--admin-text-muted)]">
+                        {activityUser.email || a.text}
+                      </p>
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <p className="text-[10px] font-black text-foreground">{formatRelativeAdminTime(a.timestamp)}</p>
+                      <p className="mt-1 text-[9px] text-[var(--admin-text-muted)]">
+                        {new Date(a.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
               {logs.length === 0 && <p className="text-center py-8 text-[var(--admin-text-muted)] text-sm">No recent activity.</p>}
             </div>
           </div>

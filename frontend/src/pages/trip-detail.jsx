@@ -663,7 +663,7 @@ function MapWidget({ destination, isLight = false }) {
             loading="lazy"
           />
         ) : (
-          <div className={`absolute inset-0 ${isLight ? 'bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.22),transparent_58%),linear-gradient(180deg,#eff6ff_0%,#dbeafe_100%)]' : 'bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_58%),linear-gradient(180deg,#142033_0%,#0b1321_100%)]'}`} />
+          <div className={`absolute inset-0 ${isLight ? 'bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.14),transparent_58%),linear-gradient(180deg,#f8fbff_0%,#e8f1fb_100%)]' : 'bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_58%),linear-gradient(180deg,#142033_0%,#0b1321_100%)]'}`} />
         )}
       </div>
 
@@ -909,7 +909,7 @@ export default function TripDetail() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_34%),linear-gradient(180deg,#0b1728_0%,#07111d_100%)]" />
           )}
           <div className={`absolute inset-0 transition-all duration-500 ${isLightDetail
-            ? 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.13),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.12),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.18)_0%,rgba(246,249,253,0.5)_45%,rgba(236,242,248,0.9)_100%)]'
+            ? 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.09),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.08),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.1)_0%,rgba(246,249,253,0.3)_45%,rgba(236,242,248,0.62)_100%)]'
             : 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.2),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.16),transparent_22%),linear-gradient(180deg,rgba(6,11,20,0.14)_0%,rgba(6,11,20,0.58)_45%,rgba(6,11,20,0.9)_100%)]'}`} />
           <motion.div
             className={`absolute -top-24 left-[8%] h-[300px] w-[300px] rounded-full blur-[90px] ${isLightDetail ? 'bg-[#38BDF8]/8' : 'bg-[#38BDF8]/10'}`}
