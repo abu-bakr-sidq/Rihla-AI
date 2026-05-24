@@ -260,14 +260,14 @@ Return ONLY a JSON object with this exact schema (no extra text):
 
     } catch (aiErr) {
       // Rich template fallback matching same schema
-      const RATES = { INR: 83, EUR: 0.93, GBP: 0.79, JPY: 149, KRW: 1320, THB: 35, AED: 3.67, IDR: 15800, TRY: 32, MAD: 10, JOD: 0.71, EGP: 49, PEN: 3.7, BRL: 4.98, ZAR: 18.8, XPF: 110, CHF: 0.88 };
+      const destinationMeta = getPackageCurrencyMeta(pkg.destination);
       const SYMS = { INR: "₹", EUR: "€", GBP: "£", JPY: "¥", KRW: "₩", THB: "฿", AED: "AED ", IDR: "Rp", TRY: "₺", MAD: "MAD ", JOD: "JOD ", EGP: "EGP ", PEN: "PEN ", BRL: "R$", ZAR: "R", XPF: "XPF ", CHF: "CHF " };
       const CURR_MAP = { india: "INR", pondicherry: "INR", chennai: "INR", kanyakumari: "INR", japan: "JPY", kyoto: "JPY", korea: "KRW", seoul: "KRW", bali: "IDR", indonesia: "IDR", thailand: "THB", phuket: "THB", london: "GBP", uk: "GBP", france: "EUR", paris: "EUR", italy: "EUR", rome: "EUR", venice: "EUR", amalfi: "EUR", spain: "EUR", barcelona: "EUR", greece: "EUR", santorini: "EUR", netherlands: "EUR", amsterdam: "EUR", swiss: "CHF", switzerland: "CHF", turkey: "TRY", istanbul: "TRY", dubai: "AED", uae: "AED", morocco: "MAD", marrakech: "MAD", egypt: "EGP", cairo: "EGP", jordan: "JOD", petra: "JOD", peru: "PEN", machu: "PEN", brazil: "BRL", rio: "BRL", "cape town": "ZAR", "south africa": "ZAR", "bora bora": "XPF", polynesia: "XPF" };
       const d = pkg.destination.toLowerCase();
       const currKey = Object.keys(CURR_MAP).find(k => d.includes(k));
-      const currency = currKey ? CURR_MAP[currKey] : "USD";
-      const sym = SYMS[currency] || "$";
-      const rate = RATES[currency] || 1;
+      const currency = destinationMeta.code;
+      const sym = destinationMeta.symbol || "$";
+      const rate = destinationMeta.rate || 1;
       const localBudget = Math.round(budgetUsd * rate);
       const perDay = Math.round(localBudget / days);
       const fmtN = (n) => formatLocalMoney(n, currency);

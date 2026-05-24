@@ -119,6 +119,8 @@ export default function Home() {
         {/* ── HERO ── */}
         <section className="relative min-h-[calc(100vh-4rem)] md:min-h-screen flex items-center justify-center overflow-hidden">
           <HeroSlideshow />
+          <div className="absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(3,7,18,0.42)_0%,rgba(3,7,18,0.2)_24%,rgba(3,7,18,0.58)_100%)]" />
+          <div className="absolute inset-0 z-[1] bg-[radial-gradient(circle_at_center,rgba(8,15,30,0.04)_0%,rgba(8,15,30,0.28)_45%,rgba(8,15,30,0.62)_100%)]" />
 
 
           <div className="relative z-10 max-w-7xl mx-auto px-5 md:px-10 pt-20 md:pt-28 pb-16 md:pb-24 text-center">
@@ -127,7 +129,7 @@ export default function Home() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/5 mb-6 md:mb-8">
+              <div className="hidden">
                 <Tent className="w-3.5 h-3.5 text-[#D4AF37]" />
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#D4AF37]">Rihla AI · Your Journey Begins</span>
               </div>

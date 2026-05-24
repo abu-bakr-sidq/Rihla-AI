@@ -41,25 +41,49 @@ if (typeof document !== 'undefined' && !document.getElementById('tp-anim')) {
 
 /* ─── Destination Image using Google Places API ─────────────────── */
 
-// Deterministic picsum fallback (always loads, unique per destination)
-function seedHash(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) { h = ((h << 5) - h) + str.charCodeAt(i); h |= 0; }
-  return Math.abs(h) % 900 + 100;
+function buildDestinationImageQueries(destination = "") {
+  const cleaned = String(destination || "").trim();
+  if (!cleaned) return [];
+  return [
+    `${cleaned} skyline landmark`,
+    `${cleaned} city landmark`,
+    `${cleaned} travel view`,
+    cleaned,
+  ];
 }
 
 function DestImage({ destination }) {
-  const query = `${destination} travel landmark`;
-  const { src } = usePlaceImage(query);
-  const fallback = `https://picsum.photos/seed/${seedHash(destination)}/640/430`;
-  const imgSrc = src || fallback;
+  const queries = buildDestinationImageQueries(destination);
+  const { src, loading } = usePlaceImage(queries, { onlyGoogle: true });
+
+  if (!src) {
+    return (
+      <div className="absolute inset-0 flex flex-col items-center justify-center bg-[radial-gradient(circle_at_top,rgba(212,175,55,0.16),transparent_40%),linear-gradient(180deg,#0f172a_0%,#111827_100%)] px-5 text-center text-white/80">
+        {loading ? (
+          <Loader2 className="mb-3 h-6 w-6 animate-spin text-[#D4AF37]" />
+        ) : (
+          <div className="mb-3 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
+            Rihla Verified Destination
+          </div>
+        )}
+        <div className="max-w-[220px] text-lg font-black text-white">{destination}</div>
+        <div className="mt-2 max-w-[240px] text-xs leading-relaxed text-white/45">
+          {loading
+            ? "Matching the best real place image for this destination."
+            : "Live place photo unavailable right now. We kept the destination accurate instead of showing the wrong place."}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <img
-      src={imgSrc}
+      src={src}
       alt={destination}
       className="absolute inset-0 w-full h-full object-cover"
-      onError={(e) => { if (e.target.src !== fallback) e.target.src = fallback; }}
+      onError={(e) => {
+        e.target.style.display = "none";
+      }}
     />
   );
 }
@@ -122,15 +146,44 @@ function parsePackageBudget(value) {
   }
   return null;
 }
+function getStoredPackageBudgetMeta(value, destination = "") {
+  const destinationMeta = getCurrency(destination);
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return { amount: value, currency: "USD", exchangeRate: 1 };
+  }
+  if (typeof value === "string") {
+    const parsed = parsePackageBudget(value);
+    return { amount: parsed, currency: "USD", exchangeRate: 1 };
+  }
+  if (value && typeof value === "object") {
+    const amount = parsePackageBudget(value.total ?? value.amount ?? value.value ?? value.budget);
+    const currency = String(value.currency || value.code || destinationMeta.code || "USD").toUpperCase();
+    const exchangeRate = Number(
+      value.exchangeRate ||
+      value.rate ||
+      (currency === destinationMeta.code ? destinationMeta.rate : 1)
+    ) || 1;
+    return { amount, currency, exchangeRate };
+  }
+  return { amount: null, currency: destinationMeta.code, exchangeRate: destinationMeta.rate };
+}
 function getNormalizedPackageBudgetUsd(pkg, days) {
   const safeDays = Math.max(1, Number(days) || 1);
+  const destinationMeta = getCurrency(pkg?.destination);
   const estimated = estimateDailyUsd(pkg?.destination, pkg?.travelStyle) * safeDays;
-  const parsed = parsePackageBudget(pkg?.budget);
+  const storedBudget = getStoredPackageBudgetMeta(pkg?.budget, pkg?.destination);
+  const parsed = storedBudget.amount;
   if (!Number.isFinite(parsed) || parsed <= 0) return estimated;
+  const parsedUsd =
+    storedBudget.currency === "USD"
+      ? parsed
+      : storedBudget.currency === destinationMeta.code
+        ? Math.round(parsed / (storedBudget.exchangeRate || destinationMeta.rate || 1))
+        : parsed;
   const expected = estimateDailyUsd(pkg?.destination, pkg?.travelStyle);
-  const parsedPerDay = parsed / safeDays;
+  const parsedPerDay = parsedUsd / safeDays;
   if (parsedPerDay < expected * 0.6 || parsedPerDay > expected * 1.55) return estimated;
-  return Math.round(parsed);
+  return Math.round(parsedUsd);
 }
 function fmtBudget(usd, cur, days) {
   const local = Math.round(usd * cur.rate);
@@ -139,7 +192,7 @@ function fmtBudget(usd, cur, days) {
 }
 
 const DESTINATION_PRESETS_V2 = [
-  { keys: ["kerala", "kochi", "munnar", "alleppey", "kovalam", "thiruvananthapuram", "india", "chennai", "pondicherry", "kanyakumari", "mumbai", "delhi", "jaipur", "goa", "hyderabad", "bangalore", "bengaluru", "kolkata"], sym: "₹", code: "INR", rate: 83, dailyUsd: 52 },
+  { keys: ["kerala", "kochi", "munnar", "alleppey", "kovalam", "thiruvananthapuram", "india", "chennai", "pondicherry", "kanyakumari", "mumbai", "delhi", "jaipur", "goa", "hyderabad", "bangalore", "bengaluru", "kolkata", "ooty", "kodaikanal", "rameswaram", "mahabalipuram", "coimbatore"], sym: "₹", code: "INR", rate: 83, dailyUsd: 52 },
   { keys: ["tokyo", "kyoto", "osaka", "nara", "hakone", "sapporo", "japan"], sym: "¥", code: "JPY", rate: 149, dailyUsd: 128 },
   { keys: ["seoul", "busan", "jeju", "korea"], sym: "₩", code: "KRW", rate: 1320, dailyUsd: 118 },
   { keys: ["bali", "jakarta", "ubud", "indonesia"], sym: "Rp", code: "IDR", rate: 15800, dailyUsd: 82 },
