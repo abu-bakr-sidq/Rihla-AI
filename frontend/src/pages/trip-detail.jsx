@@ -1016,12 +1016,12 @@ export default function TripDetail() {
                 </motion.div>
               ) : null}
               <div className={`absolute inset-0 ${isLightDetail
-                ? 'bg-[linear-gradient(180deg,rgba(248,251,255,0.34)_0%,rgba(241,246,251,0.5)_12%,rgba(236,243,249,0.7)_34%,rgba(234,241,247,0.82)_58%,rgba(231,239,246,0.94)_100%)]'
-                : 'bg-[linear-gradient(180deg,rgba(5,11,19,0.22)_0%,rgba(5,11,19,0.3)_12%,rgba(5,11,19,0.46)_28%,rgba(5,11,19,0.68)_54%,rgba(5,11,19,0.9)_100%)]'}`} />
+                ? 'bg-[linear-gradient(180deg,rgba(248,251,255,0.22)_0%,rgba(241,246,251,0.36)_12%,rgba(236,243,249,0.56)_34%,rgba(234,241,247,0.72)_58%,rgba(231,239,246,0.9)_100%)]'
+                : 'bg-[linear-gradient(180deg,rgba(5,11,19,0.16)_0%,rgba(5,11,19,0.22)_12%,rgba(5,11,19,0.36)_28%,rgba(5,11,19,0.58)_54%,rgba(5,11,19,0.86)_100%)]'}`} />
               <div className="absolute inset-x-0 top-0 h-[34%] bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,0.14),transparent_56%)]" />
               <div className={`absolute -left-[8%] top-[14%] h-[280px] w-[36%] rounded-full blur-[86px] ${isLightDetail ? 'bg-[#38BDF8]/12' : 'bg-[#38BDF8]/10'}`} />
               <div className={`absolute right-[4%] top-[8%] h-[240px] w-[28%] rounded-full blur-[80px] ${isLightDetail ? 'bg-[#D4AF37]/12' : 'bg-[#D4AF37]/10'}`} />
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,11,19,0.34),transparent_18%,transparent_82%,rgba(5,11,19,0.34))]" />
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,11,19,0.22),transparent_14%,transparent_86%,rgba(5,11,19,0.22))]" />
             </div>
           </div>
         </div>
@@ -1132,13 +1132,7 @@ export default function TripDetail() {
               </div>
             </div>
 
-          <div className="flex items-center gap-1 mb-2 group/pill-carousel w-full">
-            <button
-              onClick={() => document.getElementById('trip-day-pills-carousel')?.scrollBy({ left: -200, behavior: 'smooth' })}
-              className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-full border shadow-lg transition-all opacity-0 group-hover/pill-carousel:opacity-100 ${isLightDetail ? 'bg-white/80 border-slate-200 text-slate-500 hover:text-slate-950 hover:bg-[#D4AF37] hover:border-[#D4AF37]' : 'bg-[#111A24]/85 border-white/10 text-white/70 hover:text-white hover:bg-[#D4AF37] hover:border-[#D4AF37]'}`}
-            >
-              <ChevronLeft size={16} />
-            </button>
+          <div className="flex items-center gap-1 mb-2 w-full">
             <div
               id="trip-day-pills-carousel"
               className="flex-1 flex items-center gap-3 overflow-x-auto pb-2 px-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
@@ -1166,12 +1160,6 @@ export default function TripDetail() {
               })}
               <div className="w-1 shrink-0" />
             </div>
-            <button
-              onClick={() => document.getElementById('trip-day-pills-carousel')?.scrollBy({ left: 200, behavior: 'smooth' })}
-              className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-full border shadow-lg transition-all opacity-0 group-hover/pill-carousel:opacity-100 ${isLightDetail ? 'bg-white/80 border-slate-200 text-slate-500 hover:text-slate-950 hover:bg-[#D4AF37] hover:border-[#D4AF37]' : 'bg-[#111A24]/85 border-white/10 text-white/70 hover:text-white hover:bg-[#D4AF37] hover:border-[#D4AF37]'}`}
-            >
-              <ChevronRight size={16} />
-            </button>
           </div>
           </div>
 
