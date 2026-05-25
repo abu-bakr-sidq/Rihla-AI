@@ -417,6 +417,13 @@ function compactPlaceName(value) {
   return cleaned.split(",")[0].trim();
 }
 
+function extractSubjectPlaceName(value = "") {
+  const cleaned = cleanDisplayText(value);
+  if (!cleaned) return "";
+  const match = cleaned.match(/^(.{3,90}?)\s+(?:is|offers|sits|stands|serves|gives|marks|anchors)\b/i);
+  return compactPlaceName(match?.[1] || "");
+}
+
 function getAreaLabel(placeName = "", destination = "") {
   const place = cleanDisplayText(placeName);
   const dest = cleanDisplayText(destination);
@@ -595,6 +602,26 @@ export function resolvePlannedPlaceName(placeName = "", destination = "", slotKe
   }
 
   return cleaned || compactPlaceName(destination) || "Local stop";
+}
+
+export function pickBestActivityPlace(activity = {}, destination = "", slotKey = "", fallbackIndex = 0) {
+  const candidates = [
+    activity?.place,
+    activity?.title,
+    activity?.name,
+    activity?.location,
+    extractSubjectPlaceName(activity?.description),
+    extractSubjectPlaceName(activity?.activity),
+  ]
+    .map((value) => compactPlaceName(value))
+    .filter(Boolean)
+    .filter((value, index, list) => list.indexOf(value) === index);
+
+  const exact = candidates.find((value) => !isGenericPlaceLabel(value, destination));
+  if (exact) return exact;
+
+  const firstCandidate = candidates[0] || "";
+  return resolvePlannedPlaceName(firstCandidate, destination, slotKey, fallbackIndex);
 }
 
 function isStreetFindCandidateUseful(value = "", resolvedPlace = "", destination = "") {
@@ -1093,8 +1120,11 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
   const createCompanionSlot = (activity = {}, basePlace = "", slotKey = "", cost = 0) => {
     const slotSeed =
       slotKeys.indexOf(slotKey) >= 0 ? slotKeys.indexOf(slotKey) : compactSlotKeys.indexOf(getSlotBucket(slotKey));
-    const normalizedPlace = resolvePlannedPlaceName(
-      cleanDisplayText(basePlace) || cleanDisplayText(activity.location) || cleanDisplayText(activity.title) || "",
+    const normalizedPlace = pickBestActivityPlace(
+      {
+        ...activity,
+        place: cleanDisplayText(basePlace) || activity?.place || "",
+      },
       destination,
       slotKey,
       Math.max(0, slotSeed)
@@ -1134,7 +1164,7 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
     let activityBudget = 0;
     const createSlotPayload = (activity, slotKey, slotIndex, baseCostOverride = null) => {
       if (!activity) return null;
-      const place = resolvePlannedPlaceName(activity.location || activity.title || "", destination, slotKey, slotIndex) || `Stop ${slotIndex + 1}`;
+      const place = pickBestActivityPlace(activity, destination, slotKey, slotIndex) || `Stop ${slotIndex + 1}`;
       const cost = baseCostOverride == null ? parseCost(activity.cost) : baseCostOverride;
       const seedContent = generatePlaceCardFallbackContent(place, activity.description || activity.title || "", destination, slotKey, {
         travelStyle,

@@ -9,7 +9,7 @@ import { exportTripPDF, downloadTripPDF } from '@/services/exportTripPDF';
 import { useDeleteTrip } from '@/hooks/use-trips';
 import { useToast } from '@/hooks/use-toast';
 import { api, buildUrl, resolveApiUrl } from '@/lib/api-contract';
-import { buildActivityDisplayContent, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from '@/lib/trip-itinerary';
+import { buildActivityDisplayContent, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, pickBestActivityPlace } from '@/lib/trip-itinerary';
 import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerTimesCard, TripPreviewCard } from '@/components/trip/EnhancedPanels';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -85,7 +85,7 @@ function PlannerDetailTimeline({ slots, slotCfg, isLight = false }) {
 function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slotColor, slotTime, cost, destination, cardIndex, currency, onClick, isSelected, details, isLight = false }) {
   const [imgSrc, setImgSrc] = useState('');
   const [expanded, setExpanded] = useState(false);
-  const displayPlace = resolvePlannedPlaceName(place, destination, slotKey, cardIndex);
+  const displayPlace = pickBestActivityPlace({ place, title: details?.title, location: details?.location, name: details?.name }, destination, slotKey, cardIndex);
   const query = extractLocationQuery(displayPlace, destination);
   const accentColor = PLAN_SLOT_COLORS[slotKey] || slotColor || '#D4AF37';
   const fallbackContent = generatePlaceCardFallbackContent(displayPlace, activity, destination, slotKey);
@@ -471,7 +471,7 @@ function DayTimeline({ slots, slotCfg }) {
 function ActivityVerticalCard({ place, activity, slotLabel, slotIcon: SlotIcon, slotTime, slotKey, cost, destination, globalIndex, currency, details }) {
   const [imgSrc, setImgSrc] = useState('');
   const [expanded, setExpanded] = useState(false);
-  const displayPlace = resolvePlannedPlaceName(place, destination, slotKey, globalIndex);
+  const displayPlace = pickBestActivityPlace({ place, title: details?.title, location: details?.location, name: details?.name }, destination, slotKey, globalIndex);
   const query = extractLocationQuery(displayPlace, destination);
   const fallbackContent = generatePlaceCardFallbackContent(displayPlace, activity, destination, slotKey);
   const { schedule, ideas } = buildActivityDisplayContent(details, fallbackContent);
