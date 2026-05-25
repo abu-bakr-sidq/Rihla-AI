@@ -1091,7 +1091,7 @@ function buildExpandedActivityPool(items, category, needed, fd) {
 }
 
 function buildItinerary(fd) {
-  const daysNum = Math.min(30, Math.max(1, Math.ceil((new Date(fd.endDate) - new Date(fd.startDate)) / 86400000)));
+  const daysNum = getInclusiveDayCount(fd.startDate, fd.endDate);
   fd.totalDaysHint = daysNum;
   const travelers = Math.max(1, Number(fd.travelers || fd.groupSize) || 1);
   const category = typeof fd.budgetCategory === "string"
@@ -1101,8 +1101,11 @@ function buildItinerary(fd) {
       : "moderate";
   const budgetSummary = buildBudgetSummary(fd.destination, daysNum, category, travelers, fd.currency || "USD", fd.budget);
   const dayBudgetProfiles = buildDayBudgetProfiles(daysNum, fd.destination, fd.travelStyle);
-  const equalDayWeights = Array.from({ length: daysNum }, () => 1);
-  const dayTotals = splitByWeights(budgetSummary.costBreakdown.total, equalDayWeights);
+  const dayAllocationWeights = dayBudgetProfiles.map((profile) => {
+    const slotAverage = (profile.slotWeights || []).reduce((sum, weight) => sum + (Number(weight) || 0), 0) / Math.max(1, profile.slotWeights?.length || 0);
+    return Math.max(1, profile.stayWeight + profile.foodWeight + profile.transportWeight + profile.activityWeight + slotAverage);
+  });
+  const dayTotals = splitByWeights(budgetSummary.costBreakdown.total, dayAllocationWeights);
   const categoryNeeds = { morning: daysNum * 2, afternoon: daysNum * 2, evening: daysNum * 2, night: daysNum * 2 };
   const categoryPools = {
     morning: buildExpandedActivityPool([], 'morning', categoryNeeds.morning, fd),
@@ -1133,15 +1136,13 @@ function buildItinerary(fd) {
     const [dayStayBudget, dayFoodBudget, dayTransportBudget, dayActivitiesBudget] = splitByWeights(
       dayTotals[i] || 0,
       [
-        budgetSummary.costBreakdown.stay,
-        budgetSummary.costBreakdown.food,
-        budgetSummary.costBreakdown.transport,
-        budgetSummary.costBreakdown.activities,
+        budgetSummary.costBreakdown.stay * dayBudgetProfile.stayWeight,
+        budgetSummary.costBreakdown.food * dayBudgetProfile.foodWeight,
+        budgetSummary.costBreakdown.transport * dayBudgetProfile.transportWeight,
+        budgetSummary.costBreakdown.activities * dayBudgetProfile.activityWeight,
       ]
     );
-    const slotWeights = dayBudgetProfile.slotWeights;
-    const slotCosts = splitByWeights(dayTotals[i] || 0, slotWeights);
-    const slots = fullSlotsList.reduce((acc, slotKey, si) => {
+    const slotEntries = fullSlotsList.map((slotKey, si) => {
       const slot = baseCat[si];
       const act = getAct(slot);
       const knownId = act.id && act.id.length >= 10 && !act.id.includes(' ');
@@ -1152,13 +1153,14 @@ function buildItinerary(fd) {
         dayTheme,
       });
       const transferMinutes = 14 + ((dNum * 11 + si * 7) % 18);
-      acc[slotKey] = {
+      return {
+        slotKey,
+        payload: {
         place: act.name,
         activity: act.desc,
         image: act.id || act.name,
         imageQuery: _extractLocationQuery(act.name, fd.destination),
         knownId,
-        cost: slotCosts[si] || 0,
         travel: `about ${transferMinutes} min from the previous stop`,
         duration: slot === 'night' ? '1-2h' : slot === 'morning' ? '3h' : '2-3h',
         reason: `Best suited for ${slot === 'morning' ? 'an energetic start' : slot === 'evening' ? 'a scenic wind-down' : slot === 'night' ? 'an intimate close' : 'full afternoon immersion'} - aligns with your ${fd.travelStyle || 'travel'} style${fd.preferences?.length ? ` and ${fd.preferences[si % fd.preferences.length]} preference.` : '.'}`,
@@ -1168,6 +1170,15 @@ function buildItinerary(fd) {
         exploreIdeas: fallbackContent.ideas,
         transportationTip: `Keep transfers around ${transferMinutes} minutes to protect the day's pacing.`,
         culturalInsight: `This ${slot.replace(/Activity/, ' activity')} stop works best when treated as part of the wider ${dayTheme.toLowerCase()} flow.`,
+        },
+        act,
+      };
+    });
+    const slotCosts = splitByWeights(dayTotals[i] || 0, buildPlanSlotWeights(slotEntries.map(({ slotKey, act }) => ({ slotKey, act }))));
+    const slots = slotEntries.reduce((acc, { slotKey, payload }, si) => {
+      acc[slotKey] = {
+        ...payload,
+        cost: slotCosts[si] || 0,
       };
       return acc;
     }, {});
@@ -1644,6 +1655,24 @@ const splitByWeights = (total, weights = []) => {
   }
 
   return values;
+};
+
+const getInclusiveDayCount = (startDate, endDate, fallback = 1) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return fallback;
+  return Math.min(30, Math.max(1, Math.ceil((end - start) / 86400000) + 1));
+};
+
+const stableBudgetSeed = (value = "") => Array.from(String(value)).reduce((sum, char, index) => {
+  return sum + (char.charCodeAt(0) * (index + 1));
+}, 0);
+
+const buildPlanSlotWeights = (entries = []) => {
+  return entries.map(({ slotKey, act }, index) => {
+    const seed = stableBudgetSeed(`${slotKey}|${act?.name || act?.place || ""}|${act?.desc || act?.activity || ""}|${index}`);
+    return 1 + ((seed % 9) * 0.11);
+  });
 };
 
 const buildDayBudgetProfile = (theme = "", index = 0, totalDays = 1, destination = "", travelStyle = "") => {
@@ -2706,7 +2735,7 @@ export default function Planner() {
     const s = new Date(formData.startDate);
     const e = new Date(formData.endDate);
     if (isNaN(s.getTime()) || isNaN(e.getTime())) return 0;
-    return Math.min(30, Math.max(1, Math.ceil((e - s) / 86400000)));
+    return getInclusiveDayCount(s, e, 0);
   };
 
   // Auto-set currency when destination changes
@@ -3084,7 +3113,7 @@ export default function Planner() {
   }, [mousePos]);
 
   const bm = useMemo(() => {
-    const days = Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000));
+    const days = getInclusiveDayCount(formData.startDate, formData.endDate);
     const ppd = formData.budget / formData.travelers / days;
     const hotel = budgetBreakdown.stay / days;
     const food = budgetBreakdown.food / days / Math.max(1, formData.travelers || 1);
@@ -3104,7 +3133,7 @@ export default function Planner() {
     let tripId = null;
     const plannerBudgetSummary = buildBudgetSummary(
       formData.destination,
-      Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)),
+      getInclusiveDayCount(formData.startDate, formData.endDate),
       budgetCategory,
       formData.travelers,
       formData.currency,
@@ -3127,7 +3156,7 @@ export default function Planner() {
           interests: []
         }),
         new Promise((_, reject) => {
-          setTimeout(() => reject(new Error("Planner generation took too long. Falling back locally.")), Math.min(120000, 30000 + (Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)) * 4500)));
+          setTimeout(() => reject(new Error("Planner generation took too long. Falling back locally.")), Math.min(120000, 30000 + (getInclusiveDayCount(formData.startDate, formData.endDate) * 4500)));
         })
       ]);
 
@@ -3161,7 +3190,7 @@ export default function Planner() {
           backendRichItinerary = {
             trip_overview: {
               destination: result.destination || formData.destination,
-              total_days: result.days || Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)),
+              total_days: result.days || getInclusiveDayCount(formData.startDate, formData.endDate),
               travel_style: result.travelStyle || formData.travelStyle,
               passengers: result.travelers || formData.travelers,
               currency: result.currency || formData.currency,
@@ -3249,7 +3278,7 @@ export default function Planner() {
               destination: formData.destination,
               startDate: formData.startDate,
               endDate: formData.endDate,
-              days: finalItin?.trip_overview?.total_days || Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)),
+              days: finalItin?.trip_overview?.total_days || getInclusiveDayCount(formData.startDate, formData.endDate),
               budget: String(budgetCategory || formData.budget || "moderate"),
               currency: formData.currency,
               travelStyle: formData.travelStyle,

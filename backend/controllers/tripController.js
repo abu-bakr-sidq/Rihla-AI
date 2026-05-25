@@ -23,7 +23,7 @@ import { getTopPlaces } from "../services/placesService.js";
 
 function getDayCount(startDate, endDate) {
   if (!startDate || !endDate) return 7;
-  return Math.min(30, Math.max(1, Math.ceil((new Date(endDate) - new Date(startDate)) / 86400000)));
+  return Math.min(30, Math.max(1, Math.ceil((new Date(endDate) - new Date(startDate)) / 86400000) + 1));
 }
 
 function withTimeout(promise, ms, label = "Operation") {
