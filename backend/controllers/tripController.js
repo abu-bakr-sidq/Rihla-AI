@@ -114,6 +114,340 @@ const STYLE_FALLBACK_THEMES = {
   balanced: ["Arrival & First Impressions", "Historic Core", "Markets & Culture", "Green & Scenic", "Modern Local Flow", "Food & Evening Atmosphere", "Neighborhood Discovery", "Farewell Highlights"],
 };
 
+const SLOT_LABELS = [
+  "Morning",
+  "Morning Activity",
+  "Afternoon",
+  "Afternoon Activity",
+  "Evening",
+  "Evening Activity",
+  "Night",
+  "Night Activity",
+];
+
+const SLOT_KEYS = [
+  "morning",
+  "morningActivity",
+  "afternoon",
+  "afternoonActivity",
+  "evening",
+  "eveningActivity",
+  "night",
+  "nightActivity",
+];
+
+const SLOT_CATEGORY_SEQUENCE = [
+  "sightseeing",
+  "activity",
+  "food",
+  "culture",
+  "viewpoint",
+  "food",
+  "night",
+  "stay",
+];
+
+function toAmount(value) {
+  return Math.max(0, Math.round(Number(value) || 0));
+}
+
+function parseActivityCost(value) {
+  if (typeof value === "number" && Number.isFinite(value)) return Math.max(0, Math.round(value));
+  const matches = String(value || "").match(/\d+(?:\.\d+)?/g);
+  if (!matches?.length) return 0;
+  const numbers = matches.map((item) => Number(item)).filter(Number.isFinite);
+  if (!numbers.length) return 0;
+  return Math.round(numbers.reduce((sum, item) => sum + item, 0) / numbers.length);
+}
+
+function buildBudgetFramework({ days, budget, travelers, currency = "USD" }) {
+  const totalDays = Math.max(1, Number(days) || 1);
+  const totalTravelers = Math.max(1, Number(travelers) || 1);
+  const tierDailyBase = {
+    budget: 95,
+    moderate: 180,
+    premium: 290,
+    luxury: 430,
+  }[normalizeBudget(budget)] || 180;
+  const total = tierDailyBase * totalDays * totalTravelers;
+  const perDay = Math.round(total / totalDays);
+  const categoryWeights = {
+    stay: 0.34,
+    food: 0.23,
+    transport: 0.16,
+    activities: 0.19,
+    buffer: 0.08,
+  };
+
+  const stay = Math.round(total * categoryWeights.stay);
+  const food = Math.round(total * categoryWeights.food);
+  const transport = Math.round(total * categoryWeights.transport);
+  const activities = Math.round(total * categoryWeights.activities);
+  const used = stay + food + transport + activities;
+  const buffer = Math.max(0, total - used);
+
+  return {
+    total,
+    perDay,
+    currency,
+    travelers: totalTravelers,
+    stay,
+    food,
+    transport,
+    activities,
+    buffer,
+  };
+}
+
+function splitDailyBudget(total, dayCount) {
+  const normalizedDays = Math.max(1, Number(dayCount) || 1);
+  const base = Math.floor(total / normalizedDays);
+  const remainder = total - (base * normalizedDays);
+  return Array.from({ length: normalizedDays }, (_, index) => base + (index < remainder ? 1 : 0));
+}
+
+function buildDailyBreakdown({
+  totalDays,
+  framework,
+  itineraryDays,
+  destination,
+  travelStyle,
+  realPlaces,
+}) {
+  const totalsByCategory = {
+    stay: splitDailyBudget(framework.stay, totalDays),
+    food: splitDailyBudget(framework.food, totalDays),
+    transport: splitDailyBudget(framework.transport, totalDays),
+    activities: splitDailyBudget(framework.activities, totalDays),
+    buffer: splitDailyBudget(framework.buffer, totalDays),
+  };
+
+  const hotelPool = Array.isArray(realPlaces?.hotels) ? realPlaces.hotels : [];
+  const restaurantPool = Array.isArray(realPlaces?.restaurants) ? realPlaces.restaurants : [];
+
+  return Array.from({ length: totalDays }, (_, index) => {
+    const dayNumber = index + 1;
+    const dayPlan = itineraryDays[index] || {};
+    const hotel = hotelPool[index % Math.max(hotelPool.length, 1)] || null;
+    const restaurant = restaurantPool[index % Math.max(restaurantPool.length, 1)] || null;
+    const stay = totalsByCategory.stay[index];
+    const food = totalsByCategory.food[index];
+    const transport = totalsByCategory.transport[index];
+    const activities = totalsByCategory.activities[index];
+    const buffer = totalsByCategory.buffer[index];
+    const total = stay + food + transport + activities + buffer;
+
+    return {
+      day: dayNumber,
+      total,
+      stay,
+      food,
+      transport,
+      activities,
+      buffer,
+      hotelSuggestion: hotel?.title || hotel?.name || `${destination} ${normalizeTravelStyle(travelStyle)} stay pick`,
+      mealSuggestion: restaurant?.title || restaurant?.name || dayPlan?.activities?.find((item) => item.category === "food")?.title || `Local ${destination} dining stop`,
+    };
+  });
+}
+
+function buildTripCostBreakdown({
+  budget,
+  days,
+  travelers,
+  currency,
+  itineraryDays,
+  rawCostBreakdown,
+  destination,
+  travelStyle,
+  realPlaces,
+}) {
+  const framework = buildBudgetFramework({ days, budget, travelers, currency });
+  const incomingTotal = toAmount(rawCostBreakdown?.total);
+  if (incomingTotal > 0) {
+    framework.total = incomingTotal;
+    framework.perDay = Math.round(incomingTotal / Math.max(1, days));
+    framework.stay = toAmount(rawCostBreakdown?.stay || rawCostBreakdown?.hotel) || framework.stay;
+    framework.food = toAmount(rawCostBreakdown?.food) || framework.food;
+    framework.transport = toAmount(rawCostBreakdown?.transport || rawCostBreakdown?.flights) || framework.transport;
+    framework.activities = toAmount(rawCostBreakdown?.activities) || framework.activities;
+    const remainder = framework.total - (framework.stay + framework.food + framework.transport + framework.activities);
+    framework.buffer = Math.max(0, remainder);
+  }
+
+  return {
+    currency: framework.currency,
+    total: framework.total,
+    perDayBudget: framework.perDay,
+    travelers: framework.travelers,
+    stay: framework.stay,
+    food: framework.food,
+    transport: framework.transport,
+    activities: framework.activities,
+    buffer: framework.buffer,
+    daily: buildDailyBreakdown({
+      totalDays: Math.max(1, days),
+      framework,
+      itineraryDays,
+      destination,
+      travelStyle,
+      realPlaces,
+    }),
+    source: rawCostBreakdown?.source || "planner-engine",
+  };
+}
+
+function makeFallbackActivity(day, slotIndex, destination, theme, travelStyle, budget) {
+  const time = SLOT_LABELS[slotIndex] || "Anytime";
+  const title = `${destination} ${time}`;
+  return {
+    time,
+    title,
+    description: `Use this ${time.toLowerCase()} slot for a ${normalizeTravelStyle(travelStyle)} experience shaped around ${theme.toLowerCase()} in ${destination}.`,
+    location: destination,
+    lat: 0,
+    lng: 0,
+    cost: parseActivityCost(budget === "luxury" ? 120 : budget === "moderate" ? 55 : 22),
+    tips: "Keep a comfortable time buffer between transfers.",
+    category: SLOT_CATEGORY_SEQUENCE[slotIndex] || "activity",
+    imageUrl: null,
+    imageAlternatives: [],
+    nearbyHighlights: [],
+    localFood: `Look for well-rated local dining near ${destination}.`,
+    transportationTip: "Use a direct route between stops whenever possible.",
+    safetyTip: "Keep valuables secure and stay on well-lit routes after dark.",
+    culturalInsight: `Follow local etiquette and site rules while exploring ${destination}.`,
+  };
+}
+
+function normalizeActivity(rawActivity, fallback = {}) {
+  const activity = rawActivity && typeof rawActivity === "object" ? rawActivity : {};
+  const place = String(activity.place || activity.title || fallback.title || fallback.place || fallback.time || "Local Highlight").trim();
+  const description = String(
+    activity.activity ||
+    activity.description ||
+    fallback.description ||
+    `Spend time at ${place} with a route that matches the day plan.`
+  ).trim();
+  const time = String(activity.time || fallback.time || "Anytime").trim();
+  const imageCandidates = [
+    activity.imageUrl,
+    ...(Array.isArray(activity.imageAlternatives) ? activity.imageAlternatives : []),
+    activity.photo,
+  ].filter((value, index, list) => value && list.indexOf(value) === index);
+
+  return {
+    time,
+    title: place,
+    description,
+    location: String(activity.location || fallback.location || place).trim(),
+    lat: Number(activity.lat) || 0,
+    lng: Number(activity.lng) || 0,
+    cost: parseActivityCost(activity.cost || fallback.cost),
+    tips: String(activity.tips || fallback.tips || "Keep enough transition time between stops.").trim(),
+    category: String(activity.category || fallback.category || "activity").trim(),
+    imageUrl: imageCandidates[0] || null,
+    imageAlternatives: imageCandidates.slice(1),
+    nearbyHighlights: Array.isArray(activity.nearbyHighlights) ? activity.nearbyHighlights.slice(0, 3) : (fallback.nearbyHighlights || []),
+    travelSuggestion: String(activity.travelSuggestion || fallback.travelSuggestion || "").trim(),
+    localFood: String(activity.localFood || fallback.localFood || "").trim(),
+    transportationTip: String(activity.transportationTip || fallback.transportationTip || "").trim(),
+    safetyTip: String(activity.safetyTip || fallback.safetyTip || "").trim(),
+    culturalInsight: String(activity.culturalInsight || fallback.culturalInsight || "").trim(),
+  };
+}
+
+function normalizeDayActivities(rawDay, dayNumber, destination, travelStyle, budget) {
+  const theme = String(rawDay?.theme || buildStyleFallbackTheme(travelStyle, dayNumber)).trim();
+  const activityList = [];
+
+  if (Array.isArray(rawDay?.activities) && rawDay.activities.length) {
+    rawDay.activities.forEach((activity, index) => {
+      activityList.push(normalizeActivity(activity, makeFallbackActivity(dayNumber, index, destination, theme, travelStyle, budget)));
+    });
+  }
+
+  SLOT_KEYS.forEach((slotKey, slotIndex) => {
+    if (rawDay?.[slotKey] && typeof rawDay[slotKey] === "object") {
+      activityList.push(normalizeActivity(rawDay[slotKey], makeFallbackActivity(dayNumber, slotIndex, destination, theme, travelStyle, budget)));
+    }
+  });
+
+  const seen = new Set();
+  const uniqueActivities = [];
+  for (const activity of activityList) {
+    const key = `${String(activity.title || "").toLowerCase()}|${String(activity.time || "").toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    uniqueActivities.push(activity);
+  }
+
+  while (uniqueActivities.length < 8) {
+    uniqueActivities.push(makeFallbackActivity(dayNumber, uniqueActivities.length, destination, theme, travelStyle, budget));
+  }
+
+  return uniqueActivities.slice(0, 8).map((activity, index) => ({
+    ...activity,
+    time: SLOT_LABELS[index] || activity.time,
+    category: activity.category || SLOT_CATEGORY_SEQUENCE[index] || "activity",
+  }));
+}
+
+function normalizeGeneratedPayload({
+  payload,
+  destination,
+  days,
+  budget,
+  travelStyle,
+  travelers,
+  currency,
+  realPlaces,
+}) {
+  const sourceDays = Array.isArray(payload?.itinerary)
+    ? payload.itinerary
+    : Array.isArray(payload)
+      ? payload
+      : [];
+
+  const itinerary = Array.from({ length: Math.max(1, days) }, (_, index) => {
+    const dayNumber = index + 1;
+    const rawDay = sourceDays[index] || {};
+    const theme = String(rawDay?.theme || buildStyleFallbackTheme(travelStyle, dayNumber)).trim();
+    return {
+      day: dayNumber,
+      title: String(rawDay?.title || `Day ${dayNumber} in ${destination}`).trim(),
+      theme,
+      activities: normalizeDayActivities(rawDay, dayNumber, destination, travelStyle, budget),
+    };
+  });
+
+  const routeCoordinates = Array.isArray(payload?.routeCoordinates)
+    ? payload.routeCoordinates.filter((point) => Number(point?.lat) || Number(point?.lng))
+    : itinerary.flatMap((day) => day.activities.map((activity) => ({
+      lat: activity.lat,
+      lng: activity.lng,
+    }))).filter((point) => point.lat || point.lng);
+
+  const costBreakdown = buildTripCostBreakdown({
+    budget,
+    days,
+    travelers,
+    currency,
+    itineraryDays: itinerary,
+    rawCostBreakdown: payload?.costBreakdown || {},
+    destination,
+    travelStyle,
+    realPlaces,
+  });
+
+  return {
+    itinerary,
+    routeCoordinates,
+    highlights: Array.isArray(payload?.highlights) ? payload.highlights.slice(0, 5) : [],
+    costBreakdown,
+  };
+}
+
 function buildStyleFallbackTheme(travelStyle = "balanced", day = 1) {
   const style = normalizeTravelStyle(travelStyle);
   const themes = STYLE_FALLBACK_THEMES[style] || STYLE_FALLBACK_THEMES.balanced;
@@ -291,6 +625,21 @@ export const createTrip = async (req, res) => {
       console.log(`[TripCache] HIT for "${destination}" — serving instantly`);
       await TripCache.updateOne({ cacheKey }, { $inc: { hitCount: 1 } });
 
+      const cachedPayload = normalizeGeneratedPayload({
+        payload: {
+          itinerary: cached.data.itinerary || [],
+          costBreakdown: cached.data.costBreakdown || {},
+          routeCoordinates: cached.data.routeCoordinates || [],
+        },
+        destination,
+        days: normDays,
+        budget: normBudget,
+        travelStyle: normTravelStyle,
+        travelers: normTravelers,
+        currency,
+        realPlaces: cached.data.realPlaces || {},
+      });
+
       const newTrip = await Trip.create({
         tripId: crypto.randomUUID(),
         userId,
@@ -310,9 +659,9 @@ export const createTrip = async (req, res) => {
         status,
         climate: cached.data.climate || {},
         realPlaces: cached.data.realPlaces || {},
-        itinerary: cached.data.itinerary || [],
-        costBreakdown: normalizeCostBreakdown(cached.data.costBreakdown || {}),
-        routeCoordinates: cached.data.routeCoordinates || [],
+        itinerary: cachedPayload.itinerary,
+        costBreakdown: cachedPayload.costBreakdown,
+        routeCoordinates: cachedPayload.routeCoordinates,
         preferences: { travelStyle: normTravelStyle, interests: normInterests, travelers: normTravelers, currency, specialRequests: preferences?.specialRequests || req.body.specialRequirements || "" },
         servedFromCache: true,
       });
@@ -374,16 +723,25 @@ export const createTrip = async (req, res) => {
     }
 
     // ── 5. Write to cache ─────────────────────────────────────────────────────
-    const effectiveItinerary = itinerary || generatedPayload?.itinerary || [];
-    const effectiveCostBreakdown = normalizeCostBreakdown(
-      costBreakdown || generatedPayload?.costBreakdown || {},
-      generatedPayload?.costBreakdown || {}
-    );
+    const normalizedPayload = normalizeGeneratedPayload({
+      payload: itinerary ? {
+        itinerary,
+        costBreakdown: costBreakdown || generatedPayload?.costBreakdown || {},
+        routeCoordinates: generatedPayload?.routeCoordinates || [],
+      } : generatedPayload,
+      destination,
+      days: normDays,
+      budget: normBudget,
+      travelStyle: normTravelStyle,
+      travelers: normTravelers,
+      currency,
+      realPlaces,
+    });
 
     const cacheData = {
-      itinerary: effectiveItinerary,
-      costBreakdown: effectiveCostBreakdown,
-      routeCoordinates: generatedPayload?.routeCoordinates || [],
+      itinerary: normalizedPayload.itinerary,
+      costBreakdown: normalizedPayload.costBreakdown,
+      routeCoordinates: normalizedPayload.routeCoordinates,
       climate: weather || {},
       realPlaces: realPlaces || {},
     };
@@ -416,9 +774,9 @@ export const createTrip = async (req, res) => {
       status,
       climate: weather || {},
       realPlaces: realPlaces || {},
-      itinerary: effectiveItinerary,
-      costBreakdown: effectiveCostBreakdown,
-      routeCoordinates: generatedPayload?.routeCoordinates || [],
+      itinerary: normalizedPayload.itinerary,
+      costBreakdown: normalizedPayload.costBreakdown,
+      routeCoordinates: normalizedPayload.routeCoordinates,
       preferences: {
         travelStyle: normTravelStyle,
         interests: normInterests,
@@ -595,15 +953,26 @@ export const generateAITrip = async (req, res) => {
       });
     }
 
+    const normalizedPayload = normalizeGeneratedPayload({
+      payload: generatedPayload,
+      destination,
+      days: normDays,
+      budget: normBudget,
+      travelStyle: normTravelStyle,
+      travelers: normTravelers,
+      currency,
+      realPlaces,
+    });
+
     return res.status(200).json({
       destination,
       days: normDays,
       travelers: normTravelers,
       currency,
       travelStyle: normTravelStyle,
-      itinerary: generatedPayload?.itinerary || generatedPayload,
-      costBreakdown: generatedPayload?.costBreakdown || {},
-      routeCoordinates: generatedPayload?.routeCoordinates || [],
+      itinerary: normalizedPayload.itinerary,
+      costBreakdown: normalizedPayload.costBreakdown,
+      routeCoordinates: normalizedPayload.routeCoordinates,
       climate: weather || {},
       realPlaces: realPlaces || {},
     });

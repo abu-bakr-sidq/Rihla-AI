@@ -21,7 +21,7 @@ export function useTrips() {
   });
 }
 
-export function useTrip(id: number) {
+export function useTrip(id: string | number) {
   return useQuery({
     queryKey: [api.trips.get.path, id],
     queryFn: async () => {
@@ -74,7 +74,7 @@ export function useCreateTrip() {
 export function useDeleteTrip() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string | number) => {
       const url = buildUrl(api.trips.delete.path, { id });
       const res = await fetch(url, {
         method: api.trips.delete.method,
