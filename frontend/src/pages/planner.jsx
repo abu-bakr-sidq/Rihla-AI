@@ -1043,6 +1043,7 @@ function buildVariantActivity(category, variantIndex, fd) {
   const theme = buildStyleAwareDayTheme(fd.travelStyle, variantIndex + 1, Math.max(4, Number(fd.totalDaysHint || 8)));
   const style = fd.travelStyle || 'balanced';
   const phase = getTripPhase(variantIndex + 1, Math.max(4, Number(fd.totalDaysHint || 8)));
+  const resolvedPlace = resolvePlannedPlaceName("", destination, category, variantIndex);
   const slotNarratives = {
     morning: [
       `Start in ${district} with a gentler introduction to ${destination}, keeping the first stop easy to enter and rewarding on foot.`,
@@ -1076,10 +1077,11 @@ function buildVariantActivity(category, variantIndex, fd) {
     coastal: ` Let the water, breeze, or open-air edge shape the rhythm rather than forcing the pace.`,
   };
   const desc = slotNarratives[category]?.[variantIndex % slotNarratives[category].length] || `Explore ${district} in ${destination}.`;
+  const placeName = resolvedPlace && resolvedPlace !== destination ? resolvedPlace : `${district} ${variantLabel}`;
 
   return {
-    name: `${district} ${variantLabel}`,
-    desc: `${desc} This stop is tuned for your ${style} travel style and supports the day's ${theme.toLowerCase()} mood with a more distinct local angle.${styleClosers[String(style).toLowerCase()] || ''}`,
+    name: placeName,
+    desc: `${desc} Focus this chapter around ${placeName} so the day feels grounded in a real local anchor, not a generic stop. This stop is tuned for your ${style} travel style and supports the day's ${theme.toLowerCase()} mood with a more distinct local angle.${styleClosers[String(style).toLowerCase()] || ''}`,
     id: null,
   };
 }
@@ -2266,13 +2268,17 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
         {/* Time badge */}
         <div className="absolute top-3 right-3 backdrop-blur-xl px-3 py-1.5 rounded-full shadow-lg"
           style={{ background: isLight ? 'rgba(255,255,255,0.86)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(148,163,184,0.18)' : '1px solid rgba(255,255,255,0.1)' }}>
-          <span className="text-[10px] font-black text-white/90 tracking-wider">{slotTime}</span>
+          <span className={cn("text-[10px] font-black tracking-wider", isLight ? "text-slate-700" : "text-white/90")}>{slotTime}</span>
         </div>
 
         {/* Cost badge */}
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 backdrop-blur-xl px-3 py-1.5 rounded-[10px] shadow-lg"
-          style={{ background: 'rgba(13,19,31,0.78)', border: '1px solid rgba(212,175,55,0.42)', boxShadow: '0 10px 24px rgba(0,0,0,0.24)' }}>
-          <span className="text-[11px] font-black text-[#F6D978] drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]">{cost ? fmtCur(cost, currency) : 'Free'}</span>
+          style={{
+            background: isLight ? 'rgba(255,255,255,0.94)' : 'rgba(13,19,31,0.78)',
+            border: isLight ? '1px solid rgba(212,175,55,0.32)' : '1px solid rgba(212,175,55,0.42)',
+            boxShadow: isLight ? '0 10px 24px rgba(148,163,184,0.18)' : '0 10px 24px rgba(0,0,0,0.24)'
+          }}>
+          <span className={cn("text-[11px] font-black", isLight ? "text-amber-700" : "text-[#F6D978] drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]")}>{cost ? fmtCur(cost, currency) : 'Free'}</span>
         </div>
       </div>
 
@@ -3034,11 +3040,42 @@ export default function Planner() {
         })
         : null;
 
-      const backendRichItinerary = result?.itinerary?.trip_overview
+            let backendRichItinerary = result?.itinerary?.trip_overview
         ? result.itinerary
         : result?.trip_overview
           ? result
           : null;
+
+      if (!backendRichItinerary && Array.isArray(result?.itinerary)) {
+        const firstDay = result.itinerary[0] || {};
+        if (firstDay.morning || firstDay.afternoon || firstDay.evening) {
+          backendRichItinerary = {
+            trip_overview: {
+              destination: result.destination || formData.destination,
+              total_days: result.days || Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)),
+              travel_style: result.travelStyle || formData.travelStyle,
+              passengers: result.travelers || formData.travelers,
+              currency: result.currency || formData.currency,
+              budget: result?.costBreakdown?.total || 0,
+            },
+            days: result.itinerary.map(day => {
+              const enrichedDay = { ...day };
+              ['morning', 'morningActivity', 'afternoon', 'afternoonActivity', 'evening', 'eveningActivity', 'night', 'nightActivity'].forEach(slot => {
+                if (enrichedDay[slot]) {
+                  enrichedDay[slot].title = enrichedDay[slot].title || enrichedDay[slot].place;
+                  enrichedDay[slot].timePlan = Array.isArray(enrichedDay[slot].timePlan) ? enrichedDay[slot].timePlan : [];
+                  enrichedDay[slot].streetFinds = Array.isArray(enrichedDay[slot].streetFinds) ? enrichedDay[slot].streetFinds : [];
+                  enrichedDay[slot].exploreIdeas = Array.isArray(enrichedDay[slot].exploreIdeas) ? enrichedDay[slot].exploreIdeas : [];
+                  enrichedDay[slot].nearbyHighlights = Array.isArray(enrichedDay[slot].nearbyHighlights) ? enrichedDay[slot].nearbyHighlights : [];
+                }
+              });
+              return enrichedDay;
+            }),
+            routeCoordinates: result.routeCoordinates || [],
+            costBreakdown: result.costBreakdown || plannerBudgetSummary.costBreakdown
+          };
+        }
+      }
 
       // Prefer backend-generated itineraries because they are the only ones
       // guaranteed to reflect the selected travel style and real-place data.
@@ -3195,12 +3232,22 @@ export default function Planner() {
   }
 
   return (
-    <AppInnerLayout>
-      <div className="planner-shell relative min-h-screen bg-background pt-2 md:pt-3 pb-24 md:pb-28 overflow-x-hidden" style={{ isolation: 'isolate' }}>
+    <AppInnerLayout transparent={step === 7 && isLightPlannerResult}>
+      <div
+        className={cn(
+          "planner-shell relative min-h-screen pt-2 md:pt-3 pb-24 md:pb-28 overflow-x-hidden",
+          step === 7 && isLightPlannerResult ? "bg-[#edf3f8]" : "bg-background"
+        )}
+        style={{ isolation: 'isolate' }}
+      >
         {/* ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ Background: Ken Burns nature slideshow for steps 1-5, dark particle for 6-7 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ */}
         <div
           className="fixed inset-0 z-0 pointer-events-none overflow-hidden"
-          style={step === 7 ? { background: '#060f1c' } : { background: '#08111d' }}
+          style={
+            step === 7
+              ? { background: isLightPlannerResult ? '#edf3f8' : '#060f1c' }
+              : { background: '#08111d' }
+          }
         >
           {step !== 7 && <PlannerSlideshow travelStyle={formData.travelStyle} />}
         </div>
@@ -3904,7 +3951,15 @@ export default function Planner() {
                   return { card: b + "&w=600&h=440", panel: b + "&w=640&h=420" };
                 }
 
-                // Tier 2: Mathematical global uniqueness mapping (Guaranteed Infinite Scale for 100+ days)
+                // Tier 2: deterministic keyword match for more relevant style-aware visuals
+                const imageNeedle = `${act?.imageQuery || ''} ${act?.place || ''} ${act?.activity || ''}`.toLowerCase();
+                const matchedKeyword = KW.find(([keyword]) => imageNeedle.includes(keyword));
+                if (matchedKeyword?.[1]) {
+                  const b = "https://images.unsplash.com/photo-" + matchedKeyword[1] + "?auto=format&fit=crop&q=80";
+                  return { card: b + "&w=600&h=440", panel: b + "&w=640&h=420" };
+                }
+
+                // Tier 3: Mathematical global uniqueness mapping (Guaranteed Infinite Scale for 100+ days)
                 const globalSeed = idx;
                 if (globalSeed < POOL.length) {
                   const b = "https://images.unsplash.com/photo-" + POOL[globalSeed] + "?auto=format&fit=crop&q=80";
@@ -4110,10 +4165,10 @@ export default function Planner() {
                               }}
                               className="flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200 flex-shrink-0 font-black text-[10px] sm:text-[11px] uppercase tracking-widest"
                               style={{
-                                background: isActive ? '#D4AF37' : isLocked ? (isLightPlannerResult ? 'rgba(226,232,240,0.65)' : 'rgba(255,255,255,0.03)') : (isLightPlannerResult ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.06)'),
-                                color: isActive ? '#000' : isLocked ? (isLightPlannerResult ? 'rgba(100,116,139,0.55)' : 'rgba(255,255,255,0.2)') : (isLightPlannerResult ? 'rgba(15,23,42,0.68)' : 'rgba(255,255,255,0.45)'),
-                                boxShadow: isActive ? '0 4px 15px rgba(212,175,55,0.3)' : isLightPlannerResult ? '0 8px 24px rgba(148,163,184,0.08)' : 'none',
-                                border: isActive ? 'none' : isLocked ? (isLightPlannerResult ? '1px dashed rgba(148,163,184,0.35)' : '1px dashed rgba(255,255,255,0.1)') : (isLightPlannerResult ? '1px solid rgba(148,163,184,0.24)' : '1px solid rgba(255,255,255,0.08)'),
+                                background: isActive ? '#D4AF37' : isLocked ? (isLightPlannerResult ? 'rgba(248,250,252,0.98)' : 'rgba(255,255,255,0.03)') : (isLightPlannerResult ? 'rgba(255,255,255,0.98)' : 'rgba(255,255,255,0.06)'),
+                                color: isActive ? '#000' : isLocked ? (isLightPlannerResult ? 'rgba(100,116,139,0.72)' : 'rgba(255,255,255,0.2)') : (isLightPlannerResult ? 'rgba(15,23,42,0.82)' : 'rgba(255,255,255,0.45)'),
+                                boxShadow: isActive ? '0 4px 15px rgba(212,175,55,0.3)' : isLightPlannerResult ? '0 10px 28px rgba(148,163,184,0.12)' : 'none',
+                                border: isActive ? 'none' : isLocked ? (isLightPlannerResult ? '1px dashed rgba(148,163,184,0.48)' : '1px dashed rgba(255,255,255,0.1)') : (isLightPlannerResult ? '1px solid rgba(148,163,184,0.34)' : '1px solid rgba(255,255,255,0.08)'),
                               }}
                             >
                               {isLocked ? (

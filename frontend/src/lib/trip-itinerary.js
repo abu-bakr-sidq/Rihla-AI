@@ -29,6 +29,18 @@ const DESTINATION_PLACE_LIBRARY = {
     evening: ["Palm West Beach", "Bluewaters boardwalk", "Madinat Jumeirah canals", "Dubai Marina promenade"],
     night: ["Souk Madinat dinner", "Downtown skyline lounge", "JBR dining strip", "La Mer evening stroll"],
   },
+  london: {
+    morning: ["The Regent's Park Mosque", "St Paul's Cathedral", "Westminster Abbey", "Tower Bridge riverside"],
+    afternoon: ["Borough Market halal kitchens", "The British Museum", "Leadenhall Market", "South Kensington museums"],
+    evening: ["South Bank promenade", "Kensington Gardens", "Tower Bridge sunset walk", "Covent Garden lanes"],
+    night: ["Dishoom Covent Garden", "The Great Chase halal fine dining", "South Bank family dinner", "Mayfair evening tea lounge"],
+  },
+  paris: {
+    morning: ["Grande Mosquee de Paris", "Sainte-Chapelle", "Tuileries Garden", "Montmartre sunrise streets"],
+    afternoon: ["Louvre Museum", "Le Marais halal bistros", "Galeries Lafayette", "Musee d'Orsay"],
+    evening: ["Seine river promenade", "Pont Alexandre III", "Palais Royal arcades", "Champ de Mars golden hour"],
+    night: ["Le Confidentiel halal dining", "Saint-Germain dessert salon", "Seine dinner cruise", "Opera district evening stroll"],
+  },
   kyoto: {
     morning: ["Fushimi Inari Taisha", "Kiyomizu-dera", "Yasaka Shrine", "Sannenzaka streets"],
     afternoon: ["Nishiki Market", "Kyoto National Museum", "Nanzen-ji precinct", "Gion tea house"],
@@ -552,9 +564,22 @@ function isGenericPlaceLabel(value = "", destination = "") {
     /\bcity lights tour\b/,
     /\bcurated stop\b/,
     /\broute \d+\b/,
+    /\bprayer-aware orientation\b/,
+    /\bstory-led\b/,
+    /\bmidday flow\b/,
+    /\bevening close\b/,
+    /\bgolden hour\b/,
+    /\bneighborhood stroll\b/,
+    /\bdining experience\b/,
+    /\bstay wind-down\b/,
+    /\bsunrise orientation\b/,
+    /\bsunset views\b/,
   ];
 
   if (genericPatterns.some((pattern) => pattern.test(text))) return true;
+  if (dest && text.startsWith(dest) && /(orientation|flow|walk|views|cuisine|dining|wind-?down|route|start|close|experience|chapter)/.test(text)) {
+    return true;
+  }
   return !!dest && text === dest;
 }
 
@@ -1075,7 +1100,9 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
       Math.max(0, slotSeed)
     ) || "Local stop";
     const companionPlace = normalizedPlace;
-    const seedContent = generatePlaceCardFallbackContent(normalizedPlace, activity.description || activity.title || "", destination, slotKey);
+    const seedContent = generatePlaceCardFallbackContent(normalizedPlace, activity.description || activity.title || "", destination, slotKey, {
+      travelStyle,
+    });
     const fallbackActivityLine = `${companionNarratives[slotKey] || "Continue exploring"} ${normalizedPlace}.`;
     return {
       place: companionPlace,
@@ -1109,6 +1136,11 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
       if (!activity) return null;
       const place = resolvePlannedPlaceName(activity.location || activity.title || "", destination, slotKey, slotIndex) || `Stop ${slotIndex + 1}`;
       const cost = baseCostOverride == null ? parseCost(activity.cost) : baseCostOverride;
+      const seedContent = generatePlaceCardFallbackContent(place, activity.description || activity.title || "", destination, slotKey, {
+        travelStyle,
+        dayNumber: index + 1,
+        totalDays: days.length,
+      });
       return {
         place,
         activity: activity.description || activity.title || "",
@@ -1120,10 +1152,10 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
         imageQuery: extractPlaceImageQuery(place, destination),
         reason: activity.culturalInsight || activity.tips || activity.description || "",
         tips: activity.tips || "",
-        timePlan: Array.isArray(activity.timePlan) ? activity.timePlan : [],
-        nearbyHighlights: Array.isArray(activity.nearbyHighlights) ? activity.nearbyHighlights : [],
-        streetFinds: Array.isArray(activity.streetFinds) ? activity.streetFinds : [],
-        exploreIdeas: Array.isArray(activity.exploreIdeas) ? activity.exploreIdeas : [],
+        timePlan: Array.isArray(activity.timePlan) && activity.timePlan.length ? activity.timePlan : seedContent.schedule,
+        nearbyHighlights: Array.isArray(activity.nearbyHighlights) && activity.nearbyHighlights.length ? activity.nearbyHighlights : seedContent.streetFinds,
+        streetFinds: Array.isArray(activity.streetFinds) && activity.streetFinds.length ? activity.streetFinds : seedContent.streetFinds,
+        exploreIdeas: Array.isArray(activity.exploreIdeas) && activity.exploreIdeas.length ? activity.exploreIdeas : seedContent.ideas,
         transportationTip: activity.transportationTip || "",
         localFood: activity.localFood || "",
         safetyTip: activity.safetyTip || "",
