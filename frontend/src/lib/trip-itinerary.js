@@ -1398,16 +1398,17 @@ export function reconcileItineraryBudget(itinerary = {}, costBreakdown = {}) {
 
   const parts = resolveBudgetParts({ ...cloned.total_budget, ...costBreakdown, currency }, total);
   const equalDayWeights = cloned.days.map(() => 1);
-  const dayStay = splitBudgetByWeights(parts.stay, equalDayWeights);
-  const dayFood = splitBudgetByWeights(parts.food, equalDayWeights);
-  const dayTransport = splitBudgetByWeights(parts.transport, equalDayWeights);
-  const dayActivities = splitBudgetByWeights(parts.activities, equalDayWeights);
+  const dayTotals = splitBudgetByWeights(total, equalDayWeights);
 
   cloned.days = cloned.days.map((day, dayIndex) => {
     const nextDay = { ...day };
+    const [dayStay, dayFood, dayTransport, dayActivities] = splitBudgetByWeights(
+      dayTotals[dayIndex] || 0,
+      [parts.stay, parts.food, parts.transport, parts.activities]
+    );
     const existingSlots = BUDGET_SLOT_KEYS.filter((slotKey) => nextDay[slotKey]);
     const slotWeights = existingSlots.map((slotKey) => Math.max(1, parseCost(nextDay[slotKey]?.cost)));
-    const slotCosts = splitBudgetByWeights(dayActivities[dayIndex] || 0, slotWeights);
+    const slotCosts = splitBudgetByWeights(dayActivities || 0, slotWeights);
 
     existingSlots.forEach((slotKey, slotIndex) => {
       nextDay[slotKey] = {
@@ -1417,11 +1418,11 @@ export function reconcileItineraryBudget(itinerary = {}, costBreakdown = {}) {
     });
 
     nextDay.budget = {
-      stay: dayStay[dayIndex] || 0,
-      food: dayFood[dayIndex] || 0,
-      transport: dayTransport[dayIndex] || 0,
-      activities: dayActivities[dayIndex] || 0,
-      total: (dayStay[dayIndex] || 0) + (dayFood[dayIndex] || 0) + (dayTransport[dayIndex] || 0) + (dayActivities[dayIndex] || 0),
+      stay: dayStay || 0,
+      food: dayFood || 0,
+      transport: dayTransport || 0,
+      activities: dayActivities || 0,
+      total: dayTotals[dayIndex] || 0,
     };
     return nextDay;
   });

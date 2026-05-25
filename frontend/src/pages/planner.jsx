@@ -1102,10 +1102,7 @@ function buildItinerary(fd) {
   const budgetSummary = buildBudgetSummary(fd.destination, daysNum, category, travelers, fd.currency || "USD", fd.budget);
   const dayBudgetProfiles = buildDayBudgetProfiles(daysNum, fd.destination, fd.travelStyle);
   const equalDayWeights = Array.from({ length: daysNum }, () => 1);
-  const dayStay = splitByWeights(budgetSummary.costBreakdown.stay, equalDayWeights);
-  const dayFood = splitByWeights(budgetSummary.costBreakdown.food, equalDayWeights);
-  const dayTransport = splitByWeights(budgetSummary.costBreakdown.transport, equalDayWeights);
-  const dayActivities = splitByWeights(budgetSummary.costBreakdown.activities, equalDayWeights);
+  const dayTotals = splitByWeights(budgetSummary.costBreakdown.total, equalDayWeights);
   const categoryNeeds = { morning: daysNum * 2, afternoon: daysNum * 2, evening: daysNum * 2, night: daysNum * 2 };
   const categoryPools = {
     morning: buildExpandedActivityPool([], 'morning', categoryNeeds.morning, fd),
@@ -1133,8 +1130,17 @@ function buildItinerary(fd) {
 
     const fullSlotsList = ['morning', 'morningActivity', 'afternoon', 'afternoonActivity', 'evening', 'eveningActivity', 'night', 'nightActivity'];
     const baseCat = ['morning', 'morning', 'afternoon', 'afternoon', 'evening', 'evening', 'night', 'night'];
+    const [dayStayBudget, dayFoodBudget, dayTransportBudget, dayActivitiesBudget] = splitByWeights(
+      dayTotals[i] || 0,
+      [
+        budgetSummary.costBreakdown.stay,
+        budgetSummary.costBreakdown.food,
+        budgetSummary.costBreakdown.transport,
+        budgetSummary.costBreakdown.activities,
+      ]
+    );
     const slotWeights = dayBudgetProfile.slotWeights;
-    const slotCosts = splitByWeights(dayActivities[i] || 0, slotWeights);
+    const slotCosts = splitByWeights(dayActivitiesBudget || 0, slotWeights);
     const slots = fullSlotsList.reduce((acc, slotKey, si) => {
       const slot = baseCat[si];
       const act = getAct(slot);
@@ -1167,13 +1173,12 @@ function buildItinerary(fd) {
     }, {});
 
     const dailyBudget = {
-      stay: dayStay[i] || 0,
-      food: dayFood[i] || 0,
-      transport: dayTransport[i] || 0,
-      activities: dayActivities[i] || 0,
-      total: 0
+      stay: dayStayBudget || 0,
+      food: dayFoodBudget || 0,
+      transport: dayTransportBudget || 0,
+      activities: dayActivitiesBudget || 0,
+      total: dayTotals[i] || 0
     };
-    dailyBudget.total = dailyBudget.stay + dailyBudget.food + dailyBudget.transport + dailyBudget.activities;
 
     return {
       day: dNum,
