@@ -543,7 +543,7 @@ export const generateAITrip = async (req, res) => {
       try {
         generatedPayload = await withTimeout(
           createCityItinerary(destination, normDays, normBudget, normTravelStyle, normInterests),
-          4000,
+          Math.min(45000, 8000 + (normDays * 1200)),
           "Location itinerary fallback"
         );
       } catch (fallbackErr) {

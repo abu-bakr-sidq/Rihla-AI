@@ -86,6 +86,11 @@ const CHENNAI_CURATED_PLACES = [
   { title: "Royapuram Fishing Harbor", area: "Royapuram", category: "waterfront", lat: 13.1132, lng: 80.2967 },
   { title: "Valluvar Kottam", area: "Nungambakkam", category: "landmark", lat: 13.054, lng: 80.2446 },
   { title: "Semmozhi Poonga", area: "Teynampet", category: "park", lat: 13.0457, lng: 80.2527 },
+  { title: "Taj Coromandel", area: "Nungambakkam", category: "stay", lat: 13.0617, lng: 80.2486 },
+  { title: "ITC Grand Chola", area: "Guindy", category: "stay", lat: 13.0106, lng: 80.2206 },
+  { title: "The Leela Palace Chennai", area: "MRC Nagar", category: "stay", lat: 13.0177, lng: 80.2735 },
+  { title: "Amethyst Cafe Courtyard", area: "Royapettah", category: "food", lat: 13.0544, lng: 80.2585 },
+  { title: "Express Avenue", area: "Royapettah", category: "mall", lat: 13.0587, lng: 80.2642 },
   { title: "Pondy Bazaar", area: "T Nagar", category: "market", lat: 13.0417, lng: 80.2335 },
   { title: "T Nagar Shopping District", area: "T Nagar", category: "neighborhood", lat: 13.0419, lng: 80.2331 },
   { title: "Panagal Park", area: "T Nagar", category: "park", lat: 13.0412, lng: 80.2345 },
@@ -197,6 +202,7 @@ function buildCuratedPlaceDescription(place, destinationLabel) {
     park: `${title} is a green urban break in ${area}, ${destinationLabel}, ideal for relaxed walks and local leisure time.`,
     market: `${title} is a lively market zone in ${area}, ${destinationLabel}, suitable for street exploration and local shopping.`,
     food: `${title} is a practical dining stop in ${area}, ${destinationLabel}, useful for regional food and comfortable meal planning.`,
+    stay: `${title} is a premium stay and hospitality anchor in ${area}, ${destinationLabel}, suited for comfort-led pacing and refined trip moments.`,
     waterfront: `${title} offers a strong waterfront atmosphere in ${area}, ${destinationLabel}, with practical nearby routes.`,
     culture: `${title} is a culture-focused stop in ${area}, ${destinationLabel}, useful for heritage-oriented exploration.`,
     mall: `${title} is a major commercial hub in ${area}, ${destinationLabel}, with dining and shopping options.`,
@@ -820,6 +826,7 @@ function inferPlaceKind(place = {}) {
   if (/beach|coast|shore|promenade/.test(source)) return "beach";
   if (/waterfront|harbour|harbor|river|lake|marina|boat/.test(source)) return "waterfront";
   if (/nature reserve|forest|nature|trail|hill|marsh|peak|valley|cliff/.test(source)) return "nature";
+  if (/stay|hotel|palace|resort|grand chola|taj coromandel|leela palace/.test(source)) return "stay";
   if (/park|garden/.test(source)) return "park";
   if (/restaurant|dining|cuisine|halal|cafe|bistro|eatery|food/.test(source)) return "food";
   if (/mall|shopping centre|shopping center/.test(source)) return "mall";
@@ -835,6 +842,7 @@ function isPlaceExcludedForStyle(place = {}, travelStyle = "") {
   if (styleKey === "halal" && /(bar|pub|club|nightclub|wine|brewery|cocktail|casino|liquor|alcohol)/.test(source)) return true;
   if (styleKey === "halal" && /( vr chennai |marketcity|shopping centre|shopping center|\bmall\b)/.test(` ${source} `)) return true;
   if (styleKey === "halal" && inferPlaceKind(place) === "mall") return true;
+  if (styleKey === "halal" && inferPlaceKind(place) === "food" && !/(halal|buhari|palmshore|zaitoon|confidentiel|great chase|mian bar)/.test(source)) return true;
   if (styleKey === "wellness" && /(nightclub|casino|liquor|cocktail)/.test(source)) return true;
   return false;
 }
@@ -851,6 +859,7 @@ function scorePlaceForStyle(place, travelStyle, slotName, day, totalDays) {
   if (kind === "temple" && /cultural|halal|wellness/.test(styleKey)) score += 4;
   if (kind === "market" && /urban|halal|cultural/.test(styleKey)) score += 3;
   if (kind === "mall" && /luxury|urban/.test(styleKey)) score += 4;
+  if (kind === "stay" && /luxury|wellness/.test(styleKey)) score += 8;
   if (kind === "park" && /wellness|adventure|cinematic|coastal/.test(styleKey)) score += 3;
   if (kind === "nature" && /wellness|adventure|cinematic|coastal/.test(styleKey)) score += 4;
   if (kind === "museum" && /cultural|urban|luxury/.test(styleKey)) score += 3;
@@ -866,6 +875,7 @@ function scorePlaceForStyle(place, travelStyle, slotName, day, totalDays) {
     if (kind === "mall") score -= 8;
     if (kind === "beach" || kind === "waterfront") score -= 3;
   } else if (styleKey === "luxury") {
+    if (kind === "stay") score += 12;
     if (kind === "mall" || kind === "food" || kind === "museum" || kind === "waterfront") score += 6;
     if (kind === "market") score -= 2;
     if (kind === "nature") score -= 2;
@@ -1014,7 +1024,7 @@ function pickPlaceForSlot(candidates, usedKeys, globalUsage, lastDayUsed, travel
     const key = normalizeToken(candidate.title);
     const usage = usedKeys.get(key) || 0;
     const totalUsage = globalUsage.get(key) || 0;
-    if (usage === 0 || (slotIndex >= 6 && usage < 2)) {
+    if (usage === 0) {
       usedKeys.set(key, usage + 1);
       globalUsage.set(key, totalUsage + 1);
       lastDayUsed.set(key, day);
@@ -1030,6 +1040,19 @@ function pickPlaceForSlot(candidates, usedKeys, globalUsage, lastDayUsed, travel
     lastDayUsed.set(key, day);
   }
   return fallback;
+}
+
+function buildSlotCandidatePool(preferredPool, eligiblePlaces, globalUsage) {
+  const preferred = Array.isArray(preferredPool) ? preferredPool : [];
+  const eligible = Array.isArray(eligiblePlaces) ? eligiblePlaces : [];
+  const unusedPreferred = preferred.filter((place) => (globalUsage.get(normalizeToken(place.title)) || 0) === 0);
+  const unusedEligible = eligible.filter((place) => (globalUsage.get(normalizeToken(place.title)) || 0) === 0);
+
+  if (unusedPreferred.length >= 2) return unusedPreferred;
+  if (unusedEligible.length >= 3) {
+    return uniqueBy([...unusedPreferred, ...unusedEligible], (place) => normalizeToken(place.title));
+  }
+  return preferred.length ? preferred : eligible;
 }
 
 const CITY_ITINERARY_DAY_THEMES = [
@@ -1055,10 +1078,10 @@ const STYLE_CITY_PROFILES = {
       "Grand Finale & Night Ambience",
     ],
     slotCategories: {
-      morning: ["landmark", "culture", "park", "beach"],
-      afternoon: ["museum", "culture", "mall", "food", "market"],
+      morning: ["stay", "landmark", "culture", "park", "beach"],
+      afternoon: ["stay", "museum", "culture", "mall", "food", "market"],
       evening: ["waterfront", "beach", "park", "landmark"],
-      night: ["mall", "food", "waterfront", "landmark"],
+      night: ["stay", "mall", "food", "waterfront", "landmark"],
     },
     note: "Prioritize comfort, premium atmosphere, and one strong signature highlight over volume.",
   },
@@ -1275,7 +1298,11 @@ export async function createCityItinerary(destination, days, budget, travelStyle
         const preferredPool = eligiblePlaces.filter((candidate) =>
           (styleProfile.slotCategories?.[slotName] || []).includes(inferPlaceKind(candidate))
         );
-        const sourcePool = preferredPool.length ? preferredPool : (eligiblePlaces.length ? eligiblePlaces : rotatedPlaces);
+        const sourcePool = buildSlotCandidatePool(
+          preferredPool,
+          eligiblePlaces.length ? eligiblePlaces : rotatedPlaces,
+          globalUsage
+        );
         const place = pickPlaceForSlot(sourcePool, dayUsedKeys, globalUsage, lastDayUsed, travelStyle, slotName, day, days, slot) || makeSyntheticPlace(destination, day, slot, fallbackBase);
         const key = normalizeToken(place.title);
         const images = placeImageCache.get(key) || [createStaticMapImageUrl(place.lat, place.lng, 14, place.title)];

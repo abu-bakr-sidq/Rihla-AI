@@ -3023,7 +3023,7 @@ export default function Planner() {
           interests: []
         }),
         new Promise((_, reject) => {
-          setTimeout(() => reject(new Error("Planner generation took too long. Falling back locally.")), Math.min(100000, 15000 + (Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)) * 3500)));
+          setTimeout(() => reject(new Error("Planner generation took too long. Falling back locally.")), Math.min(120000, 30000 + (Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)) * 4500)));
         })
       ]);
 
@@ -4253,7 +4253,7 @@ export default function Planner() {
                                       slotTime={cfg.time}
                                       cost={act.cost}
                                       destination={DEST_SHORT}
-                                      cardIndex={cardIdx}
+                                      cardIndex={((activeDay?.day || 1) - 1) * 8 + cardIdx}
                                       currency={formData.currency}
                                       fmtCur={fmtCur}
                                       isSelected={isSelected}
