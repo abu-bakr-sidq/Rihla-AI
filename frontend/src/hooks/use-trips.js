@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl, resolveApiUrl } from "@/lib/api-contract";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 45000;
-const GENERATE_REQUEST_TIMEOUT_MS = 30000;
+const GENERATE_REQUEST_TIMEOUT_MS = 120000;
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS) {
   const controller = new AbortController();
