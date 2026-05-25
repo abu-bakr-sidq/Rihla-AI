@@ -497,6 +497,203 @@ function buildDailyInsights(destination, travelStyle, interests, day = 1, slotIn
   };
 }
 
+const OVERPASS_BASE = "https://overpass-api.de/api/interpreter";
+
+const OSM_PLACE_QUERY_LIBRARY = {
+  temple: [
+    { key: "amenity", value: "place_of_worship" },
+    { key: "building", value: "mosque" }
+  ],
+  museum: [
+    { key: "tourism", value: "museum" },
+    { key: "tourism", value: "gallery" }
+  ],
+  market: [
+    { key: "amenity", value: "marketplace" }
+  ],
+  mall: [
+    { key: "shop", value: "mall" }
+  ],
+  park: [
+    { key: "leisure", value: "park" },
+    { key: "leisure", value: "garden" }
+  ],
+  waterfront: [
+    { key: "leisure", value: "marina" },
+    { key: "man_made", value: "pier" },
+    { key: "tourism", value: "viewpoint" }
+  ],
+  landmark: [
+    { key: "tourism", value: "attraction" },
+    { key: "historic", value: "monument" },
+    { key: "historic", value: "castle" }
+  ],
+  nature: [
+    { key: "leisure", value: "nature_reserve" },
+    { key: "natural", value: "peak" },
+    { key: "natural", value: "wood" }
+  ],
+  beach: [
+    { key: "natural", value: "beach" }
+  ],
+  food: [
+    { key: "amenity", value: "restaurant" },
+    { key: "amenity", value: "cafe" },
+    { key: "amenity", value: "fast_food" }
+  ],
+  culture: [
+    { key: "tourism", value: "artwork" },
+    { key: "historic", value: "memorial" }
+  ],
+  neighborhood: [
+    { key: "place", value: "square" }
+  ]
+};
+
+function buildStyleQueryKeys(travelStyle = "") {
+  const styleKey = resolveStyleProfileKey(travelStyle);
+  const profile = getStyleProfile(travelStyle);
+  const keys = new Set(Object.values(profile.slotCategories || {}).flat());
+  keys.add("landmark");
+  keys.add("park");
+  keys.add("museum");
+  if (styleKey === "halal") {
+    keys.add("temple");
+    keys.add("food");
+    keys.add("market");
+  }
+  if (styleKey === "luxury") {
+    keys.add("mall");
+    keys.add("food");
+    keys.add("waterfront");
+  }
+  if (styleKey === "coastal") {
+    keys.add("beach");
+    keys.add("waterfront");
+  }
+  if (styleKey === "adventure" || styleKey === "wellness") {
+    keys.add("nature");
+    keys.add("park");
+  }
+  if (styleKey === "urban") {
+    keys.add("market");
+    keys.add("mall");
+    keys.add("food");
+  }
+  if (styleKey === "cultural") {
+    keys.add("temple");
+    keys.add("culture");
+  }
+  return [...keys].filter((key) => Array.isArray(OSM_PLACE_QUERY_LIBRARY[key]) && OSM_PLACE_QUERY_LIBRARY[key].length);
+}
+
+function buildOverpassMultiQuery(lat, lng, radiusM, queryDefs = []) {
+  const body = queryDefs.map(({ key, value }) => `
+    node["${key}"="${value}"](around:${radiusM},${lat},${lng});
+    way["${key}"="${value}"](around:${radiusM},${lat},${lng});
+    relation["${key}"="${value}"](around:${radiusM},${lat},${lng});
+  `).join("\n");
+  return `[out:json][timeout:14];
+(
+${body}
+);
+out body center 160;`;
+}
+
+function inferOsmCategory(tags = {}, name = "") {
+  const source = normalizeToken(`${name} ${Object.entries(tags || {}).map(([k, v]) => `${k} ${v}`).join(" ")}`);
+  if (/place of worship|building mosque|religion muslim|mosque|masjid|cathedral|church|temple|synagogue|shrine/.test(source)) return "temple";
+  if (/tourism museum|tourism gallery|museum|gallery/.test(source)) return "museum";
+  if (/amenity marketplace|market|bazaar|souk/.test(source)) return "market";
+  if (/shop mall|shopping centre|shopping center|mall/.test(source)) return "mall";
+  if (/leisure park|leisure garden|garden|park/.test(source)) return "park";
+  if (/natural beach|beach/.test(source)) return "beach";
+  if (/leisure marina|man made pier|waterfront|harbour|harbor|marina|river|promenade|boardwalk|viewpoint/.test(source)) return "waterfront";
+  if (/tourism attraction|historic monument|historic castle|landmark|palace|fort|tower/.test(source)) return "landmark";
+  if (/nature reserve|natural peak|wood|forest|trail|cliff|hill/.test(source)) return "nature";
+  if (/amenity restaurant|amenity cafe|amenity fast food|cuisine|halal|dining|bistro|eatery/.test(source)) return "food";
+  if (/artwork|memorial|heritage|cultural/.test(source)) return "culture";
+  if (/square|district|quarter|street/.test(source)) return "neighborhood";
+  return "generic";
+}
+
+function buildOsmPlaceDescription(name, category, destinationLabel, tags = {}) {
+  const cuisine = String(tags.cuisine || "").replace(/_/g, " ").trim();
+  const area = tags["addr:suburb"] || tags["addr:city_district"] || tags["addr:neighbourhood"] || tags["addr:city"] || "";
+  const categoryLines = {
+    temple: `${name} is a notable spiritual stop${area ? ` in ${area}` : ""} within ${destinationLabel}, useful for respectful and practical routing.`,
+    museum: `${name} is a museum or gallery stop${area ? ` in ${area}` : ""} in ${destinationLabel}, suitable for deeper culture coverage.`,
+    market: `${name} is a local market stop${area ? ` in ${area}` : ""} in ${destinationLabel}, good for street texture and casual browsing.`,
+    mall: `${name} is a shopping hub${area ? ` in ${area}` : ""} in ${destinationLabel}, with comfortable indoor pacing.`,
+    park: `${name} is a green urban pause${area ? ` in ${area}` : ""} in ${destinationLabel}, ideal for a slower walking stretch.`,
+    beach: `${name} offers an open coastal setting${area ? ` in ${area}` : ""} around ${destinationLabel}, rewarding in calmer light.`,
+    waterfront: `${name} gives a waterfront or viewpoint moment${area ? ` in ${area}` : ""} in ${destinationLabel}, with strong scenic value.`,
+    landmark: `${name} is a recognizable city landmark${area ? ` in ${area}` : ""} in ${destinationLabel}, useful as a sightseeing anchor.`,
+    nature: `${name} adds a nature-oriented break${area ? ` in ${area}` : ""} around ${destinationLabel}, suited for gentler outdoor time.`,
+    food: `${name}${cuisine ? ` serves ${cuisine}` : " is a dining stop"}${area ? ` in ${area}` : ""} within ${destinationLabel}, helpful for a grounded local meal stop.`,
+    culture: `${name} adds a cultural layer${area ? ` in ${area}` : ""} in ${destinationLabel}, complementing broader sightseeing.`,
+    neighborhood: `${name} reflects local district character${area ? ` in ${area}` : ""} within ${destinationLabel}.`,
+  };
+  return categoryLines[category] || `${name} is a real mapped stop in ${destinationLabel}.`;
+}
+
+function isUsefulPlaceName(name = "") {
+  const normalized = normalizeToken(name);
+  if (!normalized || normalized.length < 3) return false;
+  if (/^(unnamed|unknown|yes|no|restaurant|cafe|park|museum|mosque|hotel|attraction)$/.test(normalized)) return false;
+  if (/^list of /.test(normalized)) return false;
+  return true;
+}
+
+async function fetchOsmPlacesNear(destination, geo, travelStyle, targetCount = 72) {
+  try {
+    if (!geo?.lat || !geo?.lng) return [];
+    const queryKeys = buildStyleQueryKeys(travelStyle);
+    const queryDefs = uniqueBy(queryKeys.flatMap((key) => OSM_PLACE_QUERY_LIBRARY[key] || []), ({ key, value }) => `${key}:${value}`);
+    if (!queryDefs.length) return [];
+    const radiusM = geo.isCityLevel === false ? 18000 : 12000;
+    const query = buildOverpassMultiQuery(geo.lat, geo.lng, radiusM, queryDefs);
+    const res = await fetchWithTimeout(OVERPASS_BASE, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": "AI-TP-Connection/1.0"
+      },
+      body: `data=${encodeURIComponent(query)}`
+    }, 5000);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const destinationLabel = formatDisplayName(destination) || destination;
+    const parsed = (data?.elements || []).map((el) => {
+      const tags = el.tags || {};
+      const title = tags.name || tags["name:en"] || null;
+      const lat = Number(el.lat ?? el.center?.lat);
+      const lng = Number(el.lon ?? el.center?.lon);
+      const category = inferOsmCategory(tags, title);
+      return {
+        title,
+        description: buildOsmPlaceDescription(title || "Local stop", category, destinationLabel, tags),
+        lat,
+        lng,
+        imageUrl: null,
+        category,
+        tags,
+        cuisine: tags.cuisine || "",
+        area: tags["addr:suburb"] || tags["addr:city_district"] || tags["addr:neighbourhood"] || ""
+      };
+    }).filter((place) => {
+      if (!isUsefulPlaceName(place.title)) return false;
+      if (!Number.isFinite(place.lat) || !Number.isFinite(place.lng)) return false;
+      if (geo.boundingBox && !isInsideBoundingBox(place, geo.boundingBox)) return false;
+      if (haversineKm(geo.lat, geo.lng, place.lat, place.lng) > 70) return false;
+      return true;
+    });
+    return uniqueBy(parsed, (place) => normalizeToken(place.title)).slice(0, targetCount);
+  } catch (_) {
+    return [];
+  }
+}
+
 async function geocodeDestination(destination) {
   try {
     const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(destination)}&addressdetails=1`;
@@ -604,16 +801,28 @@ function inferPlaceKind(place = {}) {
   const category = normalizeToken(place.category || "");
   const title = normalizeToken(place.title || "");
   const description = normalizeToken(place.description || "");
-  const source = `${category} ${title} ${description}`;
+  const tags = normalizeToken(Object.entries(place.tags || {}).map(([key, value]) => `${key} ${value}`).join(" "));
+  const source = `${category} ${title} ${description} ${tags} ${normalizeToken(place.cuisine || "")}`;
   if (/temple|mosque|church|shrine|monastery|cathedral|basilica|sacred/.test(source)) return "temple";
   if (/museum|gallery|archive|heritage|culture/.test(source)) return "museum";
   if (/beach|coast|shore|promenade/.test(source)) return "beach";
   if (/waterfront|harbour|harbor|river|lake|marina|boat/.test(source)) return "waterfront";
-  if (/park|garden|forest|nature|trail|hill|marsh|peak|valley/.test(source)) return "park";
-  if (/market|bazaar|souk|shopping|mall/.test(source)) return "market";
+  if (/nature reserve|forest|nature|trail|hill|marsh|peak|valley|cliff/.test(source)) return "nature";
+  if (/park|garden/.test(source)) return "park";
+  if (/restaurant|dining|cuisine|halal|cafe|bistro|eatery|food/.test(source)) return "food";
+  if (/mall|shopping centre|shopping center/.test(source)) return "mall";
+  if (/market|bazaar|souk|shopping/.test(source)) return "market";
   if (/neighborhood|neighbourhood|street|district|quarter/.test(source)) return "neighborhood";
   if (/landmark|fort|palace|tower|lighthouse|summit|view/.test(source)) return "landmark";
   return category || "generic";
+}
+
+function isPlaceExcludedForStyle(place = {}, travelStyle = "") {
+  const styleKey = resolveStyleProfileKey(travelStyle);
+  const source = normalizeToken(`${place.title || ""} ${place.description || ""} ${place.category || ""} ${Object.entries(place.tags || {}).map(([key, value]) => `${key} ${value}`).join(" ")}`);
+  if (styleKey === "halal" && /(bar|pub|club|nightclub|wine|brewery|cocktail|casino|liquor|alcohol)/.test(source)) return true;
+  if (styleKey === "wellness" && /(nightclub|casino|liquor|cocktail)/.test(source)) return true;
+  return false;
 }
 
 function scorePlaceForStyle(place, travelStyle, slotName, day, totalDays) {
@@ -625,12 +834,18 @@ function scorePlaceForStyle(place, travelStyle, slotName, day, totalDays) {
   if (kind === "waterfront" && /coastal|cinematic|luxury/.test(resolveStyleProfileKey(travelStyle))) score += 4;
   if (kind === "temple" && /cultural|halal|wellness/.test(resolveStyleProfileKey(travelStyle))) score += 4;
   if (kind === "market" && /urban|halal|cultural/.test(resolveStyleProfileKey(travelStyle))) score += 3;
+  if (kind === "mall" && /luxury|urban/.test(resolveStyleProfileKey(travelStyle))) score += 4;
   if (kind === "park" && /wellness|adventure|cinematic|coastal/.test(resolveStyleProfileKey(travelStyle))) score += 3;
+  if (kind === "nature" && /wellness|adventure|cinematic|coastal/.test(resolveStyleProfileKey(travelStyle))) score += 4;
   if (kind === "museum" && /cultural|urban|luxury/.test(resolveStyleProfileKey(travelStyle))) score += 3;
+  if (kind === "food" && /halal|luxury|urban|balanced|coastal/.test(resolveStyleProfileKey(travelStyle))) score += 4;
+  if (kind === "landmark" && /cultural|luxury|urban|halal|balanced/.test(resolveStyleProfileKey(travelStyle))) score += 2;
+  if (kind === "beach" && /coastal|cinematic|wellness/.test(resolveStyleProfileKey(travelStyle))) score += 4;
   const phase = getTripPhase(day, totalDays);
   if (phase === "arrival" && /landmark|waterfront|park/.test(kind)) score += 2;
   if (phase === "reset" && /park|waterfront|beach|culture/.test(kind)) score += 2;
   if (phase === "finale" && /waterfront|landmark|culture|beach/.test(kind)) score += 2;
+  if (place.synthetic) score -= 12;
   score += (place.title || "").length % 3;
   return score;
 }
@@ -730,10 +945,21 @@ function makeSyntheticPlace(destination, day, slot, fallbackBase) {
   };
 }
 
-function pickPlaceForSlot(candidates, usedKeys, travelStyle, slotName, day, totalDays, slotIndex = 0) {
+function pickPlaceForSlot(candidates, usedKeys, globalUsage, lastDayUsed, travelStyle, slotName, day, totalDays, slotIndex = 0) {
   const ranked = [...(Array.isArray(candidates) ? candidates : [])]
     .sort((a, b) => {
-      const scoreDiff = scorePlaceForStyle(b, travelStyle, slotName, day, totalDays) - scorePlaceForStyle(a, travelStyle, slotName, day, totalDays);
+      const scorePlace = (place) => {
+        const key = normalizeToken(place.title);
+        const totalUsage = globalUsage.get(key) || 0;
+        const lastDay = lastDayUsed.get(key) || 0;
+        const dayGap = lastDay ? day - lastDay : 99;
+        let score = scorePlaceForStyle(place, travelStyle, slotName, day, totalDays) - totalUsage * 5;
+        if (dayGap === 0) score -= 100;
+        else if (dayGap === 1) score -= 16;
+        else if (dayGap === 2) score -= 7;
+        return score;
+      };
+      const scoreDiff = scorePlace(b) - scorePlace(a);
       if (scoreDiff !== 0) return scoreDiff;
       return String(a.title || "").localeCompare(String(b.title || ""));
     });
@@ -741,8 +967,11 @@ function pickPlaceForSlot(candidates, usedKeys, travelStyle, slotName, day, tota
   for (const candidate of ranked) {
     const key = normalizeToken(candidate.title);
     const usage = usedKeys.get(key) || 0;
+    const totalUsage = globalUsage.get(key) || 0;
     if (usage === 0 || (slotIndex >= 6 && usage < 2)) {
       usedKeys.set(key, usage + 1);
+      globalUsage.set(key, totalUsage + 1);
+      lastDayUsed.set(key, day);
       return candidate;
     }
   }
@@ -751,6 +980,8 @@ function pickPlaceForSlot(candidates, usedKeys, travelStyle, slotName, day, tota
   if (fallback) {
     const key = normalizeToken(fallback.title);
     usedKeys.set(key, (usedKeys.get(key) || 0) + 1);
+    globalUsage.set(key, (globalUsage.get(key) || 0) + 1);
+    lastDayUsed.set(key, day);
   }
   return fallback;
 }
@@ -779,9 +1010,9 @@ const STYLE_CITY_PROFILES = {
     ],
     slotCategories: {
       morning: ["landmark", "culture", "park", "beach"],
-      afternoon: ["museum", "culture", "mall", "market"],
+      afternoon: ["museum", "culture", "mall", "food", "market"],
       evening: ["waterfront", "beach", "park", "landmark"],
-      night: ["mall", "culture", "waterfront", "landmark"],
+      night: ["mall", "food", "waterfront", "landmark"],
     },
     note: "Prioritize comfort, premium atmosphere, and one strong signature highlight over volume.",
   },
@@ -859,9 +1090,9 @@ const STYLE_CITY_PROFILES = {
     ],
     slotCategories: {
       morning: ["landmark", "neighborhood", "park", "culture"],
-      afternoon: ["market", "mall", "culture", "museum"],
+      afternoon: ["market", "mall", "food", "culture", "museum"],
       evening: ["waterfront", "landmark", "neighborhood", "market"],
-      night: ["market", "mall", "neighborhood", "culture"],
+      night: ["market", "mall", "food", "neighborhood", "culture"],
     },
     note: "Favor walkable districts, modern local life, and layered city energy.",
   },
@@ -881,7 +1112,7 @@ const STYLE_CITY_PROFILES = {
       morning: ["park", "nature", "temple", "beach"],
       afternoon: ["park", "culture", "museum", "waterfront"],
       evening: ["waterfront", "beach", "park", "culture"],
-      night: ["culture", "waterfront", "park", "neighborhood"],
+      night: ["culture", "food", "waterfront", "park", "neighborhood"],
     },
     note: "Protect calm, recovery, and low-friction pacing instead of maximizing stop count.",
   },
@@ -899,9 +1130,9 @@ const STYLE_CITY_PROFILES = {
     ],
     slotCategories: {
       morning: ["temple", "culture", "landmark", "park"],
-      afternoon: ["market", "culture", "museum", "waterfront"],
+      afternoon: ["market", "food", "culture", "museum", "waterfront"],
       evening: ["waterfront", "park", "neighborhood", "culture"],
-      night: ["market", "culture", "neighborhood", "waterfront"],
+      night: ["food", "market", "culture", "neighborhood", "waterfront"],
     },
     note: "Keep the routing comfortable, respectful, and easy to navigate around practical needs.",
   },
@@ -919,9 +1150,9 @@ const STYLE_CITY_PROFILES = {
     ],
     slotCategories: {
       morning: ["beach", "waterfront", "park", "nature"],
-      afternoon: ["waterfront", "market", "culture", "park"],
+      afternoon: ["waterfront", "food", "market", "culture", "park"],
       evening: ["beach", "waterfront", "landmark", "park"],
-      night: ["waterfront", "market", "culture", "neighborhood"],
+      night: ["waterfront", "food", "market", "culture", "neighborhood"],
     },
     note: "Let the waterfront, promenade, and open-air rhythm shape the trip.",
   },
@@ -930,9 +1161,9 @@ const STYLE_CITY_PROFILES = {
     dayThemes: CITY_ITINERARY_DAY_THEMES,
     slotCategories: {
       morning: ["landmark", "park", "temple", "beach"],
-      afternoon: ["museum", "market", "culture", "neighborhood"],
+      afternoon: ["museum", "market", "food", "culture", "neighborhood"],
       evening: ["waterfront", "landmark", "park", "beach"],
-      night: ["market", "culture", "neighborhood", "waterfront"],
+      night: ["market", "food", "culture", "neighborhood", "waterfront"],
     },
     note: "Balance culture, scenery, food, and local atmosphere throughout the trip.",
   },
@@ -945,30 +1176,42 @@ export async function createCityItinerary(destination, days, budget, travelStyle
     const usingCurated = Array.isArray(curatedPlaces) && curatedPlaces.length > 0;
     const geo = usingCurated ? curatedCenter : await geocodeDestination(destination);
     const searchRadiusM = geo?.isCityLevel === false ? 40000 : 25000;
-    let places = usingCurated ? curatedPlaces : geo ? await fetchWikiPlacesNear(destination, geo.lat, geo.lng, searchRadiusM, 80) : [];
+    const targetPoolSize = Math.min(140, Math.max(48, Number(days || 1) * 7));
+    let places = [];
+
+    if (usingCurated) {
+      places = curatedPlaces;
+    } else if (geo) {
+      const [osmPlaces, wikiPlaces] = await Promise.all([
+        fetchOsmPlacesNear(destination, geo, travelStyle, targetPoolSize),
+        fetchWikiPlacesNear(destination, geo.lat, geo.lng, searchRadiusM, Math.max(80, targetPoolSize))
+      ]);
+      places = uniqueBy([...osmPlaces, ...wikiPlaces], (p) => normalizeToken(p.title));
+    }
     
     if (geo && !usingCurated) {
       if (geo.boundingBox) places = places.filter((p) => isInsideBoundingBox(p, geo.boundingBox));
       places = places.filter((p) => haversineKm(geo.lat, geo.lng, p.lat, p.lng) <= 60);
     }
 
+    places = places.filter((place) => !isPlaceExcludedForStyle(place, travelStyle));
     places = uniqueBy(places, (p) => normalizeToken(p.title));
     if (places.length < 3) return null;
 
     const fallbackBase = geo ? { lat: geo.lat, lng: geo.lng } : { lat: 0, lng: 0 };
     const placeImageCache = new Map();
-    const placeUsage = new Map();
-    let placeCursor = 0;
+    const globalUsage = new Map();
+    const lastDayUsed = new Map();
 
-    if (usingCurated) {
+    if (usingCurated || places.some((p) => !p.imageUrl)) {
       const wikiThumbs = await fetchWikipediaBulkThumbnails(places.map((p) => p.title));
       for (const p of places) {
         const key = normalizeToken(p.title);
-        placeImageCache.set(key, [wikiThumbs.get(key), createStaticMapImageUrl(p.lat, p.lng, 15, p.title)].filter(Boolean));
+        placeImageCache.set(key, [p.imageUrl, wikiThumbs.get(key), createStaticMapImageUrl(p.lat, p.lng, 15, p.title)].filter(Boolean));
       }
     } else {
       for (const p of places) {
-        if (p.imageUrl) placeImageCache.set(normalizeToken(p.title), [p.imageUrl, createStaticMapImageUrl(p.lat, p.lng, 15, p.title)].filter(Boolean));
+        placeImageCache.set(normalizeToken(p.title), [p.imageUrl, createStaticMapImageUrl(p.lat, p.lng, 15, p.title)].filter(Boolean));
       }
     }
 
@@ -980,17 +1223,15 @@ export async function createCityItinerary(destination, days, budget, travelStyle
       const dayTheme = buildStyleDayTheme(travelStyle, day, days);
       const rotatedPlaces = rotateUnique(places, day * 7 + destination.length, Math.max(places.length, 8));
       const dayUsedKeys = new Map();
+      const eligiblePlaces = rotatedPlaces.filter((candidate) => !isPlaceExcludedForStyle(candidate, travelStyle));
       for (let slot = 0; slot < 8; slot++) {
         const slotName = slotNames[slot] || "morning";
-        const preferredPool = rotatedPlaces.filter((candidate) =>
+        const preferredPool = eligiblePlaces.filter((candidate) =>
           (styleProfile.slotCategories?.[slotName] || []).includes(inferPlaceKind(candidate))
         );
-        const sourcePool = preferredPool.length ? preferredPool : rotatedPlaces;
-        const place = pickPlaceForSlot(sourcePool, dayUsedKeys, travelStyle, slotName, day, days, slot) || makeSyntheticPlace(destination, day, slot, fallbackBase);
+        const sourcePool = preferredPool.length ? preferredPool : (eligiblePlaces.length ? eligiblePlaces : rotatedPlaces);
+        const place = pickPlaceForSlot(sourcePool, dayUsedKeys, globalUsage, lastDayUsed, travelStyle, slotName, day, days, slot) || makeSyntheticPlace(destination, day, slot, fallbackBase);
         const key = normalizeToken(place.title);
-        placeUsage.set(key, (placeUsage.get(key) || 0) + 1);
-        placeCursor++;
-        
         const images = placeImageCache.get(key) || [createStaticMapImageUrl(place.lat, place.lng, 14, place.title)];
         activities.push(makePlaceActivity({
           ...place,
