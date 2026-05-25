@@ -27,6 +27,28 @@ const CURATED_CITY_CENTERS = {
       west: 80.12,
       east: 80.36
     }
+  },
+  london: {
+    lat: 51.5072,
+    lng: -0.1276,
+    displayName: "London, United Kingdom",
+    boundingBox: {
+      south: 51.28,
+      north: 51.70,
+      west: -0.51,
+      east: 0.23
+    }
+  },
+  paris: {
+    lat: 48.8566,
+    lng: 2.3522,
+    displayName: "Paris, France",
+    boundingBox: {
+      south: 48.79,
+      north: 48.92,
+      west: 2.22,
+      east: 2.43
+    }
   }
 };
 
@@ -92,6 +114,47 @@ const CHENNAI_CURATED_PLACES = [
   { title: "Broken Bridge Viewpoint", area: "Adyar", category: "waterfront", lat: 13.0126, lng: 80.2675 }
 ];
 
+const LONDON_CURATED_PLACES = [
+  { title: "The Regent's Park Mosque", area: "Regent's Park", category: "temple", lat: 51.5237, lng: -0.1586 },
+  { title: "East London Mosque", area: "Whitechapel", category: "temple", lat: 51.5175, lng: -0.0634 },
+  { title: "Westminster Abbey", area: "Westminster", category: "landmark", lat: 51.4993, lng: -0.1273 },
+  { title: "St Paul's Cathedral", area: "City of London", category: "landmark", lat: 51.5138, lng: -0.0984 },
+  { title: "Tower Bridge Riverside", area: "Southwark", category: "waterfront", lat: 51.5055, lng: -0.0754 },
+  { title: "South Bank Promenade", area: "South Bank", category: "waterfront", lat: 51.5079, lng: -0.1169 },
+  { title: "Borough Market", area: "Southwark", category: "market", lat: 51.5055, lng: -0.0910 },
+  { title: "Leadenhall Market", area: "City of London", category: "market", lat: 51.5128, lng: -0.0838 },
+  { title: "The British Museum", area: "Bloomsbury", category: "museum", lat: 51.5194, lng: -0.1269 },
+  { title: "Victoria and Albert Museum", area: "South Kensington", category: "museum", lat: 51.4966, lng: -0.1722 },
+  { title: "Kensington Gardens", area: "Kensington", category: "park", lat: 51.5066, lng: -0.1795 },
+  { title: "Hyde Park Serpentine", area: "Hyde Park", category: "park", lat: 51.5050, lng: -0.1657 },
+  { title: "Covent Garden Piazza", area: "Covent Garden", category: "neighborhood", lat: 51.5117, lng: -0.1230 },
+  { title: "Notting Hill Streets", area: "Notting Hill", category: "neighborhood", lat: 51.5099, lng: -0.1974 },
+  { title: "Dishoom Covent Garden", area: "Covent Garden", category: "food", lat: 51.5129, lng: -0.1269 },
+  { title: "The Great Chase", area: "Clerkenwell", category: "food", lat: 51.5231, lng: -0.1095 },
+  { title: "Harrods", area: "Knightsbridge", category: "mall", lat: 51.4994, lng: -0.1632 },
+  { title: "Liberty London", area: "Soho", category: "mall", lat: 51.5138, lng: -0.1419 }
+];
+
+const PARIS_CURATED_PLACES = [
+  { title: "Grande Mosquee de Paris", area: "Latin Quarter", category: "temple", lat: 48.8423, lng: 2.3553 },
+  { title: "Paris Grand Mosque Courtyard", area: "5th Arrondissement", category: "temple", lat: 48.8419, lng: 2.3557 },
+  { title: "Louvre Museum", area: "1st Arrondissement", category: "museum", lat: 48.8606, lng: 2.3376 },
+  { title: "Musee d'Orsay", area: "7th Arrondissement", category: "museum", lat: 48.8600, lng: 2.3266 },
+  { title: "Sainte-Chapelle", area: "Ile de la Cite", category: "landmark", lat: 48.8554, lng: 2.3450 },
+  { title: "Pont Alexandre III", area: "7th Arrondissement", category: "waterfront", lat: 48.8638, lng: 2.3130 },
+  { title: "Seine Riverside Walk", area: "Central Paris", category: "waterfront", lat: 48.8570, lng: 2.3410 },
+  { title: "Tuileries Garden", area: "1st Arrondissement", category: "park", lat: 48.8635, lng: 2.3270 },
+  { title: "Luxembourg Gardens", area: "6th Arrondissement", category: "park", lat: 48.8462, lng: 2.3372 },
+  { title: "Le Marais Lanes", area: "Le Marais", category: "neighborhood", lat: 48.8578, lng: 2.3622 },
+  { title: "Montmartre Streets", area: "18th Arrondissement", category: "neighborhood", lat: 48.8867, lng: 2.3431 },
+  { title: "Galeries Lafayette", area: "Opera", category: "mall", lat: 48.8720, lng: 2.3320 },
+  { title: "Printemps Haussmann", area: "Opera", category: "mall", lat: 48.8724, lng: 2.3295 },
+  { title: "Marché des Enfants Rouges", area: "Le Marais", category: "market", lat: 48.8631, lng: 2.3626 },
+  { title: "Rue Cler Food Street", area: "7th Arrondissement", category: "market", lat: 48.8559, lng: 2.3048 },
+  { title: "Le Confidentiel", area: "1st Arrondissement", category: "food", lat: 48.8618, lng: 2.3402 },
+  { title: "Mian Bar", area: "10th Arrondissement", category: "food", lat: 48.8721, lng: 2.3586 }
+];
+
 function logDebug(msg) {
   try {
     const timestamp = new Date().toISOString();
@@ -114,6 +177,8 @@ function keywordTokens(text) {
 function detectCuratedCityKey(destination) {
   const d = String(destination || "").toLowerCase();
   if (d.includes("chennai") || d.includes("madras")) return "chennai";
+  if (d.includes("london")) return "london";
+  if (d.includes("paris")) return "paris";
   return null;
 }
 
@@ -148,6 +213,28 @@ function getCuratedCityPlaces(destination) {
   const destinationLabel = formatDisplayName(destination) || destination;
   if (key === "chennai") {
     return CHENNAI_CURATED_PLACES.map((place) => ({
+      title: place.title,
+      description: buildCuratedPlaceDescription(place, destinationLabel),
+      lat: Number(place.lat),
+      lng: Number(place.lng),
+      imageUrl: null,
+      area: place.area,
+      category: place.category
+    }));
+  }
+  if (key === "london") {
+    return LONDON_CURATED_PLACES.map((place) => ({
+      title: place.title,
+      description: buildCuratedPlaceDescription(place, destinationLabel),
+      lat: Number(place.lat),
+      lng: Number(place.lng),
+      imageUrl: null,
+      area: place.area,
+      category: place.category
+    }));
+  }
+  if (key === "paris") {
+    return PARIS_CURATED_PLACES.map((place) => ({
       title: place.title,
       description: buildCuratedPlaceDescription(place, destinationLabel),
       lat: Number(place.lat),
@@ -907,7 +994,7 @@ export async function createCityItinerary(destination, days, budget, travelStyle
         const images = placeImageCache.get(key) || [createStaticMapImageUrl(place.lat, place.lng, 14, place.title)];
         activities.push(makePlaceActivity({
           ...place,
-          title: `${formatDisplayName(place.title)} - ${dayTheme}`,
+          title: formatDisplayName(place.title),
           description: `${normalizePlaceDescription(place.description, destination)} This stop supports the day's ${dayTheme.toLowerCase()} rhythm.`,
           imageUrl: images[0],
           imageAlternatives: images.slice(1)
