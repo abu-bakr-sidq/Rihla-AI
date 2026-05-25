@@ -1779,6 +1779,37 @@ const buildBudgetSummary = (destination, days, category, travelers = 1, currency
   };
 };
 
+const mergePlannerBudgetBreakdown = (primary = {}, plannerBudget = {}, requestedTotal = 0, currency = "USD") => {
+  const forcedTotal = Math.max(0, Math.round(Number(requestedTotal) || 0));
+  const baseTotal = forcedTotal || Math.max(0, Math.round(Number(primary?.total || plannerBudget?.total) || 0));
+  const base = {
+    ...plannerBudget,
+    ...primary,
+    currency: primary?.currency || plannerBudget?.currency || currency,
+  };
+  const splitSource = [
+    Math.max(0, Number(base.stay) || 0),
+    Math.max(0, Number(base.food) || 0),
+    Math.max(0, Number(base.transport) || 0),
+    Math.max(0, Number(base.activities) || 0),
+  ];
+  const [stay, food, transport, activities] = splitByWeights(
+    baseTotal,
+    splitSource.some(Boolean) ? splitSource : [0.4, 0.24, 0.11, 0.25]
+  );
+
+  return {
+    ...base,
+    stay,
+    food,
+    transport,
+    activities,
+    total: baseTotal,
+    currency: base.currency || currency,
+    source: "planner-budget-locked",
+  };
+};
+
 
 const getAutoCategory = (dailyAmount) => {
   if (dailyAmount < 3500) return "budget";
@@ -1967,7 +1998,53 @@ const _fetchActivityImage = async (queryInput, cardIndex) => {
   return null;
 };
 
-const _activityImageFallbacks = () => [];
+const FALLBACK_TRAVEL_IMAGE_IDS = [
+  "1500530855697-b586d89ba3ee",
+  "1507525428034-b723cf961d3e",
+  "1516483638261-f4dbaf036963",
+  "1523906834658-6e24ef2386f9",
+  "1533105079780-92b9be482077",
+  "1530841377377-3ff06c0ca713",
+  "1506744038136-46273834b3fb",
+  "1494783367193-149034c05e8f",
+  "1500534314209-a25ddb2bd429",
+  "1500534623283-312aade485b7",
+  "1519677100203-a0e668c92439",
+  "1526772662000-3f88f10405ff",
+  "1530789253388-582c481c54b0",
+  "1501785888041-af3ef285b470",
+  "1524492412937-b28074a5d7da",
+  "1512453979798-5ea266f8880c",
+  "1527631746610-bca00a040d60",
+  "1506929562872-bb421503ef21",
+  "1501594907352-04cda38ebc29",
+  "1500835556837-99ac94a94552",
+  "1528164344705-47542687000d",
+  "1533104816931-20fa691ff6ca",
+  "1519046904884-53103b34b206",
+  "1520250497591-112f2f40a3f4",
+];
+
+const _stableHash = (value = "") => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+};
+
+const _fallbackTravelImage = (seed, width = 900, height = 620) => {
+  const id = FALLBACK_TRAVEL_IMAGE_IDS[_stableHash(seed) % FALLBACK_TRAVEL_IMAGE_IDS.length];
+  return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&q=82&w=${width}&h=${height}`;
+};
+
+const _activityImageFallbacks = (queries = [], cardIndex = 0) => {
+  const baseSeed = `${Array.isArray(queries) ? queries.join("|") : queries}|${cardIndex}`;
+  return [
+    _fallbackTravelImage(baseSeed),
+    _fallbackTravelImage(`${baseSeed}|alternate`),
+  ];
+};
 
 function HiddenSpotThumb({ query, cardIndex = 0 }) {
   const [src, setSrc] = useState(null);
@@ -2204,8 +2281,8 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
       return () => { alive = false; };
     }, [queryKey, cardIndex]);
 
-  const fallbackImages = _activityImageFallbacks(imageQueries);
-  const activeImageSrc = imgSrc || "";
+  const fallbackImages = _activityImageFallbacks(imageQueries, cardIndex);
+  const activeImageSrc = imgSrc || fallbackImages[0] || "";
 
   return (
     <div
@@ -2228,7 +2305,11 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
                 setImgSrc("");
                 return;
               }
-                e.target.style.display = 'none';
+              if (fallbackImages[1] && e.currentTarget.src !== fallbackImages[1]) {
+                e.currentTarget.src = fallbackImages[1];
+                return;
+              }
+              e.target.style.display = 'none';
             }}
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1400ms] ease-out group-hover:scale-[1.04]"
             style={{ objectPosition: 'center 40%' }}
@@ -2573,24 +2654,18 @@ export default function Planner() {
       if (hit) return { cacheKey: storageKey, url: hit };
 
       const query = buildQuery(act, sk);
+      const queries = _buildPlannerImageQueries({
+        place: act?.place,
+        activity: act?.activity,
+        destination: DEST,
+        details: act,
+      });
+      const url = await _fetchActivityImage(queries.length ? queries : query, idx);
+      if (url) sessionStorage.setItem(storageKey, url);
+      return { cacheKey: storageKey, url };
 
       // Tier 1 - Google Places API backend proxy with unique photoIndex per slot
       // photoIndex = global sequential index across ALL days & slots ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â guarantees unique photos
-      const rawPlace = act?.place || act?.activity || '';
-      const exactPlaceQuery = _extractLocationQuery(rawPlace, DEST);
-      try {
-        const finalQuery = exactPlaceQuery || DEST || query;
-        // Pass photoIndex so backend rotates through different Google Place photos
-        const r = await fetch(resolveApiUrl(`/api/place-image?query=${encodeURIComponent(finalQuery)}&photoIndex=${idx}&onlyGoogle=1`));
-        if (r.ok) {
-          const d = await r.json();
-          if (d?.url) {
-            sessionStorage.setItem(storageKey, d.url);
-            return { cacheKey: storageKey, url: d.url };
-          }
-        }
-      } catch (_) { /* Fallthrough */ }
-      return { cacheKey: storageKey, url: null };
     };
 
     const run = async () => {
@@ -3029,6 +3104,12 @@ export default function Planner() {
       formData.currency,
       formData.budget
     );
+    const lockedPlannerBudget = mergePlannerBudgetBreakdown(
+      plannerBudgetSummary.costBreakdown,
+      plannerBudgetSummary.costBreakdown,
+      formData.budget,
+      formData.currency
+    );
     const plannerPerfectItinerary = buildItinerary({ ...formData, budgetCategory });
 
     try {
@@ -3053,7 +3134,12 @@ export default function Planner() {
           travelers: formData.travelers,
           travelStyle: formData.travelStyle,
           currency: formData.currency,
-          costBreakdown: result?.costBreakdown || plannerBudgetSummary.costBreakdown,
+          costBreakdown: mergePlannerBudgetBreakdown(
+            result?.costBreakdown,
+            plannerBudgetSummary.costBreakdown,
+            formData.budget,
+            formData.currency
+          ),
         })
         : null;
 
@@ -3073,7 +3159,7 @@ export default function Planner() {
               travel_style: result.travelStyle || formData.travelStyle,
               passengers: result.travelers || formData.travelers,
               currency: result.currency || formData.currency,
-              budget: result?.costBreakdown?.total || 0,
+              budget: formData.budget || result?.costBreakdown?.total || 0,
             },
             days: result.itinerary.map(day => {
               const enrichedDay = { ...day };
@@ -3089,7 +3175,12 @@ export default function Planner() {
               return enrichedDay;
             }),
             routeCoordinates: result.routeCoordinates || [],
-            costBreakdown: result.costBreakdown || plannerBudgetSummary.costBreakdown
+            costBreakdown: mergePlannerBudgetBreakdown(
+              result.costBreakdown,
+              plannerBudgetSummary.costBreakdown,
+              formData.budget,
+              formData.currency
+            )
           };
         }
       }
@@ -3097,11 +3188,12 @@ export default function Planner() {
       // Prefer backend-generated itineraries because they are the only ones
       // guaranteed to reflect the selected travel style and real-place data.
       finalItin = backendRichItinerary || normalizedBackendItinerary || plannerPerfectItinerary || fallback;
-      finalCostInfo = backendRichItinerary || normalizedBackendItinerary
+      const rawCostInfo = backendRichItinerary || normalizedBackendItinerary
         ? (result?.costBreakdown || result?.itinerary?.total_budget || result?.total_budget || normalizedBackendItinerary?.total_budget || plannerBudgetSummary.costBreakdown)
         : (plannerPerfectItinerary?.total_budget || fallback.total_budget || plannerBudgetSummary.costBreakdown);
-      finalItin = reconcileItineraryBudget(finalItin, finalCostInfo || plannerBudgetSummary.costBreakdown);
-      finalCostInfo = finalItin?.total_budget || finalCostInfo || plannerBudgetSummary.costBreakdown;
+      finalCostInfo = mergePlannerBudgetBreakdown(rawCostInfo, plannerBudgetSummary.costBreakdown, formData.budget, formData.currency);
+      finalItin = reconcileItineraryBudget(finalItin, finalCostInfo || lockedPlannerBudget);
+      finalCostInfo = mergePlannerBudgetBreakdown(finalItin?.total_budget || finalCostInfo, plannerBudgetSummary.costBreakdown, formData.budget, formData.currency);
       tripId = result?.id || result?._id || null;
 
       setGeneratedResult(finalItin);
@@ -3111,9 +3203,9 @@ export default function Planner() {
       console.error("Generation failed, using local fallback:", err);
       await new Promise(r => setTimeout(r, 2800));
       finalItin = buildItinerary({ ...formData, budgetCategory });
-      finalCostInfo = finalItin.total_budget || plannerBudgetSummary.costBreakdown;
+      finalCostInfo = mergePlannerBudgetBreakdown(finalItin.total_budget, plannerBudgetSummary.costBreakdown, formData.budget, formData.currency);
       finalItin = reconcileItineraryBudget(finalItin, finalCostInfo);
-      finalCostInfo = finalItin?.total_budget || finalCostInfo;
+      finalCostInfo = mergePlannerBudgetBreakdown(finalItin?.total_budget || finalCostInfo, plannerBudgetSummary.costBreakdown, formData.budget, formData.currency);
       setGeneratedResult(finalItin);
       setActiveDay(0);
       setActiveTime('morning');

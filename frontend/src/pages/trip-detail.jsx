@@ -233,6 +233,39 @@ const getApiBaseUrl = () => {
   return configured.replace(/\/+$/, '').replace(/\/api$/i, '');
 };
 
+const TRIP_FALLBACK_IMAGE_IDS = [
+  "1500530855697-b586d89ba3ee",
+  "1507525428034-b723cf961d3e",
+  "1516483638261-f4dbaf036963",
+  "1523906834658-6e24ef2386f9",
+  "1533105079780-92b9be482077",
+  "1530841377377-3ff06c0ca713",
+  "1506744038136-46273834b3fb",
+  "1494783367193-149034c05e8f",
+  "1500534314209-a25ddb2bd429",
+  "1500534623283-312aade485b7",
+  "1519677100203-a0e668c92439",
+  "1526772662000-3f88f10405ff",
+  "1530789253388-582c481c54b0",
+  "1501785888041-af3ef285b470",
+  "1524492412937-b28074a5d7da",
+  "1512453979798-5ea266f8880c",
+];
+
+const stableHash = (value = "") => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+};
+
+const buildTripFallbackImageUrl = (query, index = 0) => {
+  const seed = `${query || "travel"}|${index}`;
+  const id = TRIP_FALLBACK_IMAGE_IDS[stableHash(seed) % TRIP_FALLBACK_IMAGE_IDS.length];
+  return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&q=82&w=900&h=620`;
+};
+
 const _fetchActivityImage = async (query, globalIndex) => {
   const cacheKey = query + '__gi' + (globalIndex || 0);
   if (_imgCache[cacheKey]) return _imgCache[cacheKey];
@@ -255,7 +288,9 @@ const _fetchActivityImage = async (query, globalIndex) => {
     } catch (_) {}
   }
 
-  return null;
+  const fallback = buildTripFallbackImageUrl(query, globalIndex);
+  _imgCache[cacheKey] = fallback;
+  return fallback;
 };
 
 function AccordionWidget({ title, icon: Icon, iconColor, defaultOpen = false, children }) {

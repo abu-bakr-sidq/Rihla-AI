@@ -71,6 +71,37 @@ function normalizeTravelStyle(raw) {
   return String(pickScalar(raw, "balanced") || "balanced").trim().toLowerCase() || "balanced";
 }
 
+function normalizeCostBreakdown(raw, fallback = {}) {
+  const source = raw && typeof raw === "object" ? raw : fallback;
+  const base = {
+    ...(fallback && typeof fallback === "object" ? fallback : {}),
+    ...(source && typeof source === "object" ? source : {}),
+  };
+  const toAmount = (value) => Math.max(0, Math.round(Number(value) || 0));
+  const total = toAmount(base.total);
+  if (!total) return base;
+
+  const weights = [
+    toAmount(base.stay),
+    toAmount(base.food),
+    toAmount(base.transport),
+    toAmount(base.activities),
+  ];
+  const weightTotal = weights.reduce((sum, value) => sum + value, 0) || 1;
+  const scaled = weights.map((value) => Math.round((value / weightTotal) * total));
+  const delta = total - scaled.reduce((sum, value) => sum + value, 0);
+  scaled[scaled.length - 1] += delta;
+
+  return {
+    ...base,
+    stay: scaled[0],
+    food: scaled[1],
+    transport: scaled[2],
+    activities: scaled[3],
+    total,
+  };
+}
+
 const STYLE_FALLBACK_THEMES = {
   luxury: ["Arrival & Signature Comfort", "Private Heritage Flow", "Dining & Design Districts", "Scenic Leisure", "Boutique Culture", "Soft Luxury", "Waterfront Indulgence", "Grand Finale"],
   cultural: ["Arrival & Historic Orientation", "Sacred Heritage Trail", "Museums & Story Layers", "Old Quarter Deep Dive", "Craft & Living Culture", "Archive Moments", "Architecture Details", "Farewell Through Heritage Streets"],
@@ -254,7 +285,7 @@ export const createTrip = async (req, res) => {
 
     // ── 2. Check cache ────────────────────────────────────────────────────────
     const cacheKey = buildCacheKey(destination, normDays, normBudget, normTravelStyle);
-    const cached = await TripCache.findOne({ cacheKey }).lean();
+    const cached = itinerary ? null : await TripCache.findOne({ cacheKey }).lean();
 
     if (cached) {
       console.log(`[TripCache] HIT for "${destination}" — serving instantly`);
@@ -280,7 +311,7 @@ export const createTrip = async (req, res) => {
         climate: cached.data.climate || {},
         realPlaces: cached.data.realPlaces || {},
         itinerary: cached.data.itinerary || [],
-        costBreakdown: cached.data.costBreakdown || {},
+        costBreakdown: normalizeCostBreakdown(cached.data.costBreakdown || {}),
         routeCoordinates: cached.data.routeCoordinates || [],
         preferences: { travelStyle: normTravelStyle, interests: normInterests, travelers: normTravelers, currency, specialRequests: preferences?.specialRequests || req.body.specialRequirements || "" },
         servedFromCache: true,
@@ -344,7 +375,10 @@ export const createTrip = async (req, res) => {
 
     // ── 5. Write to cache ─────────────────────────────────────────────────────
     const effectiveItinerary = itinerary || generatedPayload?.itinerary || [];
-    const effectiveCostBreakdown = costBreakdown || generatedPayload?.costBreakdown || {};
+    const effectiveCostBreakdown = normalizeCostBreakdown(
+      costBreakdown || generatedPayload?.costBreakdown || {},
+      generatedPayload?.costBreakdown || {}
+    );
 
     const cacheData = {
       itinerary: effectiveItinerary,

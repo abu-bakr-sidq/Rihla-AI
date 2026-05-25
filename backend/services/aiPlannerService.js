@@ -135,6 +135,12 @@ ${styleBlock}
     - For restaurants, specify the actual cuisine and signature dish
     - Weather-appropriate activities (if rainy → include indoor options)
 
+    - Maximum itinerary length is 30 days. If a request is longer, return exactly 30 days.
+    - Travel style is STRICT: every place, restaurant, pacing choice, and activity must match "${travelStyle}" only.
+    - Do NOT repeat the same place name, activity description, day title, route concept, or image-worthy stop across the itinerary.
+    - Every day must feel meaningfully different, with fresh neighborhoods, hidden gems, food stops, and experience types.
+    - Prefer exact Google Places-searchable place names; avoid invented venue names.
+
     Return ONLY this JSON structure (no markdown, no explanation):
     {
       "itinerary": [
@@ -160,6 +166,8 @@ ${styleBlock}
   }
 }`;
 
+  const maxTokens = Math.min(24000, Math.max(4096, Number(days || 1) * 900));
+
   const response = await ai.chat.completions.create({
     model: "grok-3-mini",
     messages: [
@@ -167,7 +175,7 @@ ${styleBlock}
       { role: "user", content: userPrompt },
     ],
     temperature: 0.65,
-    max_tokens: 4096,
+    max_tokens: maxTokens,
     response_format: { type: "json_object" },
   });
 
