@@ -806,11 +806,8 @@ export default function TripDetail() {
   const [exportingPreview, setExportingPreview] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
-  const [themeCurtain, setThemeCurtain] = useState(null);
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [detailTheme, setDetailTheme] = useState('dark');
-  const themeTransitionTimers = useRef([]);
 
   const deleteMutation = useDeleteTrip();
   const { toast } = useToast();
@@ -823,27 +820,12 @@ export default function TripDetail() {
     }
   }, [resolvedTheme, theme]);
 
-  useEffect(() => () => {
-    themeTransitionTimers.current.forEach((timer) => window.clearTimeout(timer));
-    themeTransitionTimers.current = [];
-  }, []);
-
   const handleDetailThemeToggle = () => {
     const nextTheme = detailTheme === 'light' ? 'dark' : 'light';
-    themeTransitionTimers.current.forEach((timer) => window.clearTimeout(timer));
-    themeTransitionTimers.current = [];
-    setIsThemeTransitioning(true);
-    setThemeCurtain(nextTheme);
-    themeTransitionTimers.current.push(window.setTimeout(() => {
-      startTransition(() => {
-        setDetailTheme(nextTheme);
-        setTheme(nextTheme);
-      });
-    }, 120));
-    themeTransitionTimers.current.push(window.setTimeout(() => {
-      setThemeCurtain(null);
-      setIsThemeTransitioning(false);
-    }, 380));
+    startTransition(() => {
+      setDetailTheme(nextTheme);
+      setTheme(nextTheme);
+    });
   };
 
   // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ Auth guard: only redirect once we KNOW user is not logged in ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬
@@ -949,16 +931,7 @@ export default function TripDetail() {
 
   return (
     <AppInnerLayout>
-      <div className={`trip-detail-shell ${isThemeTransitioning ? 'theme-transitioning' : ''} ${isLightDetail ? 'detail-light bg-[#eef4fb]' : 'detail-dark'} relative w-full min-h-screen pb-10 overflow-hidden transition-colors duration-300`}>
-        <div
-          className={`pointer-events-none absolute inset-0 z-[15] transition-opacity duration-200 ${themeCurtain ? 'opacity-100' : 'opacity-0'}`}
-          style={{
-            background: themeCurtain === 'light'
-              ? 'linear-gradient(180deg, rgba(248,251,255,0.94) 0%, rgba(238,244,248,0.97) 100%)'
-              : 'linear-gradient(180deg, rgba(11,23,40,0.92) 0%, rgba(7,17,29,0.97) 100%)',
-            backdropFilter: 'blur(10px)',
-          }}
-        />
+      <div className={`trip-detail-shell ${isLightDetail ? 'detail-light bg-[#eef4fb]' : 'detail-dark'} relative w-full min-h-screen pb-10 overflow-hidden transition-[background-color,color] duration-500`}>
         <div className="fixed inset-0 -z-10 overflow-hidden">
           {backgroundSlides.length > 0 ? (
             backgroundSlides.map((src, index) => (
@@ -968,11 +941,11 @@ export default function TripDetail() {
                 initial={{ opacity: 0 }}
                 animate={{
                   opacity: index === 0 ? 0.56 : 0.28,
-                  scale: isThemeTransitioning ? 1.04 : [1.04, 1.11, 1.04],
-                  x: isThemeTransitioning ? 0 : (index === 0 ? [0, -18, 0] : [0, 16, 0]),
-                  y: isThemeTransitioning ? 0 : (index === 0 ? [0, 12, 0] : [0, -14, 0]),
+                  scale: [1.04, 1.11, 1.04],
+                  x: index === 0 ? [0, -18, 0] : [0, 16, 0],
+                  y: index === 0 ? [0, 12, 0] : [0, -14, 0],
                 }}
-                transition={isThemeTransitioning ? { duration: 0.24, ease: "easeOut" } : { duration: index === 0 ? 24 : 28, repeat: Infinity, ease: "easeInOut" }}
+                transition={{ duration: index === 0 ? 24 : 28, repeat: Infinity, ease: "easeInOut" }}
               >
                 <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${src})` }} />
               </motion.div>
@@ -980,18 +953,18 @@ export default function TripDetail() {
           ) : (
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_34%),linear-gradient(180deg,#0b1728_0%,#07111d_100%)]" />
           )}
-          <div className={`absolute inset-0 transition-all duration-300 ${isLightDetail
+          <div className={`absolute inset-0 transition-all duration-500 ${isLightDetail
             ? 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.06),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.05),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(244,248,252,0.64)_42%,rgba(238,244,250,0.96)_100%)]'
             : 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.2),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.16),transparent_22%),linear-gradient(180deg,rgba(6,11,20,0.14)_0%,rgba(6,11,20,0.58)_45%,rgba(6,11,20,0.9)_100%)]'}`} />
           <motion.div
             className={`absolute -top-24 left-[8%] h-[300px] w-[300px] rounded-full blur-[90px] ${isLightDetail ? 'bg-[#38BDF8]/5' : 'bg-[#38BDF8]/10'}`}
-            animate={isThemeTransitioning ? { x: 0, y: 0, scale: 1 } : { x: [0, 44, 0], y: [0, 18, 0], scale: [1, 1.1, 1] }}
-            transition={isThemeTransitioning ? { duration: 0.24, ease: "easeOut" } : { duration: 18, repeat: Infinity, ease: "easeInOut" }}
+            animate={{ x: [0, 44, 0], y: [0, 18, 0], scale: [1, 1.1, 1] }}
+            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
             className={`absolute top-[18%] right-[10%] h-[240px] w-[240px] rounded-full blur-[82px] ${isLightDetail ? 'bg-[#D4AF37]/5' : 'bg-[#D4AF37]/10'}`}
-            animate={isThemeTransitioning ? { x: 0, y: 0, scale: 1 } : { x: [0, -32, 0], y: [0, 24, 0], scale: [1, 1.08, 1] }}
-            transition={isThemeTransitioning ? { duration: 0.24, ease: "easeOut" } : { duration: 20, repeat: Infinity, ease: "easeInOut" }}
+            animate={{ x: [0, -32, 0], y: [0, 24, 0], scale: [1, 1.08, 1] }}
+            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
           />
         </div>
 
