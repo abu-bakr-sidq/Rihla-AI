@@ -102,21 +102,22 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
 
   return (
     <div
-      className={`flex flex-col rounded-[20px] group transition-all duration-500 overflow-hidden cursor-pointer ${isSelected ? (isLight ? 'shadow-[0_0_0_2px_rgba(212,175,55,0.28),0_20px_48px_rgba(148,163,184,0.24)]' : 'shadow-[0_0_0_2px_rgba(212,175,55,0.35),0_12px_40px_rgba(0,0,0,0.6)]') : (isLight ? 'shadow-[0_12px_34px_rgba(148,163,184,0.16)] hover:shadow-[0_20px_40px_rgba(148,163,184,0.24)] hover:-translate-y-1' : 'shadow-[0_4px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:-translate-y-1')}`}
+      className={`flex flex-col rounded-[20px] group transition-[transform,box-shadow,border-color,background-color] duration-300 overflow-hidden cursor-pointer ${isSelected ? (isLight ? 'shadow-[0_0_0_2px_rgba(212,175,55,0.28),0_20px_48px_rgba(148,163,184,0.24)]' : 'shadow-[0_0_0_2px_rgba(212,175,55,0.35),0_12px_40px_rgba(0,0,0,0.6)]') : (isLight ? 'shadow-[0_12px_34px_rgba(148,163,184,0.16)] hover:shadow-[0_20px_40px_rgba(148,163,184,0.24)] hover:-translate-y-1' : 'shadow-[0_4px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:-translate-y-1')}`}
       style={{ background: isLight ? 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(241,245,249,0.98) 100%)' : '#0E1520', border: isSelected ? `1.5px solid ${accentColor}55` : (isLight ? '1px solid rgba(148,163,184,0.18)' : '1px solid rgba(255,255,255,0.07)') }}
       onClick={onClick}
     >
-      <div className={`relative w-full h-[190px] overflow-hidden shrink-0 ${isLight ? 'bg-slate-200' : 'bg-[#0F1623]'}`}>
+      <div className="relative w-full h-[190px] overflow-hidden shrink-0 bg-[#0F1623]">
         {imgSrc ? (
-          <img src={imgSrc} onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" alt={displayPlace} />
+          <img src={imgSrc} onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt={displayPlace} />
         ) : null}
-        <div className={`absolute top-0 inset-x-0 h-24 ${isLight ? 'bg-gradient-to-b from-white/26 via-white/8 to-transparent' : 'bg-gradient-to-b from-[#0E1520]/90 to-transparent'}`} />
-        <div className={`absolute bottom-0 inset-x-0 h-32 ${isLight ? 'bg-gradient-to-t from-[rgba(248,250,252,0.82)] via-[rgba(248,250,252,0.38)] to-transparent' : 'bg-gradient-to-t from-[#0E1520] via-[#0E1520]/60 to-transparent'}`} />
-        <div className="absolute top-3 left-3 backdrop-blur-xl px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg" style={{ background: isLight ? 'rgba(255,255,255,0.94)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(226,232,240,0.96)' : `1px solid ${accentColor}40` }}>
+        <div className={`absolute inset-0 transition-opacity duration-300 ${isLight ? 'opacity-100' : 'opacity-0'}`} style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 26%, rgba(255,255,255,0) 45%)' }} />
+        <div className={`absolute top-0 inset-x-0 h-24 ${isLight ? 'bg-gradient-to-b from-[rgba(8,15,27,0.22)] via-[rgba(8,15,27,0.08)] to-transparent' : 'bg-gradient-to-b from-[#0E1520]/90 to-transparent'}`} />
+        <div className={`absolute bottom-0 inset-x-0 h-32 ${isLight ? 'bg-gradient-to-t from-[rgba(8,15,27,0.72)] via-[rgba(8,15,27,0.26)] to-transparent' : 'bg-gradient-to-t from-[#0E1520] via-[#0E1520]/60 to-transparent'}`} />
+        <div className="absolute top-3 left-3 backdrop-blur-xl px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg transition-[background-color,border-color,color] duration-300" style={{ background: isLight ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(226,232,240,0.9)' : `1px solid ${accentColor}40` }}>
           {SlotIcon ? <SlotIcon size={12} strokeWidth={2.5} style={{ color: accentColor }} /> : null}
           <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: accentColor }}>{slotLabel}</span>
         </div>
-        <div className="absolute top-3 right-3 backdrop-blur-xl px-3 py-1.5 rounded-full shadow-lg" style={{ background: isLight ? 'rgba(255,255,255,0.96)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(203,213,225,0.92)' : '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="absolute top-3 right-3 backdrop-blur-xl px-3 py-1.5 rounded-full shadow-lg transition-[background-color,border-color,color] duration-300" style={{ background: isLight ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(203,213,225,0.88)' : '1px solid rgba(255,255,255,0.1)' }}>
           <span className={`text-[10px] font-black tracking-wider ${isLight ? 'text-slate-900' : 'text-white/90'}`}>{slotTime}</span>
         </div>
         <div
