@@ -56,17 +56,19 @@ export const Card = React.memo(
             }
           }}
         />
-      {/* Always-visible gradient label */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/12 to-transparent" />
+      {/* Keep labels readable even on bright destination photos. */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/42 to-transparent" />
       <div className="absolute bottom-0 left-0 right-0 p-4">
-        <div className="text-[14px] font-display italic font-black text-white uppercase tracking-tight leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-          {safeTitle}
-        </div>
-        {safeLocation && (
-          <div className="text-[#D4AF37] text-[8px] font-sans font-bold tracking-[0.35em] uppercase mt-1 opacity-80">
-            {safeLocation}
+        <div className="inline-flex max-w-full flex-col rounded-2xl bg-black/38 px-3 py-2 shadow-[0_14px_34px_rgba(0,0,0,0.42)] ring-1 ring-white/10 backdrop-blur-[2px]">
+          <div className="max-w-full truncate text-[14px] font-display italic font-black text-white uppercase tracking-tight leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
+            {safeTitle}
           </div>
-        )}
+          {safeLocation && (
+            <div className="mt-1 max-w-full truncate rounded-full border border-[#D4AF37]/35 bg-black/55 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.35em] text-[#FFE28A] shadow-[0_6px_18px_rgba(0,0,0,0.42)] [text-shadow:0_1px_5px_rgba(0,0,0,0.95)]">
+              {safeLocation}
+            </div>
+          )}
+        </div>
       </div>
 
       {isSelected && (
