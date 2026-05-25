@@ -1140,7 +1140,7 @@ function buildItinerary(fd) {
       ]
     );
     const slotWeights = dayBudgetProfile.slotWeights;
-    const slotCosts = splitByWeights(dayActivitiesBudget || 0, slotWeights);
+    const slotCosts = splitByWeights(dayTotals[i] || 0, slotWeights);
     const slots = fullSlotsList.reduce((acc, slotKey, si) => {
       const slot = baseCat[si];
       const act = getAct(slot);

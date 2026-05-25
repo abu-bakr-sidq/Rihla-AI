@@ -1408,7 +1408,7 @@ export function reconcileItineraryBudget(itinerary = {}, costBreakdown = {}) {
     );
     const existingSlots = BUDGET_SLOT_KEYS.filter((slotKey) => nextDay[slotKey]);
     const slotWeights = existingSlots.map((slotKey) => Math.max(1, parseCost(nextDay[slotKey]?.cost)));
-    const slotCosts = splitBudgetByWeights(dayActivities || 0, slotWeights);
+    const slotCosts = splitBudgetByWeights(dayTotals[dayIndex] || 0, slotWeights);
 
     existingSlots.forEach((slotKey, slotIndex) => {
       nextDay[slotKey] = {
