@@ -24,6 +24,7 @@ import AnoAI from "@/components/ui/animated-shader-background";
 import { Link } from "wouter";
 import DashboardSlideshow from "@/components/ui/DashboardSlideshow";
 import { format } from "date-fns";
+import { useTheme } from "next-themes";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { CalendarGrid, isDisabled } from "./planner";
 import { resolveApiUrl } from "@/lib/api-contract";
@@ -941,6 +942,7 @@ function AddPackageModal({ isOpen, onClose }) {
 export default function Admin() {
   const { data: user, isLoading: userLoading } = useUser();
   const { data: adminData, isLoading: adminLoading, refetch } = useAdmin();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const [localTheme, setLocalTheme] = useState("dark");
   const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
   const [themeCurtain, setThemeCurtain] = useState(null);
@@ -983,6 +985,14 @@ export default function Admin() {
   // Standard Hydration Fix for next-themes
   useEffect(() => { setMounted(true); }, []);
 
+  useEffect(() => {
+    if (!mounted) return;
+    const nextTheme = resolvedTheme || theme || "dark";
+    if (nextTheme === "light" || nextTheme === "dark") {
+      setLocalTheme(nextTheme);
+    }
+  }, [mounted, resolvedTheme, theme]);
+
   const activeTheme = mounted ? localTheme : "dark";
   const isDark = activeTheme === "dark";
 
@@ -999,6 +1009,7 @@ export default function Admin() {
     setThemeCurtain(nextTheme);
     themeTransitionTimers.current.push(window.setTimeout(() => {
       setLocalTheme(nextTheme);
+      setTheme(nextTheme);
     }, 120));
     themeTransitionTimers.current.push(window.setTimeout(() => {
       setThemeCurtain(null);

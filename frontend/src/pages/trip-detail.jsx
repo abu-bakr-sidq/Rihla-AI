@@ -12,6 +12,7 @@ import { api, buildUrl, resolveApiUrl } from '@/lib/api-contract';
 import { buildActivityDisplayContent, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, pickBestActivityPlace, reconcileItineraryBudget } from '@/lib/trip-itinerary';
 import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerTimesCard, TripPreviewCard } from '@/components/trip/EnhancedPanels';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { useTheme } from 'next-themes';
 import ThemeToggle from '@/components/ThemeToggle';
 
 function fmtCur(amount, currency = 'USD') {
@@ -807,10 +808,8 @@ export default function TripDetail() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
   const [themeCurtain, setThemeCurtain] = useState(null);
-  const [detailTheme, setDetailTheme] = useState(() => {
-    if (typeof window === 'undefined') return 'dark';
-    return localStorage.getItem('trip-detail-theme') || 'dark';
-  });
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  const [detailTheme, setDetailTheme] = useState('dark');
   const themeTransitionTimers = useRef([]);
 
   const deleteMutation = useDeleteTrip();
@@ -818,9 +817,11 @@ export default function TripDetail() {
   const isLightDetail = detailTheme === 'light';
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('trip-detail-theme', detailTheme);
-  }, [detailTheme]);
+    const nextTheme = resolvedTheme || theme || 'dark';
+    if (nextTheme === 'light' || nextTheme === 'dark') {
+      setDetailTheme(nextTheme);
+    }
+  }, [resolvedTheme, theme]);
 
   useEffect(() => () => {
     themeTransitionTimers.current.forEach((timer) => window.clearTimeout(timer));
@@ -836,6 +837,7 @@ export default function TripDetail() {
     themeTransitionTimers.current.push(window.setTimeout(() => {
       startTransition(() => {
         setDetailTheme(nextTheme);
+        setTheme(nextTheme);
       });
     }, 120));
     themeTransitionTimers.current.push(window.setTimeout(() => {

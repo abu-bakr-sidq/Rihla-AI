@@ -165,7 +165,13 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" forcedTheme="dark" defaultTheme="dark" enableSystem={false}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem={false}
+        storageKey="rihla-theme"
+        themes={["dark", "light"]}
+      >
         <TooltipProvider>
           <TripProvider>
             <div className="min-h-dvh w-full overflow-x-hidden bg-transparent text-foreground antialiased selection:bg-primary/30 relative">
