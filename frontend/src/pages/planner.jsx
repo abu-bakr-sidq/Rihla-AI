@@ -22,7 +22,7 @@ import { FocusCards } from "@/components/ui/focus-cards";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { ChatButton } from "@/components/ChatBot/ChatButton";
 import { exportTripPDF, downloadTripPDF } from "@/services/exportTripPDF";
-import { buildActivityDisplayContent, buildStreetFindChips, buildStyleAwareDayTheme, extractPlaceImageQuery, generatePlaceCardFallbackContent, getStyleTravelProfile, getTripPhase, normalizeLegacyArrayItinerary, resolvePlannedPlaceName } from "@/lib/trip-itinerary";
+import { buildActivityDisplayContent, buildStreetFindChips, buildStyleAwareDayTheme, extractPlaceImageQuery, generatePlaceCardFallbackContent, getStyleTravelProfile, getTripPhase, normalizeLegacyArrayItinerary, reconcileItineraryBudget, resolvePlannedPlaceName } from "@/lib/trip-itinerary";
 import { sanitizeVisibleText } from "@/lib/display-text";
 import { resolveApiUrl } from "@/lib/api-contract";
 import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerTimesCard, TripPreviewCard } from "@/components/trip/EnhancedPanels";
@@ -1091,7 +1091,7 @@ function buildExpandedActivityPool(items, category, needed, fd) {
 }
 
 function buildItinerary(fd) {
-  const daysNum = Math.max(1, Math.ceil((new Date(fd.endDate) - new Date(fd.startDate)) / 86400000));
+  const daysNum = Math.min(30, Math.max(1, Math.ceil((new Date(fd.endDate) - new Date(fd.startDate)) / 86400000)));
   fd.totalDaysHint = daysNum;
   const travelers = Math.max(1, Number(fd.travelers || fd.groupSize) || 1);
   const category = typeof fd.budgetCategory === "string"
@@ -1099,7 +1099,7 @@ function buildItinerary(fd) {
       : typeof fd.budget === "string"
       ? fd.budget
       : "moderate";
-  const budgetSummary = buildBudgetSummary(fd.destination, daysNum, category, travelers, fd.currency || "USD");
+  const budgetSummary = buildBudgetSummary(fd.destination, daysNum, category, travelers, fd.currency || "USD", fd.budget);
   const dayBudgetProfiles = buildDayBudgetProfiles(daysNum, fd.destination, fd.travelStyle);
   const dayStay = splitByWeights(budgetSummary.costBreakdown.stay, dayBudgetProfiles.map((profile) => profile.stayWeight));
   const dayFood = splitByWeights(budgetSummary.costBreakdown.food, dayBudgetProfiles.map((profile) => profile.foodWeight));
@@ -1743,14 +1743,20 @@ const buildDayBudgetProfiles = (days, destination = "", travelStyle = "") => {
   ));
 };
 
-const buildBudgetSummary = (destination, days, category, travelers = 1, currency = "USD") => {
+const buildBudgetSummary = (destination, days, category, travelers = 1, currency = "USD", explicitTotal = 0) => {
   const raw = calculateBudget(destination, days, category, travelers);
   const safeDays = Math.max(1, Number(days) || 1);
-  const stay = convertCurrency(raw.stayINR, currency);
-  const food = convertCurrency(raw.foodINR, currency);
-  const transport = convertCurrency(raw.transportINR, currency);
-  const activities = convertCurrency(raw.activitiesINR, currency);
-  const total = stay + food + transport + activities;
+  const requestedTotal = Math.max(0, Math.round(Number(explicitTotal) || 0));
+  const categoryStay = convertCurrency(raw.stayINR, currency);
+  const categoryFood = convertCurrency(raw.foodINR, currency);
+  const categoryTransport = convertCurrency(raw.transportINR, currency);
+  const categoryActivities = convertCurrency(raw.activitiesINR, currency);
+  const categoryTotal = categoryStay + categoryFood + categoryTransport + categoryActivities;
+  const total = requestedTotal || categoryTotal;
+  const splitSource = categoryTotal > 0
+    ? [categoryStay, categoryFood, categoryTransport, categoryActivities]
+    : [0.4, 0.24, 0.11, 0.25];
+  const [stay, food, transport, activities] = splitByWeights(total, splitSource);
 
   return {
     daily: Math.round(total / safeDays),
@@ -2619,7 +2625,7 @@ export default function Planner() {
     const s = new Date(formData.startDate);
     const e = new Date(formData.endDate);
     if (isNaN(s.getTime()) || isNaN(e.getTime())) return 0;
-    return Math.max(1, Math.ceil((e - s) / 86400000));
+    return Math.min(30, Math.max(1, Math.ceil((e - s) / 86400000)));
   };
 
   // Auto-set currency when destination changes
@@ -2631,13 +2637,21 @@ export default function Planner() {
 
   // Ref to prevent loop: set to true when we auto-push budget into formData
   const isAutoSettingBudget = useRef(false);
+  const isManualBudgetOverride = useRef(false);
 
   // AUTO-CALC: fires when destination / dates / category / currency / travelers changes
   useEffect(() => {
     const days = numDays();
     if (!formData.destination || days < 1) return;
     const groupSize = Math.max(1, formData.travelers || 1);
-    const summary = buildBudgetSummary(formData.destination, days, budgetCategory, groupSize, formData.currency);
+    const summary = buildBudgetSummary(
+      formData.destination,
+      days,
+      budgetCategory,
+      groupSize,
+      formData.currency,
+      isManualBudgetOverride.current ? formData.budget : 0
+    );
     setBudgetBreakdown({
       daily: summary.daily,
       food: summary.food,
@@ -2645,8 +2659,10 @@ export default function Planner() {
       other: summary.other,
       total: summary.total,
     });
-    isAutoSettingBudget.current = true;
-    setFormData(prev => ({ ...prev, budget: summary.total }));
+    if (!isManualBudgetOverride.current) {
+      isAutoSettingBudget.current = true;
+      setFormData(prev => ({ ...prev, budget: summary.total }));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.destination, formData.startDate, formData.endDate, budgetCategory, formData.currency, formData.travelers]);
 
@@ -3010,7 +3026,8 @@ export default function Planner() {
       Math.max(1, Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / 86400000)),
       budgetCategory,
       formData.travelers,
-      formData.currency
+      formData.currency,
+      formData.budget
     );
     const plannerPerfectItinerary = buildItinerary({ ...formData, budgetCategory });
 
@@ -3083,6 +3100,8 @@ export default function Planner() {
       finalCostInfo = backendRichItinerary || normalizedBackendItinerary
         ? (result?.costBreakdown || result?.itinerary?.total_budget || result?.total_budget || normalizedBackendItinerary?.total_budget || plannerBudgetSummary.costBreakdown)
         : (plannerPerfectItinerary?.total_budget || fallback.total_budget || plannerBudgetSummary.costBreakdown);
+      finalItin = reconcileItineraryBudget(finalItin, finalCostInfo || plannerBudgetSummary.costBreakdown);
+      finalCostInfo = finalItin?.total_budget || finalCostInfo || plannerBudgetSummary.costBreakdown;
       tripId = result?.id || result?._id || null;
 
       setGeneratedResult(finalItin);
@@ -3093,6 +3112,8 @@ export default function Planner() {
       await new Promise(r => setTimeout(r, 2800));
       finalItin = buildItinerary({ ...formData, budgetCategory });
       finalCostInfo = finalItin.total_budget || plannerBudgetSummary.costBreakdown;
+      finalItin = reconcileItineraryBudget(finalItin, finalCostInfo);
+      finalCostInfo = finalItin?.total_budget || finalCostInfo;
       setGeneratedResult(finalItin);
       setActiveDay(0);
       setActiveTime('morning');
@@ -3621,6 +3642,7 @@ export default function Planner() {
                               value={formData.budget > 0 ? String(formData.budget) : ""}
                               onChange={(e) => {
                                 let val = e.target.value.replace(/[^0-9]/g, "").replace(/^0+/, "");
+                                isManualBudgetOverride.current = true;
                                 setFormData({ ...formData, budget: val === "" ? 0 : Number(val) });
                               }}
                               className="bg-transparent border-none text-[2.2rem] md:text-[2.45rem] font-display font-black text-white focus:outline-none w-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -3644,6 +3666,7 @@ export default function Planner() {
                         <button
                           key={key}
                           onClick={() => {
+                            isManualBudgetOverride.current = false;
                             setBudgetCategory(key);
                             console.log("CATEGORY:", key);
                           }}

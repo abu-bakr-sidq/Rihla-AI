@@ -23,7 +23,7 @@ import { getTopPlaces } from "../services/placesService.js";
 
 function getDayCount(startDate, endDate) {
   if (!startDate || !endDate) return 7;
-  return Math.max(1, Math.ceil((new Date(endDate) - new Date(startDate)) / 86400000));
+  return Math.min(30, Math.max(1, Math.ceil((new Date(endDate) - new Date(startDate)) / 86400000)));
 }
 
 function withTimeout(promise, ms, label = "Operation") {
@@ -239,7 +239,7 @@ export const createTrip = async (req, res) => {
 
     const normBudget = normalizeBudget(budget);
     const normTravelStyle = normalizeTravelStyle(travelStyle);
-    const normDays = Number(days) || getDayCount(startDate, endDate) || 7;
+    const normDays = Math.min(30, Math.max(1, Number(days) || getDayCount(startDate, endDate) || 7));
     const normTravelers = Number(travelers) || 1;
     const normInterests = Array.isArray(interests) ? interests : [];
     const now = new Date();
@@ -497,7 +497,7 @@ export const generateAITrip = async (req, res) => {
 
     const normBudget = normalizeBudget(budget);
     const normTravelStyle = normalizeTravelStyle(travelStyle);
-    const normDays = Number(days) || getDayCount(startDate, endDate) || 7;
+    const normDays = Math.min(30, Math.max(1, Number(days) || getDayCount(startDate, endDate) || 7));
     const normInterests = Array.isArray(interests) ? interests : [];
     const normTravelers = Number(travelers) || 1;
 

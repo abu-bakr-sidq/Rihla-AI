@@ -9,7 +9,7 @@ import { exportTripPDF, downloadTripPDF } from '@/services/exportTripPDF';
 import { useDeleteTrip } from '@/hooks/use-trips';
 import { useToast } from '@/hooks/use-toast';
 import { api, buildUrl, resolveApiUrl } from '@/lib/api-contract';
-import { buildActivityDisplayContent, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, pickBestActivityPlace } from '@/lib/trip-itinerary';
+import { buildActivityDisplayContent, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, pickBestActivityPlace, reconcileItineraryBudget } from '@/lib/trip-itinerary';
 import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerTimesCard, TripPreviewCard } from '@/components/trip/EnhancedPanels';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -834,7 +834,7 @@ export default function TripDetail() {
   if (loading || userLoading) return <div className="min-h-screen bg-[#060B14] flex items-center justify-center"><div className="w-6 h-6 rounded-full border-2 border-[#D4AF37]/20 border-t-[#D4AF37] animate-spin" /></div>;
   if (error || !trip) return <div className="min-h-screen bg-[#060B14] flex items-center justify-center text-white">Error loading trip.</div>;
 
-  const res = Array.isArray(trip.itinerary)
+  const rawRes = Array.isArray(trip.itinerary)
     ? normalizeLegacyArrayItinerary(trip.itinerary, {
       destination: trip.destination,
       startDate: trip.startDate,
@@ -845,6 +845,7 @@ export default function TripDetail() {
       costBreakdown: trip.costBreakdown || {},
     })
     : trip.itinerary;
+  const res = reconcileItineraryBudget(rawRes, trip.costBreakdown || {});
   const ov = res?.trip_overview || {};
   const DEST = trip.destination || '';
   const DEST_SHORT = DEST.split(',')[0].trim();

@@ -1,13 +1,62 @@
 function parseCost(value) {
   if (value == null) return 0;
   if (typeof value === "number" && Number.isFinite(value)) return value;
-  const text = String(value).trim();
+  const text = String(value).trim().replace(/(?<=\d),(?=\d)/g, "");
   const parts = [...text.matchAll(/\d+(?:\.\d+)?/g)].map((match) => Number(match[0])).filter(Number.isFinite);
   if (!parts.length) return 0;
-  if (parts.length >= 2 && /[-–to]/i.test(text)) {
+  if (parts.length >= 2 && /(?:-|–|\bto\b)/i.test(text)) {
     return Math.round(parts.reduce((sum, part) => sum + part, 0) / parts.length);
   }
   return parts[0] || 0;
+}
+
+const BUDGET_SLOT_KEYS = ["morning", "morningActivity", "afternoon", "afternoonActivity", "evening", "eveningActivity", "night", "nightActivity"];
+
+function splitBudgetByWeights(total, weights = []) {
+  const safeTotal = Math.max(0, Math.round(Number(total) || 0));
+  const safeWeights = Array.isArray(weights) && weights.length ? weights : [1];
+  const totalWeight = safeWeights.reduce((sum, weight) => sum + Math.max(0, Number(weight) || 0), 0) || safeWeights.length;
+  const values = safeWeights.map((weight) => Math.floor((safeTotal * (Math.max(0, Number(weight) || 0) || 1)) / totalWeight));
+  let remainder = safeTotal - values.reduce((sum, value) => sum + value, 0);
+
+  for (let i = 0; i < values.length && remainder > 0; i += 1) {
+    values[i] += 1;
+    remainder -= 1;
+  }
+
+  return values;
+}
+
+function resolveBudgetParts(costBreakdown = {}, total = 0) {
+  const safeTotal = Math.max(0, Math.round(Number(total) || 0));
+  const stay = parseCost(costBreakdown?.stay);
+  const food = parseCost(costBreakdown?.food);
+  const transport = parseCost(costBreakdown?.transport);
+  const activities = parseCost(costBreakdown?.activities);
+  const partsTotal = stay + food + transport + activities;
+
+  if (safeTotal > 0 && partsTotal > 0) {
+    const scale = safeTotal / partsTotal;
+    const [finalStay, finalFood, finalTransport] = [stay, food, transport].map((value) => Math.max(0, Math.round(value * scale)));
+    return {
+      stay: finalStay,
+      food: finalFood,
+      transport: finalTransport,
+      activities: Math.max(0, safeTotal - finalStay - finalFood - finalTransport),
+      total: safeTotal,
+      currency: costBreakdown?.currency,
+    };
+  }
+
+  const [finalStay, finalFood, finalTransport, finalActivities] = splitBudgetByWeights(safeTotal, [0.4, 0.24, 0.11, 0.25]);
+  return {
+    stay: finalStay,
+    food: finalFood,
+    transport: finalTransport,
+    activities: finalActivities,
+    total: safeTotal,
+    currency: costBreakdown?.currency,
+  };
 }
 
 const DESTINATION_PLACE_LIBRARY = {
@@ -1248,6 +1297,57 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
   const startLabel = startDate ? new Date(startDate).toLocaleDateString("en-US") : "";
   const endLabel = endDate ? new Date(endDate).toLocaleDateString("en-US") : "";
   const computedTotal = normalizedDays.reduce((sum, day) => sum + (day.budget?.total || 0), 0);
+  const providedTotal = parseCost(costBreakdown?.total);
+  const finalTotal = providedTotal || computedTotal;
+  const finalParts = resolveBudgetParts({ ...costBreakdown, currency }, finalTotal);
+  const finalStay = finalParts.stay;
+  const finalFood = finalParts.food;
+  const finalTransport = finalParts.transport;
+  const finalActivities = finalParts.activities;
+
+  if (finalTotal > 0 && normalizedDays.length > 0) {
+    const safeDays = normalizedDays.length;
+    const weights = normalizedDays.map((day) => Math.max(1, Number(day.budget?.total) || 0));
+    const weightTotal = weights.reduce((sum, weight) => sum + weight, 0) || safeDays;
+    const allocate = (amount) => {
+      const total = Math.max(0, Math.round(Number(amount) || 0));
+      let used = 0;
+      return weights.map((weight, index) => {
+        if (index === safeDays - 1) return Math.max(0, total - used);
+        const value = Math.round((total * weight) / weightTotal);
+        used += value;
+        return value;
+      });
+    };
+    const dayStay = allocate(finalStay);
+    const dayFood = allocate(finalFood);
+    const dayTransport = allocate(finalTransport);
+    const dayActivities = allocate(finalActivities);
+    const slotKeysForBudget = slotKeys;
+
+    normalizedDays.forEach((day, dayIndex) => {
+      const activityBudget = dayActivities[dayIndex] || 0;
+      const slotWeights = slotKeysForBudget.map((slotKey) => Math.max(1, Number(day[slotKey]?.cost) || 0));
+      const slotWeightTotal = slotWeights.reduce((sum, weight) => sum + weight, 0) || slotKeysForBudget.length;
+      let usedSlotBudget = 0;
+      slotKeysForBudget.forEach((slotKey, slotIndex) => {
+        if (!day[slotKey]) return;
+        const value = slotIndex === slotKeysForBudget.length - 1
+          ? Math.max(0, activityBudget - usedSlotBudget)
+          : Math.round((activityBudget * slotWeights[slotIndex]) / slotWeightTotal);
+        usedSlotBudget += value;
+        day[slotKey].cost = value;
+      });
+      const total = (dayStay[dayIndex] || 0) + (dayFood[dayIndex] || 0) + (dayTransport[dayIndex] || 0) + activityBudget;
+      day.budget = {
+        stay: dayStay[dayIndex] || 0,
+        food: dayFood[dayIndex] || 0,
+        transport: dayTransport[dayIndex] || 0,
+        activities: activityBudget,
+        total,
+      };
+    });
+  }
 
   return {
     trip_overview: {
@@ -1256,16 +1356,16 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
       total_days: normalizedDays.length,
       travel_style: travelStyle,
       passengers: travelers,
-      budget: parseCost(costBreakdown?.total || computedTotal),
+      budget: finalTotal,
       currency,
     },
     days: normalizedDays,
     total_budget: {
-      stay: parseCost(costBreakdown?.stay),
-      food: parseCost(costBreakdown?.food),
-      transport: parseCost(costBreakdown?.transport),
-      activities: parseCost(costBreakdown?.activities) || computedTotal,
-      total: parseCost(costBreakdown?.total) || computedTotal,
+      stay: finalStay,
+      food: finalFood,
+      transport: finalTransport,
+      activities: finalActivities,
+      total: finalTotal,
       currency,
     },
     ai_suggestions: {
@@ -1275,6 +1375,69 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
       avoid: [],
     },
   };
+}
+
+export function reconcileItineraryBudget(itinerary = {}, costBreakdown = {}) {
+  if (!itinerary || typeof itinerary !== "object" || !Array.isArray(itinerary.days)) return itinerary;
+
+  const cloned = {
+    ...itinerary,
+    trip_overview: { ...(itinerary.trip_overview || {}) },
+    total_budget: { ...(itinerary.total_budget || {}) },
+    days: itinerary.days.map((day) => ({ ...day })),
+  };
+  const currency = costBreakdown?.currency || cloned.total_budget?.currency || cloned.trip_overview?.currency;
+  const total = parseCost(
+    costBreakdown?.total ||
+    cloned.total_budget?.total ||
+    cloned.trip_overview?.budget ||
+    cloned.days.reduce((sum, day) => sum + parseCost(day?.budget?.total), 0)
+  );
+
+  if (!total || !cloned.days.length) return cloned;
+
+  const parts = resolveBudgetParts({ ...cloned.total_budget, ...costBreakdown, currency }, total);
+  const dayWeights = cloned.days.map((day) => Math.max(1, parseCost(day?.budget?.total)));
+  const dayStay = splitBudgetByWeights(parts.stay, dayWeights);
+  const dayFood = splitBudgetByWeights(parts.food, dayWeights);
+  const dayTransport = splitBudgetByWeights(parts.transport, dayWeights);
+  const dayActivities = splitBudgetByWeights(parts.activities, dayWeights);
+
+  cloned.days = cloned.days.map((day, dayIndex) => {
+    const nextDay = { ...day };
+    const existingSlots = BUDGET_SLOT_KEYS.filter((slotKey) => nextDay[slotKey]);
+    const slotWeights = existingSlots.map((slotKey) => Math.max(1, parseCost(nextDay[slotKey]?.cost)));
+    const slotCosts = splitBudgetByWeights(dayActivities[dayIndex] || 0, slotWeights);
+
+    existingSlots.forEach((slotKey, slotIndex) => {
+      nextDay[slotKey] = {
+        ...nextDay[slotKey],
+        cost: slotCosts[slotIndex] || 0,
+      };
+    });
+
+    nextDay.budget = {
+      stay: dayStay[dayIndex] || 0,
+      food: dayFood[dayIndex] || 0,
+      transport: dayTransport[dayIndex] || 0,
+      activities: dayActivities[dayIndex] || 0,
+      total: (dayStay[dayIndex] || 0) + (dayFood[dayIndex] || 0) + (dayTransport[dayIndex] || 0) + (dayActivities[dayIndex] || 0),
+    };
+    return nextDay;
+  });
+
+  cloned.total_budget = {
+    ...parts,
+    currency,
+  };
+  cloned.trip_overview = {
+    ...cloned.trip_overview,
+    total_days: cloned.trip_overview.total_days || cloned.days.length,
+    budget: total,
+    currency,
+  };
+
+  return cloned;
 }
 
 export function getTripCardImageQuery(trip) {
