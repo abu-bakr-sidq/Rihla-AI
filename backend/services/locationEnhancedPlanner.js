@@ -1,5 +1,6 @@
 import { appendFileSync } from "fs";
 import OpenAI from "openai";
+import { getTopPlaces } from "./placesService.js";
 
 const EXTERNAL_FETCH_TIMEOUT_MS = 3000;
 const commonsImageCache = new Map();
@@ -15,6 +16,7 @@ const CROSS_LOCATION_CITIES = new Set([
 ]);
 
 const GENERIC_IMAGE_PATTERN = /(map(_of|s)|location_map|locator_map|blank_map|flag_of|coat_of_arms|logo|icon|symbol|emblem|seal_of|diagram|chart|graph|route_map|suburban_rail|metro_map|transit_map|system_map|network_map|scheme|transport_map|infrastructure|topology|connectivity|transportation_map|urban_rail|railway_map|transit_network|city_map|street_map|geographical_map|political_map|vector_map|interactive_map|transit_system|route_network|map_icon|transit_icon|navigation|gps_map|system_diagram|network_diagram|schematic|layout|blueprint|plan_of|topography|cartography)/i;
+const BAD_IMAGE_SUBJECT_PATTERN = /\b(cat|kitten|dog|puppy|pet|animal|motorcycle|bike|bicycle|scooter|helmet|car|truck|bus|train|auto rickshaw|toy|poster|selfie|portrait|people at home|indoor room)\b/i;
 const HARD_BLOCK_PLACE_PATTERN = /\b(police|police station|station house|substation|supermarket|grocery|hypermarket|department store|convenience store|hardware|warehouse|depot|wholesale|bus depot|vehicle yard|petrol pump|gas station|fuel station|atm|bank|clinic|hospital|medical|pharmacy|school|college|university|tuition|hostel|government office|municipal office|corporation office|passport office|court complex|jail|prison|cemetery|crematorium|dump yard|sewage|drain|warehouse|industrial estate)\b/i;
 const LOW_SIGNAL_PLACE_PATTERN = /\b(playground|mini park|municipal park|roadside|exterior only|surroundings|service road|bus stand|junction|intersection|parking|empty lot|market complex)\b/i;
 
@@ -405,6 +407,57 @@ function imageUrlPassesCrossLocationCheck(imageUrl, destination) {
   return true;
 }
 
+function imageMetadataLooksTravelRelevant(text = "", destination = "", placeTitle = "", category = "") {
+  const body = normalizeToken(text);
+  if (!body) return true;
+  if (BAD_IMAGE_SUBJECT_PATTERN.test(body)) return false;
+
+  const destinationTokens = keywordTokens(destination);
+  const placeTokens = keywordTokens(placeTitle);
+  const categoryTokens = keywordTokens(category);
+  const requiredTokens = [...placeTokens.slice(0, 3), ...destinationTokens.slice(0, 2)];
+  const categoryBoost = categoryTokens.some((token) => body.includes(token));
+  if (requiredTokens.length === 0) return !BAD_IMAGE_SUBJECT_PATTERN.test(body);
+  const hitCount = requiredTokens.filter((token) => body.includes(token)).length;
+  return hitCount >= 1 || categoryBoost;
+}
+
+function shouldAttachExternalImage(place = {}, destination = "") {
+  if (!place || place.synthetic) return false;
+  if (hasHardBlockedSignal(place)) return false;
+  const kind = inferPlaceKind(place);
+  if (kind === "generic") return false;
+  if (!place.title || /^local attraction$/i.test(String(place.title || "").trim())) return false;
+  if (normalizeToken(place.title).includes(normalizeToken(destination))) return true;
+  return ["temple", "museum", "beach", "waterfront", "nature", "stay", "wellness", "park", "food", "mall", "market", "neighborhood", "landmark", "culture"].includes(kind);
+}
+
+function normalizeSupplementalPlace(entry = {}, destination = "") {
+  const title = String(entry.title || entry.name || "").trim();
+  if (!title) return null;
+  const lat = Number(entry.lat);
+  const lng = Number(entry.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const destinationLabel = formatDisplayName(destination) || destination;
+  const category = inferPlaceKind({
+    title,
+    category: entry.category || "",
+    cuisine: entry.cuisine || "",
+    description: entry.description || "",
+  });
+  return {
+    title,
+    description: entry.description || `${title} is a real place in ${destinationLabel} suited to a ${category} stop.`,
+    lat,
+    lng,
+    imageUrl: null,
+    category,
+    cuisine: entry.cuisine || "",
+    tags: entry.tags || {},
+    area: entry.address || entry.area || "",
+  };
+}
+
 async function fetchCommonsImages(query, destination, placeTitle, limit = 8) {
   const cacheKey = `${normalizeToken(query)}::${normalizeToken(destination)}::${normalizeToken(placeTitle)}::${limit}`;
   if (commonsImageCache.has(cacheKey)) return commonsImageCache.get(cacheKey);
@@ -429,17 +482,19 @@ async function fetchCommonsImages(query, destination, placeTitle, limit = 8) {
       /\.(jpg|jpeg|png|webp)(\?|$)/i.test(item.imageUrl) &&
       !GENERIC_IMAGE_PATTERN.test(item.imageUrl) &&
       !GENERIC_IMAGE_PATTERN.test(item.title) &&
+      !BAD_IMAGE_SUBJECT_PATTERN.test(`${item.title} ${item.description} ${item.categories}`) &&
       imageUrlPassesCrossLocationCheck(item.imageUrl, destination)
     );
     const strict = normalized.filter((item) => {
       const meta = `${normalizeToken(item.title)} ${item.description} ${item.categories}`;
       const hasPlace = placeTokensArr.length === 0 || placeTokensArr.some((t) => meta.includes(t));
       const hasDest = destTokensArr.length === 0 || destTokensArr.some((t) => meta.includes(t));
-      return hasPlace && hasDest;
+      return hasPlace && hasDest && imageMetadataLooksTravelRelevant(meta, destination, placeTitle);
     }).map((i) => i.imageUrl);
     const relaxed = normalized.filter((item) => {
       const meta = `${normalizeToken(item.title)} ${item.description} ${item.categories}`;
-      return destTokensArr.length === 0 || destTokensArr.some((t) => meta.includes(t));
+      return (destTokensArr.length === 0 || destTokensArr.some((t) => meta.includes(t))) &&
+        imageMetadataLooksTravelRelevant(meta, destination, placeTitle);
     }).map((i) => i.imageUrl);
     const urls = strict.length > 0 ? strict : relaxed;
     const uniqueUrls = [...new Set(urls)].slice(0, limit);
@@ -460,6 +515,7 @@ async function fetchWikipediaSummaryImage(title) {
     const imageUrl = data?.originalimage?.source || data?.thumbnail?.source || null;
     if (!imageUrl || !/^https?:\/\//i.test(imageUrl)) return null;
     if (imageUrl && (GENERIC_IMAGE_PATTERN.test(imageUrl) || GENERIC_IMAGE_PATTERN.test(data.title))) return null;
+    if (BAD_IMAGE_SUBJECT_PATTERN.test(`${data?.title || ""} ${data?.description || ""} ${data?.extract || ""}`)) return null;
     return imageUrl;
   } catch (_error) {
     return null;
@@ -484,7 +540,7 @@ async function buildVerifiedImageSet(destination, placeTitle, fallbackImageUrl) 
     const destinationImage = await fetchWikipediaSummaryImage(destination);
     if (destinationImage) merged = [destinationImage];
   }
-  return merged.slice(0, 8);
+  return merged.filter((url) => imageUrlPassesCrossLocationCheck(url, destination)).slice(0, 8);
 }
 
 async function fetchWikipediaBulkThumbnails(titles) {
@@ -1162,15 +1218,15 @@ function makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle = 
   const destinationLabel = formatDisplayName(destination) || destination;
   const styleKey = resolveStyleProfileKey(travelStyle);
   const styleSlotNames = {
-    luxury: ["Signature Hotel Arrival", "Iconic Landmark Visit", "Refined Lunch Stop", "Boutique Culture Visit", "Scenic Lounge Moment", "Waterfront Evening Drive", "Fine Dining Reservation", "Suite Wind-Down"],
-    cultural: ["Old Quarter Orientation", "Sacred Landmark Visit", "Traditional Lunch Stop", "Museum Collection Visit", "Architecture Walk", "Craft Quarter Discovery", "Story-Led Dinner", "Heritage Night Stroll"],
-    adventure: ["Sunrise Trail Start", "Active Landmark Route", "Local Fuel Lunch", "Outdoor Push", "Viewpoint Reward", "Open-Air Exploration", "Recovery Dinner", "Easy Night Reset"],
-    cinematic: ["Golden-Light Arrival", "Panorama Walk", "Photo-Worthy Lunch", "Architecture Frames", "Blue-Hour Viewpoint", "Atmospheric Street Sequence", "Photo-Friendly Dinner", "Night Scene Close"],
-    urban: ["City Pulse Start", "Boulevard Discovery", "Market Lunch", "Design District Session", "Skyline View", "Lifestyle Neighborhood", "Modern Dining", "City Lights Close"],
-    wellness: ["Slow Sunrise Reset", "Garden or Spa Start", "Nourishing Lunch", "Quiet Culture Pause", "Waterfront Breathing Space", "Gentle Scenic Walk", "Restorative Dinner", "Calm Stay Finish"],
-    halal: ["Prayer-Aware Start", "Mosque Visit", "Halal Lunch Stop", "Family-Friendly Culture", "Comfortable Scenic Stop", "Market Without Rush", "Halal Dinner Window", "Quiet Reflection Close"],
-    coastal: ["Sea-Breeze Morning", "Promenade Walk", "Coastal Lunch", "Harbour Discovery", "Beach Golden Hour", "Waterfront Stroll", "Sea-View Dinner", "Shoreline Night Close"],
-    balanced: ["Sunrise Orientation", "Heritage Walk", "Local Lunch Discovery", "Museum or Craft Session", "Golden Hour Viewpoint", "Neighborhood Food Trail", "Night Lights Route", "Stay Wind-Down"],
+    luxury: ["Signature Arrival Window", "Iconic Landmark Chapter", "Luxury Lunch Window", "Boutique Culture Chapter", "Scenic Lounge Moment", "Waterfront Evening Chapter", "Fine Dining Window", "Suite Wind-Down"],
+    cultural: ["Old Quarter Orientation", "Sacred Landmark Chapter", "Traditional Lunch Window", "Museum Collection Chapter", "Architecture Walk", "Craft Quarter Chapter", "Story-Led Dinner", "Heritage Night Stroll"],
+    adventure: ["Sunrise Trail Start", "Active Landmark Route", "Fuel-Up Lunch Window", "Outdoor Push", "Viewpoint Reward", "Open-Air Exploration", "Recovery Dinner", "Easy Night Reset"],
+    cinematic: ["Golden-Light Arrival", "Panorama Walk", "Photo-Worthy Lunch Window", "Architecture Frames", "Blue-Hour Viewpoint", "Atmospheric Street Sequence", "Photo-Friendly Dinner", "Night Scene Close"],
+    urban: ["City Pulse Start", "Boulevard Discovery", "Market Lunch Window", "Design District Chapter", "Skyline View", "Lifestyle Neighborhood", "Modern Dining", "City Lights Close"],
+    wellness: ["Slow Sunrise Reset", "Garden or Spa Start", "Nourishing Lunch Window", "Quiet Culture Pause", "Waterfront Breathing Space", "Gentle Scenic Walk", "Restorative Dinner", "Calm Stay Finish"],
+    halal: ["Prayer-Aware Start", "Mosque Visit", "Halal Lunch Window", "Family-Friendly Culture", "Comfortable Scenic Stop", "Market Without Rush", "Halal Dinner Window", "Quiet Reflection Close"],
+    coastal: ["Sea-Breeze Morning", "Promenade Walk", "Coastal Lunch Window", "Harbour Discovery", "Beach Golden Hour", "Waterfront Stroll", "Sea-View Dinner", "Shoreline Night Close"],
+    balanced: ["Sunrise Orientation", "Heritage Walk", "Local Lunch Window", "Museum or Craft Chapter", "Golden Hour Viewpoint", "Neighborhood Food Trail", "Night Lights Route", "Stay Wind-Down"],
   };
   const slotName = (styleSlotNames[styleKey] || styleSlotNames.balanced)[slot] || "City Exploration";
   const categoryByStyle = {
@@ -1186,7 +1242,7 @@ function makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle = 
   };
   return {
     title: `${destinationLabel} ${slotName}`,
-    description: `A curated ${slotName.toLowerCase()} in ${destinationLabel}, shaped for a ${styleKey} travel style when live local data is limited.`,
+    description: `A placeholder ${slotName.toLowerCase()} in ${destinationLabel}, used only when verified local place data is limited for a ${styleKey} itinerary.`,
     lat: Number((fallbackBase.lat + seededOffset(day * 31 + slot * 7)).toFixed(6)),
     lng: Number((fallbackBase.lng + seededOffset(day * 37 + slot * 11)).toFixed(6)),
     imageUrl: null,
@@ -1276,6 +1332,7 @@ function shouldUseWikipediaThumb(place = {}) {
   if (!place || place.synthetic) return false;
   const source = normalizeToken(`${place.title || ""} ${place.description || ""} ${place.category || ""}`);
   if (hasHardBlockedSignal(place)) return false;
+  if (BAD_IMAGE_SUBJECT_PATTERN.test(source)) return false;
   if (/\b(route|arrival|reset|close|stop|session|district lunch|discovery|wind down|night close)\b/.test(source)) return false;
   return true;
 }
@@ -1476,11 +1533,19 @@ export async function createCityItinerary(destination, days, budget, travelStyle
     if (usingCurated) {
       places = curatedPlaces;
     } else if (geo) {
-      const [osmPlaces, wikiPlaces] = await Promise.all([
+      const [osmPlaces, wikiPlaces, nearbyRealPlaces] = await Promise.all([
         fetchOsmPlacesNear(destination, geo, travelStyle, targetPoolSize),
-        fetchWikiPlacesNear(destination, geo.lat, geo.lng, searchRadiusM, Math.max(80, targetPoolSize))
+        fetchWikiPlacesNear(destination, geo.lat, geo.lng, searchRadiusM, Math.max(80, targetPoolSize)),
+        getTopPlaces(geo.lat, geo.lng, destination).catch(() => null),
       ]);
-      places = uniqueBy([...osmPlaces, ...wikiPlaces], (p) => normalizeToken(p.title));
+      const supplementalPlaces = [
+        ...(nearbyRealPlaces?.attractions || []),
+        ...(nearbyRealPlaces?.restaurants || []),
+        ...(nearbyRealPlaces?.hotels || []),
+      ]
+        .map((entry) => normalizeSupplementalPlace(entry, destination))
+        .filter(Boolean);
+      places = uniqueBy([...osmPlaces, ...wikiPlaces, ...supplementalPlaces], (p) => normalizeToken(p.title));
     }
     
     if (geo && !usingCurated) {
@@ -1492,8 +1557,11 @@ export async function createCityItinerary(destination, days, budget, travelStyle
     places = uniqueBy(places, (p) => normalizeToken(p.title));
 
     const fallbackBase = geo ? { lat: geo.lat, lng: geo.lng } : { lat: 0, lng: 0 };
-    if (places.length < 3) {
-      places = buildSyntheticPlacePool(destination, days, travelStyle, fallbackBase);
+    if (places.length < 8) {
+      places = uniqueBy(
+        [...places, ...buildSyntheticPlacePool(destination, days, travelStyle, fallbackBase)],
+        (p) => normalizeToken(p.title)
+      );
     }
 
     const placeImageCache = new Map();
@@ -1501,15 +1569,20 @@ export async function createCityItinerary(destination, days, budget, travelStyle
     const lastDayUsed = new Map();
 
     if (usingCurated || places.some((p) => !p.imageUrl)) {
-      const wikiThumbs = await fetchWikipediaBulkThumbnails(places.map((p) => p.title));
+      const wikiThumbs = await fetchWikipediaBulkThumbnails(places.filter((p) => shouldAttachExternalImage(p, destination)).map((p) => p.title));
       for (const p of places) {
         const key = normalizeToken(p.title);
-        const wikiThumb = shouldUseWikipediaThumb(p) ? wikiThumbs.get(key) : null;
-        placeImageCache.set(key, [p.imageUrl, wikiThumb, createStaticMapImageUrl(p.lat, p.lng, 15, p.title)].filter(Boolean));
+        let images = [];
+        if (shouldAttachExternalImage(p, destination)) {
+          const wikiThumb = shouldUseWikipediaThumb(p) ? wikiThumbs.get(key) : null;
+          images = await buildVerifiedImageSet(destination, p.title, p.imageUrl || wikiThumb || null);
+        }
+        placeImageCache.set(key, uniqueBy(images.filter(Boolean), (url) => String(url).toLowerCase()));
       }
     } else {
       for (const p of places) {
-        placeImageCache.set(normalizeToken(p.title), [p.imageUrl, createStaticMapImageUrl(p.lat, p.lng, 15, p.title)].filter(Boolean));
+        const images = shouldAttachExternalImage(p, destination) ? await buildVerifiedImageSet(destination, p.title, p.imageUrl || null) : [];
+        placeImageCache.set(normalizeToken(p.title), uniqueBy(images.filter(Boolean), (url) => String(url).toLowerCase()));
       }
     }
 
@@ -1540,12 +1613,12 @@ export async function createCityItinerary(destination, days, budget, travelStyle
           : filterSlotPoolByQuality(slotBasePlaces.length ? slotBasePlaces : rotatedPlaces, travelStyle, slotName, day, days, slot);
         const place = pickPlaceForSlot(relaxedPool, dayUsedKeys, globalUsage, lastDayUsed, travelStyle, slotName, day, days, slot) || makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle);
         const key = normalizeToken(place.title);
-        const images = placeImageCache.get(key) || [createStaticMapImageUrl(place.lat, place.lng, 14, place.title)];
+        const images = placeImageCache.get(key) || [];
         activities.push(makePlaceActivity({
           ...place,
           title: formatDisplayName(place.title),
           description: `${normalizePlaceDescription(place.description, destination)} This stop supports the day's ${dayTheme.toLowerCase()} rhythm.`,
-          imageUrl: images[0],
+          imageUrl: images[0] || null,
           imageAlternatives: images.slice(1)
         }, destination, budget, slot, travelStyle, interests, day, days, dayTheme));
       }
