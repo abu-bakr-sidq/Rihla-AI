@@ -68,10 +68,12 @@ const CHENNAI_CURATED_PLACES = [
   { title: "Chennai Lighthouse", area: "Marina", category: "landmark", lat: 13.0484, lng: 80.2821 },
   { title: "Parthasarathy Temple", area: "Triplicane", category: "temple", lat: 13.0527, lng: 80.2793 },
   { title: "Triplicane Heritage Streets", area: "Triplicane", category: "neighborhood", lat: 13.0558, lng: 80.2767 },
+  { title: "Wallajah Mosque", area: "Triplicane", category: "temple", lat: 13.0615, lng: 80.2759 },
   { title: "Chepauk Stadium Exterior", area: "Chepauk", category: "landmark", lat: 13.0636, lng: 80.2805 },
   { title: "Government Museum Chennai", area: "Egmore", category: "museum", lat: 13.0723, lng: 80.2649 },
   { title: "Museum Theatre Egmore", area: "Egmore", category: "museum", lat: 13.0718, lng: 80.2643 },
   { title: "Connemara Public Library", area: "Egmore", category: "museum", lat: 13.0713, lng: 80.2638 },
+  { title: "Thousand Lights Mosque", area: "Royapettah", category: "temple", lat: 13.0586, lng: 80.2642 },
   { title: "Ripon Building", area: "Park Town", category: "landmark", lat: 13.0813, lng: 80.2746 },
   { title: "Chennai Central Railway Heritage Facade", area: "Park Town", category: "landmark", lat: 13.0826, lng: 80.2754 },
   { title: "Fort St. George", area: "George Town", category: "landmark", lat: 13.0796, lng: 80.2871 },
@@ -89,6 +91,9 @@ const CHENNAI_CURATED_PLACES = [
   { title: "Panagal Park", area: "T Nagar", category: "park", lat: 13.0412, lng: 80.2345 },
   { title: "Kodambakkam Bridge View", area: "Kodambakkam", category: "landmark", lat: 13.0565, lng: 80.2305 },
   { title: "Vadapalani Murugan Temple", area: "Vadapalani", category: "temple", lat: 13.0517, lng: 80.2125 },
+  { title: "Buhari Mount Road", area: "Mount Road", category: "food", lat: 13.0631, lng: 80.2617 },
+  { title: "Palmshore Restaurant", area: "Triplicane", category: "food", lat: 13.0572, lng: 80.2758 },
+  { title: "Zaitoon Restaurant", area: "Anna Nagar", category: "food", lat: 13.0842, lng: 80.2166 },
   { title: "Chetpet Eco Park", area: "Chetpet", category: "park", lat: 13.074, lng: 80.2442 },
   { title: "Anna Nagar Tower Park", area: "Anna Nagar", category: "park", lat: 13.0855, lng: 80.2109 },
   { title: "VR Chennai", area: "Anna Nagar West", category: "mall", lat: 13.0719, lng: 80.1947 },
@@ -191,6 +196,7 @@ function buildCuratedPlaceDescription(place, destinationLabel) {
     museum: `${title} is a well-known museum and culture stop in ${area}, ${destinationLabel}, with strong educational value.`,
     park: `${title} is a green urban break in ${area}, ${destinationLabel}, ideal for relaxed walks and local leisure time.`,
     market: `${title} is a lively market zone in ${area}, ${destinationLabel}, suitable for street exploration and local shopping.`,
+    food: `${title} is a practical dining stop in ${area}, ${destinationLabel}, useful for regional food and comfortable meal planning.`,
     waterfront: `${title} offers a strong waterfront atmosphere in ${area}, ${destinationLabel}, with practical nearby routes.`,
     culture: `${title} is a culture-focused stop in ${area}, ${destinationLabel}, useful for heritage-oriented exploration.`,
     mall: `${title} is a major commercial hub in ${area}, ${destinationLabel}, with dining and shopping options.`,
@@ -827,26 +833,60 @@ function isPlaceExcludedForStyle(place = {}, travelStyle = "") {
   const styleKey = resolveStyleProfileKey(travelStyle);
   const source = normalizeToken(`${place.title || ""} ${place.description || ""} ${place.category || ""} ${Object.entries(place.tags || {}).map(([key, value]) => `${key} ${value}`).join(" ")}`);
   if (styleKey === "halal" && /(bar|pub|club|nightclub|wine|brewery|cocktail|casino|liquor|alcohol)/.test(source)) return true;
+  if (styleKey === "halal" && /( vr chennai |marketcity|shopping centre|shopping center|\bmall\b)/.test(` ${source} `)) return true;
+  if (styleKey === "halal" && inferPlaceKind(place) === "mall") return true;
   if (styleKey === "wellness" && /(nightclub|casino|liquor|cocktail)/.test(source)) return true;
   return false;
 }
 
 function scorePlaceForStyle(place, travelStyle, slotName, day, totalDays) {
   const profile = getStyleProfile(travelStyle);
+  const styleKey = resolveStyleProfileKey(travelStyle);
   const desired = profile.slotCategories?.[slotName] || profile.slotCategories?.morning || [];
   const kind = inferPlaceKind(place);
+  const source = normalizeToken(`${place.title || ""} ${place.description || ""} ${place.category || ""} ${Object.entries(place.tags || {}).map(([key, value]) => `${key} ${value}`).join(" ")}`);
   let score = 0;
   if (desired.includes(kind)) score += 8;
-  if (kind === "waterfront" && /coastal|cinematic|luxury/.test(resolveStyleProfileKey(travelStyle))) score += 4;
-  if (kind === "temple" && /cultural|halal|wellness/.test(resolveStyleProfileKey(travelStyle))) score += 4;
-  if (kind === "market" && /urban|halal|cultural/.test(resolveStyleProfileKey(travelStyle))) score += 3;
-  if (kind === "mall" && /luxury|urban/.test(resolveStyleProfileKey(travelStyle))) score += 4;
-  if (kind === "park" && /wellness|adventure|cinematic|coastal/.test(resolveStyleProfileKey(travelStyle))) score += 3;
-  if (kind === "nature" && /wellness|adventure|cinematic|coastal/.test(resolveStyleProfileKey(travelStyle))) score += 4;
-  if (kind === "museum" && /cultural|urban|luxury/.test(resolveStyleProfileKey(travelStyle))) score += 3;
-  if (kind === "food" && /halal|luxury|urban|balanced|coastal/.test(resolveStyleProfileKey(travelStyle))) score += 4;
-  if (kind === "landmark" && /cultural|luxury|urban|halal|balanced/.test(resolveStyleProfileKey(travelStyle))) score += 2;
-  if (kind === "beach" && /coastal|cinematic|wellness/.test(resolveStyleProfileKey(travelStyle))) score += 4;
+  if (kind === "waterfront" && /coastal|cinematic|luxury/.test(styleKey)) score += 4;
+  if (kind === "temple" && /cultural|halal|wellness/.test(styleKey)) score += 4;
+  if (kind === "market" && /urban|halal|cultural/.test(styleKey)) score += 3;
+  if (kind === "mall" && /luxury|urban/.test(styleKey)) score += 4;
+  if (kind === "park" && /wellness|adventure|cinematic|coastal/.test(styleKey)) score += 3;
+  if (kind === "nature" && /wellness|adventure|cinematic|coastal/.test(styleKey)) score += 4;
+  if (kind === "museum" && /cultural|urban|luxury/.test(styleKey)) score += 3;
+  if (kind === "food" && /halal|luxury|urban|balanced|coastal/.test(styleKey)) score += 4;
+  if (kind === "landmark" && /cultural|luxury|urban|halal|balanced/.test(styleKey)) score += 2;
+  if (kind === "beach" && /coastal|cinematic|wellness/.test(styleKey)) score += 4;
+
+  if (styleKey === "halal") {
+    if (kind === "temple") score += 12;
+    if (kind === "food") score += 10;
+    if (kind === "market" || kind === "park" || kind === "neighborhood") score += 4;
+    if (/mosque|masjid|halal|family/.test(source)) score += 10;
+    if (kind === "mall") score -= 8;
+    if (kind === "beach" || kind === "waterfront") score -= 3;
+  } else if (styleKey === "luxury") {
+    if (kind === "mall" || kind === "food" || kind === "museum" || kind === "waterfront") score += 6;
+    if (kind === "market") score -= 2;
+    if (kind === "nature") score -= 2;
+  } else if (styleKey === "adventure") {
+    if (kind === "nature" || kind === "park" || kind === "waterfront" || kind === "beach") score += 7;
+    if (kind === "mall" || kind === "museum") score -= 5;
+  } else if (styleKey === "coastal") {
+    if (kind === "beach" || kind === "waterfront") score += 10;
+    if (kind === "mall") score -= 5;
+    if (kind === "museum") score -= 2;
+  } else if (styleKey === "wellness") {
+    if (kind === "park" || kind === "nature" || kind === "temple" || kind === "food") score += 6;
+    if (kind === "mall") score -= 6;
+  } else if (styleKey === "urban") {
+    if (kind === "market" || kind === "mall" || kind === "food" || kind === "neighborhood") score += 6;
+    if (kind === "nature") score -= 3;
+  } else if (styleKey === "cultural") {
+    if (kind === "temple" || kind === "museum" || kind === "landmark" || kind === "market") score += 6;
+    if (kind === "mall") score -= 4;
+  }
+
   const phase = getTripPhase(day, totalDays);
   if (phase === "arrival" && /landmark|waterfront|park/.test(kind)) score += 2;
   if (phase === "reset" && /park|waterfront|beach|culture/.test(kind)) score += 2;
