@@ -15,6 +15,8 @@ const CROSS_LOCATION_CITIES = new Set([
 ]);
 
 const GENERIC_IMAGE_PATTERN = /(map(_of|s)|location_map|locator_map|blank_map|flag_of|coat_of_arms|logo|icon|symbol|emblem|seal_of|diagram|chart|graph|route_map|suburban_rail|metro_map|transit_map|system_map|network_map|scheme|transport_map|infrastructure|topology|connectivity|transportation_map|urban_rail|railway_map|transit_network|city_map|street_map|geographical_map|political_map|vector_map|interactive_map|transit_system|route_network|map_icon|transit_icon|navigation|gps_map|system_diagram|network_diagram|schematic|layout|blueprint|plan_of|topography|cartography)/i;
+const HARD_BLOCK_PLACE_PATTERN = /\b(police|police station|station house|substation|supermarket|grocery|hypermarket|department store|convenience store|hardware|warehouse|depot|wholesale|bus depot|vehicle yard|petrol pump|gas station|fuel station|atm|bank|clinic|hospital|medical|pharmacy|school|college|university|tuition|hostel|government office|municipal office|corporation office|passport office|court complex|jail|prison|cemetery|crematorium|dump yard|sewage|drain|warehouse|industrial estate)\b/i;
+const LOW_SIGNAL_PLACE_PATTERN = /\b(playground|mini park|municipal park|roadside|exterior only|surroundings|service road|bus stand|junction|intersection|parking|empty lot|market complex)\b/i;
 
 const CURATED_CITY_CENTERS = {
   chennai: {
@@ -48,6 +50,28 @@ const CURATED_CITY_CENTERS = {
       north: 48.92,
       west: 2.22,
       east: 2.43
+    }
+  },
+  "new-york": {
+    lat: 40.7128,
+    lng: -74.006,
+    displayName: "New York City, New York",
+    boundingBox: {
+      south: 40.67,
+      north: 40.83,
+      west: -74.06,
+      east: -73.90
+    }
+  },
+  pondicherry: {
+    lat: 11.9416,
+    lng: 79.8083,
+    displayName: "Puducherry, India",
+    boundingBox: {
+      south: 11.86,
+      north: 12.04,
+      west: 79.76,
+      east: 79.87
     }
   }
 };
@@ -165,6 +189,50 @@ const PARIS_CURATED_PLACES = [
   { title: "Mian Bar", area: "10th Arrondissement", category: "food", lat: 48.8721, lng: 2.3586 }
 ];
 
+const NEW_YORK_CURATED_PLACES = [
+  { title: "The Plaza Hotel", area: "Midtown Manhattan", category: "stay", lat: 40.7644, lng: -73.9747 },
+  { title: "The St. Regis New York", area: "Midtown Manhattan", category: "stay", lat: 40.7616, lng: -73.9744 },
+  { title: "The Metropolitan Museum of Art", area: "Upper East Side", category: "museum", lat: 40.7794, lng: -73.9632 },
+  { title: "Museum of Modern Art", area: "Midtown Manhattan", category: "museum", lat: 40.7614, lng: -73.9776 },
+  { title: "Central Park Bethesda Terrace", area: "Central Park", category: "park", lat: 40.774, lng: -73.9701 },
+  { title: "Brooklyn Bridge Promenade", area: "Lower Manhattan", category: "waterfront", lat: 40.7061, lng: -73.9969 },
+  { title: "Top of the Rock", area: "Midtown Manhattan", category: "landmark", lat: 40.7591, lng: -73.9799 },
+  { title: "Empire State Building", area: "Midtown Manhattan", category: "landmark", lat: 40.7484, lng: -73.9857 },
+  { title: "Statue of Liberty Viewpoint", area: "Battery Park", category: "waterfront", lat: 40.7033, lng: -74.017 },
+  { title: "Rockefeller Center", area: "Midtown Manhattan", category: "landmark", lat: 40.7587, lng: -73.9787 },
+  { title: "SoHo Cast-Iron District", area: "SoHo", category: "neighborhood", lat: 40.7233, lng: -74.003 },
+  { title: "Fifth Avenue Luxury Boutiques", area: "Midtown Manhattan", category: "mall", lat: 40.7608, lng: -73.9758 },
+  { title: "Madison Avenue Designer Row", area: "Upper East Side", category: "mall", lat: 40.7666, lng: -73.9697 },
+  { title: "The High Line", area: "Chelsea", category: "park", lat: 40.748, lng: -74.0048 },
+  { title: "DUMBO Waterfront", area: "Brooklyn", category: "waterfront", lat: 40.7033, lng: -73.9881 },
+  { title: "The River Cafe", area: "Brooklyn", category: "food", lat: 40.7037, lng: -73.9947 },
+  { title: "Peak at Hudson Yards", area: "Hudson Yards", category: "food", lat: 40.7538, lng: -74.0025 },
+  { title: "The Morgan Library & Museum", area: "Murray Hill", category: "museum", lat: 40.7493, lng: -73.9817 },
+  { title: "Grand Central Terminal Main Concourse", area: "Midtown Manhattan", category: "landmark", lat: 40.7527, lng: -73.9772 },
+  { title: "Lincoln Center Plaza", area: "Upper West Side", category: "culture", lat: 40.7725, lng: -73.9835 }
+];
+
+const PONDICHERRY_CURATED_PLACES = [
+  { title: "Promenade Beach", area: "White Town", category: "waterfront", lat: 11.9344, lng: 79.8368 },
+  { title: "Rock Beach", area: "White Town", category: "waterfront", lat: 11.9357, lng: 79.8342 },
+  { title: "Sri Aurobindo Ashram", area: "White Town", category: "temple", lat: 11.9368, lng: 79.8347 },
+  { title: "French Quarter Heritage Streets", area: "White Town", category: "neighborhood", lat: 11.9349, lng: 79.8329 },
+  { title: "Basilica of the Sacred Heart of Jesus", area: "Puducherry", category: "temple", lat: 11.9292, lng: 79.8196 },
+  { title: "Immaculate Conception Cathedral", area: "Mission Street", category: "temple", lat: 11.9319, lng: 79.8179 },
+  { title: "Puducherry Museum", area: "Saint Louis Street", category: "museum", lat: 11.9352, lng: 79.8308 },
+  { title: "Bharathi Park", area: "White Town", category: "park", lat: 11.9345, lng: 79.8306 },
+  { title: "Aayi Mandapam", area: "Bharathi Park", category: "landmark", lat: 11.9343, lng: 79.8309 },
+  { title: "Auroville Matrimandir Viewpoint", area: "Auroville", category: "landmark", lat: 12.0054, lng: 79.8099 },
+  { title: "Serenity Beach", area: "Kottakuppam", category: "beach", lat: 11.9676, lng: 79.8466 },
+  { title: "Paradise Beach Boat Jetty", area: "Chunnambar", category: "waterfront", lat: 11.8786, lng: 79.8146 },
+  { title: "Le Dupleix Courtyard", area: "White Town", category: "stay", lat: 11.9314, lng: 79.8343 },
+  { title: "Villa Shanti Courtyard", area: "White Town", category: "food", lat: 11.9342, lng: 79.8326 },
+  { title: "Cafe des Arts", area: "White Town", category: "food", lat: 11.9342, lng: 79.8279 },
+  { title: "La Villa Heritage Dining", area: "White Town", category: "food", lat: 11.9348, lng: 79.8297 },
+  { title: "Goubert Market", area: "MG Road", category: "market", lat: 11.9332, lng: 79.8158 },
+  { title: "Jawahar Toy Museum", area: "White Town", category: "museum", lat: 11.9349, lng: 79.8313 }
+];
+
 function logDebug(msg) {
   try {
     const timestamp = new Date().toISOString();
@@ -189,6 +257,8 @@ function detectCuratedCityKey(destination) {
   if (d.includes("chennai") || d.includes("madras")) return "chennai";
   if (d.includes("london")) return "london";
   if (d.includes("paris")) return "paris";
+  if (d.includes("new york") || d.includes("newyork") || d.includes("nyc") || d.includes("manhattan")) return "new-york";
+  if (d.includes("pondicherry") || d.includes("puducherry")) return "pondicherry";
   return null;
 }
 
@@ -247,6 +317,28 @@ function getCuratedCityPlaces(destination) {
   }
   if (key === "paris") {
     return PARIS_CURATED_PLACES.map((place) => ({
+      title: place.title,
+      description: buildCuratedPlaceDescription(place, destinationLabel),
+      lat: Number(place.lat),
+      lng: Number(place.lng),
+      imageUrl: null,
+      area: place.area,
+      category: place.category
+    }));
+  }
+  if (key === "new-york") {
+    return NEW_YORK_CURATED_PLACES.map((place) => ({
+      title: place.title,
+      description: buildCuratedPlaceDescription(place, destinationLabel),
+      lat: Number(place.lat),
+      lng: Number(place.lng),
+      imageUrl: null,
+      area: place.area,
+      category: place.category
+    }));
+  }
+  if (key === "pondicherry") {
+    return PONDICHERRY_CURATED_PLACES.map((place) => ({
       title: place.title,
       description: buildCuratedPlaceDescription(place, destinationLabel),
       lat: Number(place.lat),
@@ -863,15 +955,43 @@ function inferPlaceKind(place = {}) {
   return category || "generic";
 }
 
+function hasHardBlockedSignal(place = {}) {
+  const source = normalizeToken(`${place.title || ""} ${place.description || ""} ${place.category || ""} ${Object.entries(place.tags || {}).map(([key, value]) => `${key} ${value}`).join(" ")}`);
+  if (HARD_BLOCK_PLACE_PATTERN.test(source)) return true;
+  if (LOW_SIGNAL_PLACE_PATTERN.test(source) && !/heritage|museum|cathedral|ashram|promenade|beach|high line|central park|metropolitan museum/.test(source)) return true;
+  return false;
+}
+
+function getMinimumStyleScore(travelStyle = "", slotName = "morning") {
+  const styleKey = resolveStyleProfileKey(travelStyle);
+  if (styleKey === "luxury") return slotName === "night" ? 12 : 11;
+  if (styleKey === "adventure") return slotName === "night" ? 5 : 8;
+  if (styleKey === "cultural") return 8;
+  if (styleKey === "halal") return 8;
+  if (styleKey === "coastal") return 8;
+  if (styleKey === "wellness") return 8;
+  if (styleKey === "urban") return 6;
+  return 5;
+}
+
 function isPlaceExcludedForStyle(place = {}, travelStyle = "") {
   const styleKey = resolveStyleProfileKey(travelStyle);
+  const kind = inferPlaceKind(place);
   const source = normalizeToken(`${place.title || ""} ${place.description || ""} ${place.category || ""} ${Object.entries(place.tags || {}).map(([key, value]) => `${key} ${value}`).join(" ")}`);
   const halalFoodSignal = /(halal|diet halal yes|diet:halal yes|cuisine halal|buhari|palmshore|zaitoon|confidentiel|great chase|mian bar|arab|arabic|middle eastern|lebanese|turkish|pakistani|indian|malaysian|indonesian|mughlai|kebab|shawarma|biryani)/;
+  if (hasHardBlockedSignal(place)) return true;
+  if (kind === "generic") return true;
   if (styleKey === "halal" && /(bar|pub|club|nightclub|wine|brewery|cocktail|casino|liquor|alcohol)/.test(source)) return true;
   if (styleKey === "halal" && /( vr chennai |marketcity|shopping centre|shopping center|\bmall\b)/.test(` ${source} `)) return true;
-  if (styleKey === "halal" && inferPlaceKind(place) === "mall") return true;
-  if (styleKey === "halal" && inferPlaceKind(place) === "food" && !halalFoodSignal.test(source)) return true;
+  if (styleKey === "halal" && kind === "mall") return true;
+  if (styleKey === "halal" && kind === "food" && !halalFoodSignal.test(source)) return true;
   if (styleKey === "wellness" && /(nightclub|casino|liquor|cocktail)/.test(source)) return true;
+  if (styleKey === "luxury" && /(budget|hostel|dormitory|discount|value|mart|wholesale|food court|canteen)/.test(source)) return true;
+  if (styleKey === "luxury" && /park/.test(kind) && !/central park|luxembourg|tuileries|high line|kensington|hyde park|bharathi park/.test(source)) return true;
+  if (styleKey === "luxury" && /market/.test(kind) && !/fifth avenue|madison avenue|harrods|liberty london|galeries lafayette|printemps/.test(source)) return true;
+  if (styleKey === "adventure" && /(mall|museum|stay)/.test(kind)) return true;
+  if (styleKey === "adventure" && /(indoor|shopping|boutique)/.test(source)) return true;
+  if (styleKey === "cultural" && /(mall|supermarket|grocery|resort)/.test(source)) return true;
   return false;
 }
 
@@ -906,11 +1026,16 @@ function scorePlaceForStyle(place, travelStyle, slotName, day, totalDays) {
   } else if (styleKey === "luxury") {
     if (kind === "stay") score += 12;
     if (kind === "mall" || kind === "food" || kind === "museum" || kind === "waterfront") score += 6;
+    if (kind === "landmark") score += 5;
+    if (/michelin|chef|suite|plaza|st regis|ritz|palace|rooftop|designer|boutique|lounge|river cafe|peak at hudson/.test(source)) score += 8;
     if (kind === "market") score -= 2;
     if (kind === "nature") score -= 2;
+    if (kind === "park") score -= 4;
   } else if (styleKey === "adventure") {
     if (kind === "nature" || kind === "park" || kind === "waterfront" || kind === "beach") score += 7;
     if (kind === "mall" || kind === "museum") score -= 5;
+    if (/trail|hike|cliff|ridge|summit|boat|surf|kayak|marsh|national park|bridge promenade|high line|beach/.test(source)) score += 6;
+    if (/heritage hotel|designer|boutique|fine dining/.test(source)) score -= 8;
   } else if (styleKey === "coastal") {
     if (kind === "beach" || kind === "waterfront") score += 10;
     if (kind === "mall") score -= 5;
@@ -931,6 +1056,7 @@ function scorePlaceForStyle(place, travelStyle, slotName, day, totalDays) {
   if (phase === "arrival" && /landmark|waterfront|park/.test(kind)) score += 2;
   if (phase === "reset" && /park|waterfront|beach|culture/.test(kind)) score += 2;
   if (phase === "finale" && /waterfront|landmark|culture|beach/.test(kind)) score += 2;
+  if (hasHardBlockedSignal(place)) score -= 50;
   if (place.synthetic) score -= 12;
   score += (place.title || "").length % 3;
   return score;
@@ -1013,15 +1139,15 @@ function makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle = 
   const destinationLabel = formatDisplayName(destination) || destination;
   const styleKey = resolveStyleProfileKey(travelStyle);
   const styleSlotNames = {
-    luxury: ["Premium Stay Arrival", "Signature Landmark", "Design District Lunch", "Boutique Culture", "Scenic Lounge Hour", "Waterfront Chauffeur Loop", "Fine Dining", "Suite Wind-Down"],
-    cultural: ["Old Quarter Orientation", "Sacred Landmark", "Traditional Lunch", "Museum Session", "Architecture Walk", "Craft Quarter", "Story-Led Dinner", "Heritage Night Stroll"],
-    adventure: ["Outdoor Sunrise Start", "Active Landmark Route", "Local Fuel Stop", "Trail Or Park Push", "Viewpoint Reward", "Open-Air Route", "Recovery Dinner", "Easy Night Reset"],
-    cinematic: ["Golden-Light Arrival", "Panorama Walk", "Textured Local Lunch", "Architecture Frames", "Blue-Hour Viewpoint", "Atmospheric Streets", "Photo-Friendly Dinner", "Night Scene Close"],
-    urban: ["City Pulse Start", "Boulevard Route", "Market Lunch", "Design District", "Skyline View", "Lifestyle Neighborhood", "Modern Dining", "City Lights Close"],
-    wellness: ["Slow Sunrise Reset", "Garden Or Spa Start", "Nourishing Lunch", "Quiet Culture Pause", "Waterfront Breathing Space", "Gentle Scenic Walk", "Restorative Dinner", "Calm Stay Finish"],
-    halal: ["Prayer-Aware Start", "Mosque Or Sacred Landmark", "Halal Lunch Plan", "Family-Friendly Culture", "Comfortable Scenic Stop", "Market Without Rush", "Halal Dinner Window", "Quiet Reflection Close"],
-    coastal: ["Sea-Breeze Morning", "Promenade Walk", "Coastal Lunch", "Harbour Or Island Stop", "Beach Golden Hour", "Waterfront Stroll", "Sea-View Dinner", "Shoreline Night Close"],
-    balanced: ["Sunrise Orientation", "Heritage Walk", "Local Lunch Discovery", "Museum Or Craft Session", "Golden Hour Viewpoint", "Neighborhood Food Trail", "Night Lights Route", "Stay Wind-Down"],
+    luxury: ["Signature Hotel Arrival", "Iconic Landmark Visit", "Refined Lunch Stop", "Boutique Culture Visit", "Scenic Lounge Moment", "Waterfront Evening Drive", "Fine Dining Reservation", "Suite Wind-Down"],
+    cultural: ["Old Quarter Orientation", "Sacred Landmark Visit", "Traditional Lunch Stop", "Museum Collection Visit", "Architecture Walk", "Craft Quarter Discovery", "Story-Led Dinner", "Heritage Night Stroll"],
+    adventure: ["Sunrise Trail Start", "Active Landmark Route", "Local Fuel Lunch", "Outdoor Push", "Viewpoint Reward", "Open-Air Exploration", "Recovery Dinner", "Easy Night Reset"],
+    cinematic: ["Golden-Light Arrival", "Panorama Walk", "Photo-Worthy Lunch", "Architecture Frames", "Blue-Hour Viewpoint", "Atmospheric Street Sequence", "Photo-Friendly Dinner", "Night Scene Close"],
+    urban: ["City Pulse Start", "Boulevard Discovery", "Market Lunch", "Design District Session", "Skyline View", "Lifestyle Neighborhood", "Modern Dining", "City Lights Close"],
+    wellness: ["Slow Sunrise Reset", "Garden or Spa Start", "Nourishing Lunch", "Quiet Culture Pause", "Waterfront Breathing Space", "Gentle Scenic Walk", "Restorative Dinner", "Calm Stay Finish"],
+    halal: ["Prayer-Aware Start", "Mosque Visit", "Halal Lunch Stop", "Family-Friendly Culture", "Comfortable Scenic Stop", "Market Without Rush", "Halal Dinner Window", "Quiet Reflection Close"],
+    coastal: ["Sea-Breeze Morning", "Promenade Walk", "Coastal Lunch", "Harbour Discovery", "Beach Golden Hour", "Waterfront Stroll", "Sea-View Dinner", "Shoreline Night Close"],
+    balanced: ["Sunrise Orientation", "Heritage Walk", "Local Lunch Discovery", "Museum or Craft Session", "Golden Hour Viewpoint", "Neighborhood Food Trail", "Night Lights Route", "Stay Wind-Down"],
   };
   const slotName = (styleSlotNames[styleKey] || styleSlotNames.balanced)[slot] || "City Exploration";
   const categoryByStyle = {
@@ -1036,7 +1162,7 @@ function makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle = 
     balanced: ["landmark", "culture", "food", "museum", "waterfront", "neighborhood", "food", "stay"],
   };
   return {
-    title: `${destinationLabel} Route ${day} - ${slotName}`,
+    title: `${destinationLabel} ${slotName}`,
     description: `A curated ${slotName.toLowerCase()} in ${destinationLabel}, shaped for a ${styleKey} travel style when live local data is limited.`,
     lat: Number((fallbackBase.lat + seededOffset(day * 31 + slot * 7)).toFixed(6)),
     lng: Number((fallbackBase.lng + seededOffset(day * 37 + slot * 11)).toFixed(6)),
@@ -1111,6 +1237,23 @@ function buildSlotCandidatePool(preferredPool, eligiblePlaces, globalUsage) {
     return uniqueBy([...unusedPreferred, ...unusedEligible], (place) => normalizeToken(place.title));
   }
   return preferred.length ? preferred : eligible;
+}
+
+function filterSlotPoolByQuality(candidates, travelStyle, slotName, day, totalDays) {
+  const minimum = getMinimumStyleScore(travelStyle, slotName);
+  const pool = (Array.isArray(candidates) ? candidates : []).filter((candidate) =>
+    !hasHardBlockedSignal(candidate) &&
+    scorePlaceForStyle(candidate, travelStyle, slotName, day, totalDays) >= minimum
+  );
+  return pool;
+}
+
+function shouldUseWikipediaThumb(place = {}) {
+  if (!place || place.synthetic) return false;
+  const source = normalizeToken(`${place.title || ""} ${place.description || ""} ${place.category || ""}`);
+  if (hasHardBlockedSignal(place)) return false;
+  if (/\b(route|arrival|reset|close|stop|session|district lunch|discovery|wind down|night close)\b/.test(source)) return false;
+  return true;
 }
 
 const CITY_ITINERARY_DAY_THEMES = [
@@ -1337,7 +1480,8 @@ export async function createCityItinerary(destination, days, budget, travelStyle
       const wikiThumbs = await fetchWikipediaBulkThumbnails(places.map((p) => p.title));
       for (const p of places) {
         const key = normalizeToken(p.title);
-        placeImageCache.set(key, [p.imageUrl, wikiThumbs.get(key), createStaticMapImageUrl(p.lat, p.lng, 15, p.title)].filter(Boolean));
+        const wikiThumb = shouldUseWikipediaThumb(p) ? wikiThumbs.get(key) : null;
+        placeImageCache.set(key, [p.imageUrl, wikiThumb, createStaticMapImageUrl(p.lat, p.lng, 15, p.title)].filter(Boolean));
       }
     } else {
       for (const p of places) {
@@ -1362,12 +1506,15 @@ export async function createCityItinerary(destination, days, budget, travelStyle
         const preferredPool = slotBasePlaces.filter((candidate) =>
           (styleProfile.slotCategories?.[slotName] || []).includes(inferPlaceKind(candidate))
         );
-        const sourcePool = buildSlotCandidatePool(
+        const sourcePool = filterSlotPoolByQuality(buildSlotCandidatePool(
           preferredPool,
           slotBasePlaces.length ? slotBasePlaces : rotatedPlaces,
           globalUsage
-        );
-        const place = pickPlaceForSlot(sourcePool, dayUsedKeys, globalUsage, lastDayUsed, travelStyle, slotName, day, days, slot) || makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle);
+        ), travelStyle, slotName, day, days);
+        const relaxedPool = sourcePool.length
+          ? sourcePool
+          : filterSlotPoolByQuality(slotBasePlaces.length ? slotBasePlaces : rotatedPlaces, travelStyle, slotName, day, days);
+        const place = pickPlaceForSlot(relaxedPool, dayUsedKeys, globalUsage, lastDayUsed, travelStyle, slotName, day, days, slot) || makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle);
         const key = normalizeToken(place.title);
         const images = placeImageCache.get(key) || [createStaticMapImageUrl(place.lat, place.lng, 14, place.title)];
         activities.push(makePlaceActivity({
