@@ -254,7 +254,13 @@ function chooseVariant(values, seed) {
 }
 
 function rotateUnique(values, offset, count) {
-  const safe = uniqueBy((Array.isArray(values) ? values : []).filter(Boolean), (v) => String(v).toLowerCase());
+  const safe = uniqueBy((Array.isArray(values) ? values : []).filter(Boolean), (value) => {
+    if (typeof value === "string") return value.toLowerCase();
+    if (value && typeof value === "object") {
+      return normalizeToken(value.title || value.name || value.location || JSON.stringify(value));
+    }
+    return String(value || "").toLowerCase();
+  });
   if (safe.length === 0) return [];
   const normalizedOffset = Math.abs(offset) % safe.length;
   const rotated = safe.slice(normalizedOffset).concat(safe.slice(0, normalizedOffset));
