@@ -11,6 +11,16 @@ function parseCost(value) {
 }
 
 const BUDGET_SLOT_KEYS = ["morning", "morningActivity", "afternoon", "afternoonActivity", "evening", "eveningActivity", "night", "nightActivity"];
+const BUDGET_SLOT_BIAS = {
+  morning: 0.92,
+  morningActivity: 1.08,
+  afternoon: 1.02,
+  afternoonActivity: 1.16,
+  evening: 1.24,
+  eveningActivity: 1.33,
+  night: 1.2,
+  nightActivity: 1.42,
+};
 
 function splitBudgetByWeights(total, weights = []) {
   const safeTotal = Math.max(0, Math.round(Number(total) || 0));
@@ -31,10 +41,13 @@ function buildBudgetSeed(value = "") {
   return Array.from(String(value)).reduce((sum, char, index) => sum + (char.charCodeAt(0) * (index + 1)), 0);
 }
 
-function splitDistinctBudgetByWeights(total, weights = [], seed = "") {
+function splitDistinctBudgetByWeights(total, weights = [], seed = "", options = {}) {
   const safeWeights = Array.isArray(weights) && weights.length ? weights : [1];
   const safeTotal = Math.max(0, Math.round(Number(total) || 0));
-  const distinctFloor = (safeWeights.length * (safeWeights.length - 1)) / 2;
+  const requestedGap = Math.max(1, Number(options.gapUnit) || 1);
+  const maxGap = Math.max(1, Math.floor(safeTotal / Math.max(1, (safeWeights.length * (safeWeights.length - 1)) / 2 || 1)));
+  const gapUnit = Math.max(1, Math.min(requestedGap, maxGap));
+  const distinctFloor = ((safeWeights.length * (safeWeights.length - 1)) / 2) * gapUnit;
 
   if (safeWeights.length <= 1 || safeTotal < distinctFloor) {
     return splitBudgetByWeights(safeTotal, safeWeights);
@@ -50,7 +63,7 @@ function splitDistinctBudgetByWeights(total, weights = [], seed = "") {
 
   const offsets = Array.from({ length: safeWeights.length }, () => 0);
   order.forEach(({ index }, rank) => {
-    offsets[index] = rank;
+    offsets[index] = rank * gapUnit;
   });
 
   const weightedValues = splitBudgetByWeights(safeTotal - distinctFloor, safeWeights);
@@ -1436,7 +1449,8 @@ export function reconcileItineraryBudget(itinerary = {}, costBreakdown = {}) {
   const dayTotals = splitDistinctBudgetByWeights(
     total,
     dayWeights,
-    `${cloned.trip_overview?.destination || ""}|days`
+    `${cloned.trip_overview?.destination || ""}|days`,
+    { gapUnit: Math.max(45, Math.floor(total / Math.max(18, cloned.days.length * 12))) }
   );
 
   cloned.days = cloned.days.map((day, dayIndex) => {
@@ -1446,11 +1460,15 @@ export function reconcileItineraryBudget(itinerary = {}, costBreakdown = {}) {
       [parts.stay, parts.food, parts.transport, parts.activities]
     );
     const existingSlots = BUDGET_SLOT_KEYS.filter((slotKey) => nextDay[slotKey]);
-    const slotWeights = existingSlots.map((slotKey) => Math.max(1, parseCost(nextDay[slotKey]?.cost)));
+    const slotWeights = existingSlots.map((slotKey) => {
+      const baseCost = Math.max(1, parseCost(nextDay[slotKey]?.cost));
+      return baseCost * (BUDGET_SLOT_BIAS[slotKey] || 1);
+    });
     const slotCosts = splitDistinctBudgetByWeights(
       dayTotals[dayIndex] || 0,
       slotWeights,
-      `${cloned.trip_overview?.destination || ""}|day-${dayIndex + 1}`
+      `${cloned.trip_overview?.destination || ""}|day-${dayIndex + 1}`,
+      { gapUnit: Math.max(10, Math.floor((dayTotals[dayIndex] || 0) / 140)) }
     );
 
     existingSlots.forEach((slotKey, slotIndex) => {

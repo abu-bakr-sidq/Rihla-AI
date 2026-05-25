@@ -1101,14 +1101,16 @@ function buildItinerary(fd) {
       : "moderate";
   const budgetSummary = buildBudgetSummary(fd.destination, daysNum, category, travelers, fd.currency || "USD", fd.budget);
   const dayBudgetProfiles = buildDayBudgetProfiles(daysNum, fd.destination, fd.travelStyle);
-  const dayAllocationWeights = dayBudgetProfiles.map((profile) => {
+  const dayAllocationWeights = dayBudgetProfiles.map((profile, index) => {
     const slotAverage = (profile.slotWeights || []).reduce((sum, weight) => sum + (Number(weight) || 0), 0) / Math.max(1, profile.slotWeights?.length || 0);
-    return Math.max(1, profile.stayWeight + profile.foodWeight + profile.transportWeight + profile.activityWeight + slotAverage);
+    const phaseBias = 1 + (((index % 3) - 1) * 0.12) + (index === 0 ? -0.08 : 0) + (index === dayBudgetProfiles.length - 1 ? 0.16 : 0);
+    return Math.max(1, (profile.stayWeight + profile.foodWeight + profile.transportWeight + profile.activityWeight + slotAverage) * phaseBias);
   });
   const dayTotals = splitDistinctByWeights(
     budgetSummary.costBreakdown.total,
     dayAllocationWeights,
-    `${fd.destination}|${fd.travelStyle}|days`
+    `${fd.destination}|${fd.travelStyle}|days`,
+    { gapUnit: Math.max(45, Math.floor((budgetSummary.costBreakdown.total || 0) / Math.max(18, daysNum * 12))) }
   );
   const categoryNeeds = { morning: daysNum * 2, afternoon: daysNum * 2, evening: daysNum * 2, night: daysNum * 2 };
   const categoryPools = {
@@ -1181,7 +1183,8 @@ function buildItinerary(fd) {
     const slotCosts = splitDistinctByWeights(
       dayTotals[i] || 0,
       buildPlanSlotWeights(slotEntries.map(({ slotKey, act }) => ({ slotKey, act }))),
-      `${fd.destination}|${dNum}|slots`
+      `${fd.destination}|${dNum}|slots`,
+      { gapUnit: Math.max(10, Math.floor((dayTotals[i] || 0) / 140)) }
     );
     const slots = slotEntries.reduce((acc, { slotKey, payload }, si) => {
       acc[slotKey] = {
@@ -1676,10 +1679,13 @@ const stableBudgetSeed = (value = "") => Array.from(String(value)).reduce((sum, 
   return sum + (char.charCodeAt(0) * (index + 1));
 }, 0);
 
-const splitDistinctByWeights = (total, weights = [], seed = "") => {
+const splitDistinctByWeights = (total, weights = [], seed = "", options = {}) => {
   const safeWeights = Array.isArray(weights) && weights.length ? weights : [1];
   const safeTotal = Math.max(0, Math.round(Number(total) || 0));
-  const distinctFloor = (safeWeights.length * (safeWeights.length - 1)) / 2;
+  const requestedGap = Math.max(1, Number(options.gapUnit) || 1);
+  const maxGap = Math.max(1, Math.floor(safeTotal / Math.max(1, (safeWeights.length * (safeWeights.length - 1)) / 2 || 1)));
+  const gapUnit = Math.max(1, Math.min(requestedGap, maxGap));
+  const distinctFloor = ((safeWeights.length * (safeWeights.length - 1)) / 2) * gapUnit;
 
   if (safeWeights.length <= 1 || safeTotal < distinctFloor) {
     return splitByWeights(safeTotal, safeWeights);
@@ -1695,7 +1701,7 @@ const splitDistinctByWeights = (total, weights = [], seed = "") => {
 
   const offsets = Array.from({ length: safeWeights.length }, () => 0);
   order.forEach(({ index }, rank) => {
-    offsets[index] = rank;
+    offsets[index] = rank * gapUnit;
   });
 
   const weightedValues = splitByWeights(safeTotal - distinctFloor, safeWeights);
@@ -1705,7 +1711,20 @@ const splitDistinctByWeights = (total, weights = [], seed = "") => {
 const buildPlanSlotWeights = (entries = []) => {
   return entries.map(({ slotKey, act }, index) => {
     const seed = stableBudgetSeed(`${slotKey}|${act?.name || act?.place || ""}|${act?.desc || act?.activity || ""}|${index}`);
-    return 1 + ((seed % 9) * 0.11);
+    const slotBias = {
+      morning: 0.92,
+      morningActivity: 1.08,
+      afternoon: 1.02,
+      afternoonActivity: 1.16,
+      evening: 1.24,
+      eveningActivity: 1.33,
+      night: 1.2,
+      nightActivity: 1.42,
+    }[slotKey] || 1;
+    const text = `${act?.name || act?.place || ""} ${act?.desc || act?.activity || ""}`.toLowerCase();
+    const premiumBias = /(fine dining|restaurant|lounge|rooftop|harbour|harbor|market city|mall|premium|private|signature|sunset|night|museum|gallery|planetarium|resort)/.test(text) ? 0.18 : 0;
+    const scenicBias = /(beach|view|bridge|lighthouse|waterfront|coast|summit|society|cathedral|basilica)/.test(text) ? 0.1 : 0;
+    return (1 + ((seed % 9) * 0.11)) * slotBias + premiumBias + scenicBias;
   });
 };
 
