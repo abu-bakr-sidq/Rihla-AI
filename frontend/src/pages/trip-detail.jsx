@@ -806,10 +806,12 @@ export default function TripDetail() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
+  const [themeCurtain, setThemeCurtain] = useState(null);
   const [detailTheme, setDetailTheme] = useState(() => {
     if (typeof window === 'undefined') return 'dark';
     return localStorage.getItem('trip-detail-theme') || 'dark';
   });
+  const themeTransitionTimers = useRef([]);
 
   const deleteMutation = useDeleteTrip();
   const { toast } = useToast();
@@ -820,17 +822,26 @@ export default function TripDetail() {
     localStorage.setItem('trip-detail-theme', detailTheme);
   }, [detailTheme]);
 
-  useEffect(() => {
-    if (!isThemeTransitioning) return undefined;
-    const timer = window.setTimeout(() => setIsThemeTransitioning(false), 360);
-    return () => window.clearTimeout(timer);
-  }, [isThemeTransitioning]);
+  useEffect(() => () => {
+    themeTransitionTimers.current.forEach((timer) => window.clearTimeout(timer));
+    themeTransitionTimers.current = [];
+  }, []);
 
   const handleDetailThemeToggle = () => {
+    const nextTheme = detailTheme === 'light' ? 'dark' : 'light';
+    themeTransitionTimers.current.forEach((timer) => window.clearTimeout(timer));
+    themeTransitionTimers.current = [];
     setIsThemeTransitioning(true);
-    startTransition(() => {
-      setDetailTheme((curr) => curr === 'light' ? 'dark' : 'light');
-    });
+    setThemeCurtain(nextTheme);
+    themeTransitionTimers.current.push(window.setTimeout(() => {
+      startTransition(() => {
+        setDetailTheme(nextTheme);
+      });
+    }, 120));
+    themeTransitionTimers.current.push(window.setTimeout(() => {
+      setThemeCurtain(null);
+      setIsThemeTransitioning(false);
+    }, 380));
   };
 
   // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ Auth guard: only redirect once we KNOW user is not logged in ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬
@@ -937,6 +948,15 @@ export default function TripDetail() {
   return (
     <AppInnerLayout>
       <div className={`trip-detail-shell ${isThemeTransitioning ? 'theme-transitioning' : ''} ${isLightDetail ? 'detail-light bg-[#eef4fb]' : 'detail-dark'} relative w-full min-h-screen pb-10 overflow-hidden transition-colors duration-300`}>
+        <div
+          className={`pointer-events-none absolute inset-0 z-[15] transition-opacity duration-200 ${themeCurtain ? 'opacity-100' : 'opacity-0'}`}
+          style={{
+            background: themeCurtain === 'light'
+              ? 'linear-gradient(180deg, rgba(248,251,255,0.94) 0%, rgba(238,244,248,0.97) 100%)'
+              : 'linear-gradient(180deg, rgba(11,23,40,0.92) 0%, rgba(7,17,29,0.97) 100%)',
+            backdropFilter: 'blur(10px)',
+          }}
+        />
         <div className="fixed inset-0 -z-10 overflow-hidden">
           {backgroundSlides.length > 0 ? (
             backgroundSlides.map((src, index) => (
