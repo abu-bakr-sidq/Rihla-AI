@@ -24,7 +24,6 @@ import AnoAI from "@/components/ui/animated-shader-background";
 import { Link } from "wouter";
 import DashboardSlideshow from "@/components/ui/DashboardSlideshow";
 import { format } from "date-fns";
-import { useTheme } from "next-themes";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { CalendarGrid, isDisabled } from "./planner";
 import { resolveApiUrl } from "@/lib/api-contract";
@@ -942,11 +941,10 @@ function AddPackageModal({ isOpen, onClose }) {
 export default function Admin() {
   const { data: user, isLoading: userLoading } = useUser();
   const { data: adminData, isLoading: adminLoading, refetch } = useAdmin();
-  const { theme, resolvedTheme, setTheme } = useTheme();
-  const [localTheme, setLocalTheme] = useState("dark");
-  const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
-  const [themeCurtain, setThemeCurtain] = useState(null);
-  const themeTransitionTimers = useRef([]);
+  const [localTheme, setLocalTheme] = useState(() => {
+    if (typeof window === "undefined") return "dark";
+    return localStorage.getItem("rihla-admin-theme") || "dark";
+  });
   const logout = useLogout();
 
   const { toast } = useToast();
@@ -982,39 +980,20 @@ export default function Admin() {
     destination: "", days: 7, budget: 3000, travelStyle: "cultural", preferences: ""
   });
 
-  // Standard Hydration Fix for next-themes
+  // Hydration guard for client-only theme persistence
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    if (!mounted) return;
-    const nextTheme = resolvedTheme || theme || "dark";
-    if (nextTheme === "light" || nextTheme === "dark") {
-      setLocalTheme(nextTheme);
-    }
-  }, [mounted, resolvedTheme, theme]);
+    if (typeof window === "undefined") return;
+    localStorage.setItem("rihla-admin-theme", localTheme);
+  }, [localTheme]);
 
   const activeTheme = mounted ? localTheme : "dark";
   const isDark = activeTheme === "dark";
 
-  useEffect(() => () => {
-    themeTransitionTimers.current.forEach((timer) => window.clearTimeout(timer));
-    themeTransitionTimers.current = [];
-  }, []);
-
   const handleAdminThemeToggle = () => {
     const nextTheme = isDark ? "light" : "dark";
-    themeTransitionTimers.current.forEach((timer) => window.clearTimeout(timer));
-    themeTransitionTimers.current = [];
-    setIsThemeTransitioning(true);
-    setThemeCurtain(nextTheme);
-    themeTransitionTimers.current.push(window.setTimeout(() => {
-      setLocalTheme(nextTheme);
-      setTheme(nextTheme);
-    }, 120));
-    themeTransitionTimers.current.push(window.setTimeout(() => {
-      setThemeCurtain(null);
-      setIsThemeTransitioning(false);
-    }, 380));
+    setLocalTheme(nextTheme);
   };
 
   const [formData, setFormData] = useState({
@@ -1705,20 +1684,11 @@ export default function Admin() {
   };
 
   return (
-    <div className={`min-h-screen relative overflow-x-hidden no-scrollbar admin-root ${isThemeTransitioning ? "theme-transitioning" : ""} ${isDark ? "dark" : ""}`}>
+    <div className={`min-h-screen relative overflow-x-hidden no-scrollbar admin-root ${isDark ? "dark" : ""}`}>
       <div className="fixed inset-0 z-[-2]">
         <DashboardSlideshow />
       </div>
       <div className="fixed inset-0 z-[-1] pointer-events-none transition-colors duration-700 bg-[var(--admin-panel-bg)] backdrop-blur-[30px]" />
-      <div
-        className={`pointer-events-none fixed inset-0 z-[45] transition-opacity duration-200 ${themeCurtain ? "opacity-100" : "opacity-0"}`}
-        style={{
-          background: themeCurtain === "light"
-            ? "linear-gradient(180deg, rgba(248,251,255,0.94) 0%, rgba(238,244,248,0.97) 100%)"
-            : "linear-gradient(180deg, rgba(11,23,40,0.92) 0%, rgba(7,17,29,0.97) 100%)",
-          backdropFilter: "blur(10px)",
-        }}
-      />
 
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -1741,23 +1711,28 @@ export default function Admin() {
           --admin-chart-grid: rgba(255, 255, 255, 0.05);
         }
         
-        .admin-root { color: var(--admin-text-main); transition: color 0.3s ease, background-color 0.3s ease; }
-        .admin-root.theme-transitioning { will-change: color, background-color; }
+        .admin-root { color: var(--admin-text-main); transition: color 320ms ease, background-color 420ms cubic-bezier(0.22, 1, 0.36, 1); }
         
         .admin-panel {
           background: var(--admin-panel-bg);
           border: 1px solid var(--admin-panel-border);
           box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
           border-radius: 1rem;
-          transition: all 0.3s ease;
+          transition: background-color 420ms cubic-bezier(0.22, 1, 0.36, 1), border-color 360ms ease, box-shadow 420ms ease, color 300ms ease;
         }
         
         .admin-row {
           border-bottom: 1px solid var(--admin-chart-grid);
-          transition: background 0.2s ease;
+          transition: background-color 260ms ease, border-color 320ms ease, color 260ms ease;
         }
         .admin-row:hover {
           background: var(--admin-hover-bg);
+        }
+        .admin-root .admin-copy,
+        .admin-root .admin-copy *,
+        .admin-root .admin-theme-surface,
+        .admin-root .admin-theme-surface * {
+          transition: color 300ms ease, background-color 360ms ease, border-color 320ms ease, opacity 220ms ease, box-shadow 360ms ease;
         }
         
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -1830,12 +1805,14 @@ export default function Admin() {
               className="flex items-center justify-end gap-3"
             >
               {/* Theme Toggle */}
-              <ThemeToggle
-                compact={true}
-                isDarkOverride={isDark}
-                onClick={handleAdminThemeToggle}
-                className="shadow-none"
-              />
+              <div className="admin-theme-surface rounded-[18px] border border-[var(--admin-panel-border)] bg-[var(--admin-panel-bg)] px-2 py-2 shadow-[0_14px_34px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+                <ThemeToggle
+                  compact={true}
+                  isDarkOverride={isDark}
+                  onClick={handleAdminThemeToggle}
+                  className="shadow-none"
+                />
+              </div>
 
               {/* Divider */}
               <div className="w-px h-7" style={{ background: 'var(--admin-panel-border)' }} />
@@ -1860,7 +1837,7 @@ export default function Admin() {
                   </div>
                 </div>
                 {/* Name + Status */}
-                <div className="hidden lg:flex flex-col">
+                <div className="admin-copy hidden lg:flex flex-col">
                   <span className={`text-[10px] font-black tracking-widest leading-none uppercase ${tab === 'settings' ? 'text-cyan-400' : 'text-[var(--admin-text-main)]'}`}>
                     {user?.username || 'Admin'}
                   </span>

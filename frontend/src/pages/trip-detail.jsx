@@ -12,7 +12,6 @@ import { api, buildUrl, resolveApiUrl } from '@/lib/api-contract';
 import { buildActivityDisplayContent, buildStreetFindChips, generatePlaceCardFallbackContent, normalizeLegacyArrayItinerary, pickBestActivityPlace, reconcileItineraryBudget } from '@/lib/trip-itinerary';
 import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerTimesCard, TripPreviewCard } from '@/components/trip/EnhancedPanels';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { useTheme } from 'next-themes';
 import ThemeToggle from '@/components/ThemeToggle';
 
 function fmtCur(amount, currency = 'USD') {
@@ -806,25 +805,24 @@ export default function TripDetail() {
   const [exportingPreview, setExportingPreview] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const { theme, resolvedTheme, setTheme } = useTheme();
-  const [detailTheme, setDetailTheme] = useState('dark');
+  const [detailTheme, setDetailTheme] = useState(() => {
+    if (typeof window === 'undefined') return 'dark';
+    return localStorage.getItem('rihla-trip-detail-theme') || 'dark';
+  });
 
   const deleteMutation = useDeleteTrip();
   const { toast } = useToast();
   const isLightDetail = detailTheme === 'light';
 
   useEffect(() => {
-    const nextTheme = resolvedTheme || theme || 'dark';
-    if (nextTheme === 'light' || nextTheme === 'dark') {
-      setDetailTheme(nextTheme);
-    }
-  }, [resolvedTheme, theme]);
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('rihla-trip-detail-theme', detailTheme);
+  }, [detailTheme]);
 
   const handleDetailThemeToggle = () => {
     const nextTheme = detailTheme === 'light' ? 'dark' : 'light';
     startTransition(() => {
       setDetailTheme(nextTheme);
-      setTheme(nextTheme);
     });
   };
 

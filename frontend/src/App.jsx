@@ -169,7 +169,7 @@ export default function App() {
         attribute="class"
         defaultTheme="dark"
         enableSystem={false}
-        storageKey="rihla-theme"
+        storageKey="rihla-global-theme"
         themes={["dark", "light"]}
       >
         <TooltipProvider>
