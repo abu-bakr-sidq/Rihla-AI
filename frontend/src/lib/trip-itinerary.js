@@ -1397,11 +1397,11 @@ export function reconcileItineraryBudget(itinerary = {}, costBreakdown = {}) {
   if (!total || !cloned.days.length) return cloned;
 
   const parts = resolveBudgetParts({ ...cloned.total_budget, ...costBreakdown, currency }, total);
-  const dayWeights = cloned.days.map((day) => Math.max(1, parseCost(day?.budget?.total)));
-  const dayStay = splitBudgetByWeights(parts.stay, dayWeights);
-  const dayFood = splitBudgetByWeights(parts.food, dayWeights);
-  const dayTransport = splitBudgetByWeights(parts.transport, dayWeights);
-  const dayActivities = splitBudgetByWeights(parts.activities, dayWeights);
+  const equalDayWeights = cloned.days.map(() => 1);
+  const dayStay = splitBudgetByWeights(parts.stay, equalDayWeights);
+  const dayFood = splitBudgetByWeights(parts.food, equalDayWeights);
+  const dayTransport = splitBudgetByWeights(parts.transport, equalDayWeights);
+  const dayActivities = splitBudgetByWeights(parts.activities, equalDayWeights);
 
   cloned.days = cloned.days.map((day, dayIndex) => {
     const nextDay = { ...day };

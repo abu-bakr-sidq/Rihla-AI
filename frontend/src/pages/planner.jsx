@@ -1101,10 +1101,11 @@ function buildItinerary(fd) {
       : "moderate";
   const budgetSummary = buildBudgetSummary(fd.destination, daysNum, category, travelers, fd.currency || "USD", fd.budget);
   const dayBudgetProfiles = buildDayBudgetProfiles(daysNum, fd.destination, fd.travelStyle);
-  const dayStay = splitByWeights(budgetSummary.costBreakdown.stay, dayBudgetProfiles.map((profile) => profile.stayWeight));
-  const dayFood = splitByWeights(budgetSummary.costBreakdown.food, dayBudgetProfiles.map((profile) => profile.foodWeight));
-  const dayTransport = splitByWeights(budgetSummary.costBreakdown.transport, dayBudgetProfiles.map((profile) => profile.transportWeight));
-  const dayActivities = splitByWeights(budgetSummary.costBreakdown.activities, dayBudgetProfiles.map((profile) => profile.activityWeight));
+  const equalDayWeights = Array.from({ length: daysNum }, () => 1);
+  const dayStay = splitByWeights(budgetSummary.costBreakdown.stay, equalDayWeights);
+  const dayFood = splitByWeights(budgetSummary.costBreakdown.food, equalDayWeights);
+  const dayTransport = splitByWeights(budgetSummary.costBreakdown.transport, equalDayWeights);
+  const dayActivities = splitByWeights(budgetSummary.costBreakdown.activities, equalDayWeights);
   const categoryNeeds = { morning: daysNum * 2, afternoon: daysNum * 2, evening: daysNum * 2, night: daysNum * 2 };
   const categoryPools = {
     morning: buildExpandedActivityPool([], 'morning', categoryNeeds.morning, fd),
