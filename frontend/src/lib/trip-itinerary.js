@@ -1465,10 +1465,10 @@ export function reconcileItineraryBudget(itinerary = {}, costBreakdown = {}) {
       return baseCost * (BUDGET_SLOT_BIAS[slotKey] || 1);
     });
     const slotCosts = splitDistinctBudgetByWeights(
-      dayTotals[dayIndex] || 0,
+      dayActivities || 0,
       slotWeights,
       `${cloned.trip_overview?.destination || ""}|day-${dayIndex + 1}`,
-      { gapUnit: Math.max(10, Math.floor((dayTotals[dayIndex] || 0) / 140)) }
+      { gapUnit: Math.max(6, Math.floor((dayActivities || 0) / 120)) }
     );
 
     existingSlots.forEach((slotKey, slotIndex) => {

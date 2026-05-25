@@ -271,14 +271,14 @@ function buildCuratedPlaceDescription(place, destinationLabel) {
     museum: `${title} is a well-known museum and culture stop in ${area}, ${destinationLabel}, with strong educational value.`,
     park: `${title} is a green urban break in ${area}, ${destinationLabel}, ideal for relaxed walks and local leisure time.`,
     market: `${title} is a lively market zone in ${area}, ${destinationLabel}, suitable for street exploration and local shopping.`,
-    food: `${title} is a practical dining stop in ${area}, ${destinationLabel}, useful for regional food and comfortable meal planning.`,
-    stay: `${title} is a premium stay and hospitality anchor in ${area}, ${destinationLabel}, suited for comfort-led pacing and refined trip moments.`,
-    waterfront: `${title} offers a strong waterfront atmosphere in ${area}, ${destinationLabel}, with practical nearby routes.`,
-    culture: `${title} is a culture-focused stop in ${area}, ${destinationLabel}, useful for heritage-oriented exploration.`,
-    mall: `${title} is a major commercial hub in ${area}, ${destinationLabel}, with dining and shopping options.`,
+    food: `${title} is a strong dining anchor in ${area}, ${destinationLabel}, well suited for a more intentional meal stop.`,
+    stay: `${title} is a refined hospitality address in ${area}, ${destinationLabel}, better used as a comfort anchor than a filler sightseeing stop.`,
+    waterfront: `${title} offers a stronger open-view and waterfront atmosphere in ${area}, ${destinationLabel}, especially effective later in the day.`,
+    culture: `${title} adds a culture-led chapter in ${area}, ${destinationLabel}, with more depth than a generic photo stop.`,
+    mall: `${title} is a premium shopping district in ${area}, ${destinationLabel}, best used when the travel style calls for design and retail time.`,
     nature: `${title} is a nature-oriented stop in ${area}, ${destinationLabel}, suitable for slower-paced outdoor visits.`,
-    landmark: `${title} is a major city landmark in ${area}, ${destinationLabel}, often used as a key anchor point for sightseeing.`,
-    neighborhood: `${title} highlights local neighborhood character in ${area}, ${destinationLabel}, with practical nearby routing.`
+    landmark: `${title} is a major city landmark in ${area}, ${destinationLabel}, capable of carrying a stronger signature chapter of the day.`,
+    neighborhood: `${title} highlights local neighborhood character in ${area}, ${destinationLabel}, and works best when paired with nearby food or design stops.`
   };
   return byCategory[place.category] || `${title} is a notable local stop in ${area}, ${destinationLabel}.`;
 }
@@ -974,6 +974,20 @@ function getMinimumStyleScore(travelStyle = "", slotName = "morning") {
   return 5;
 }
 
+function isPlaceAllowedInSlot(place = {}, travelStyle = "", slotName = "morning", slotIndex = 0) {
+  const styleKey = resolveStyleProfileKey(travelStyle);
+  const kind = inferPlaceKind(place);
+  if (styleKey === "luxury") {
+    if (kind === "stay" && ![0, 7].includes(slotIndex)) return false;
+    if (kind === "stay" && !["morning", "night"].includes(slotName)) return false;
+    if (kind === "food" && !["afternoon", "night"].includes(slotName)) return false;
+  }
+  if (styleKey === "adventure") {
+    if (kind === "food" && slotName === "morning") return false;
+  }
+  return true;
+}
+
 function isPlaceExcludedForStyle(place = {}, travelStyle = "") {
   const styleKey = resolveStyleProfileKey(travelStyle);
   const kind = inferPlaceKind(place);
@@ -1104,10 +1118,19 @@ function makePlaceActivity(place, destination, budget, slotIndex, travelStyle, i
     coastal: "Let the waterfront rhythm shape the pace instead of forcing it inland.",
     balanced: "Balance atmosphere, local texture, and a clear highlight.",
   }[styleKey] || "Balance atmosphere, local texture, and a clear highlight.";
+  const kind = inferPlaceKind(place);
+  const slotLine = [
+    kind === "stay" ? "Use this more as an anchor for comfort and pacing than as a long sightseeing stop." : "",
+    kind === "food" ? "Let one memorable dish or dining room detail carry the experience." : "",
+    kind === "landmark" ? "Give the place enough time to feel iconic rather than rushed." : "",
+    kind === "waterfront" ? "Treat the setting and light as part of the experience, not just the backdrop." : "",
+    kind === "museum" ? "Focus on the strongest gallery or collection instead of trying to cover everything." : "",
+    kind === "neighborhood" ? "Pair the wider walk with one exact corner, cafe, or design detail that makes it feel local." : "",
+  ].find(Boolean) || "Keep the stop intentional so it feels specific rather than generic.";
   return {
     time: SLOT_TIME_LABELS[slotIndex] || "Anytime",
     title,
-    description: `${concise}${concise.endsWith(".") ? "" : "."} ${SLOT_ACTIVITY_FOCUS[slotIndex] || "Enjoy a well-paced city moment."} ${activitySummaryByInterest(interests, day * 13 + slotIndex * 7 + title.length)} Day ${day} focus within the ${dayTheme || buildStyleDayTheme(travelStyle, day, totalDays)} chapter. ${styleClose}`,
+    description: `${concise}${concise.endsWith(".") ? "" : "."} ${SLOT_ACTIVITY_FOCUS[slotIndex] || "Enjoy a well-paced city moment."} ${slotLine} ${activitySummaryByInterest(interests, day * 13 + slotIndex * 7 + title.length)} Day ${day} focus within the ${dayTheme || buildStyleDayTheme(travelStyle, day, totalDays)} chapter. ${styleClose}`,
     location: `${place.title}, ${destinationLabel}`,
     lat: place.lat,
     lng: place.lng,
@@ -1125,7 +1148,7 @@ function makePlaceActivity(place, destination, budget, slotIndex, travelStyle, i
 }
 
 function normalizeCost(budget, idx) {
-  if (budget === "luxury") return `$${120 + idx * 30}-${220 + idx * 40}`;
+  if (budget === "luxury") return `$${180 + idx * 45}-${340 + idx * 60}`;
   if (budget === "moderate") return `$${40 + idx * 15}-${90 + idx * 20}`;
   return `$${10 + idx * 8}-${35 + idx * 10}`;
 }
@@ -1239,10 +1262,11 @@ function buildSlotCandidatePool(preferredPool, eligiblePlaces, globalUsage) {
   return preferred.length ? preferred : eligible;
 }
 
-function filterSlotPoolByQuality(candidates, travelStyle, slotName, day, totalDays) {
+function filterSlotPoolByQuality(candidates, travelStyle, slotName, day, totalDays, slotIndex = 0) {
   const minimum = getMinimumStyleScore(travelStyle, slotName);
   const pool = (Array.isArray(candidates) ? candidates : []).filter((candidate) =>
     !hasHardBlockedSignal(candidate) &&
+    isPlaceAllowedInSlot(candidate, travelStyle, slotName, slotIndex) &&
     scorePlaceForStyle(candidate, travelStyle, slotName, day, totalDays) >= minimum
   );
   return pool;
@@ -1510,10 +1534,10 @@ export async function createCityItinerary(destination, days, budget, travelStyle
           preferredPool,
           slotBasePlaces.length ? slotBasePlaces : rotatedPlaces,
           globalUsage
-        ), travelStyle, slotName, day, days);
+        ), travelStyle, slotName, day, days, slot);
         const relaxedPool = sourcePool.length
           ? sourcePool
-          : filterSlotPoolByQuality(slotBasePlaces.length ? slotBasePlaces : rotatedPlaces, travelStyle, slotName, day, days);
+          : filterSlotPoolByQuality(slotBasePlaces.length ? slotBasePlaces : rotatedPlaces, travelStyle, slotName, day, days, slot);
         const place = pickPlaceForSlot(relaxedPool, dayUsedKeys, globalUsage, lastDayUsed, travelStyle, slotName, day, days, slot) || makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle);
         const key = normalizeToken(place.title);
         const images = placeImageCache.get(key) || [createStaticMapImageUrl(place.lat, place.lng, 14, place.title)];
