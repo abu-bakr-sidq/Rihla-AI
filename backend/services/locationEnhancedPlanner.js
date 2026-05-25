@@ -527,10 +527,21 @@ const OSM_PLACE_QUERY_LIBRARY = {
     { key: "tourism", value: "gallery" }
   ],
   market: [
-    { key: "amenity", value: "marketplace" }
+    { key: "amenity", value: "marketplace" },
+    { key: "shop", value: "marketplace" }
   ],
   mall: [
     { key: "shop", value: "mall" }
+  ],
+  stay: [
+    { key: "tourism", value: "hotel" },
+    { key: "tourism", value: "resort" },
+    { key: "tourism", value: "guest_house" }
+  ],
+  wellness: [
+    { key: "leisure", value: "spa" },
+    { key: "amenity", value: "spa" },
+    { key: "leisure", value: "fitness_centre" }
   ],
   park: [
     { key: "leisure", value: "park" },
@@ -544,12 +555,14 @@ const OSM_PLACE_QUERY_LIBRARY = {
   landmark: [
     { key: "tourism", value: "attraction" },
     { key: "historic", value: "monument" },
-    { key: "historic", value: "castle" }
+    { key: "historic", value: "castle" },
+    { key: "tourism", value: "viewpoint" }
   ],
   nature: [
     { key: "leisure", value: "nature_reserve" },
     { key: "natural", value: "peak" },
-    { key: "natural", value: "wood" }
+    { key: "natural", value: "wood" },
+    { key: "route", value: "hiking" }
   ],
   beach: [
     { key: "natural", value: "beach" }
@@ -557,7 +570,9 @@ const OSM_PLACE_QUERY_LIBRARY = {
   food: [
     { key: "amenity", value: "restaurant" },
     { key: "amenity", value: "cafe" },
-    { key: "amenity", value: "fast_food" }
+    { key: "amenity", value: "fast_food" },
+    { key: "diet:halal", value: "yes" },
+    { key: "cuisine", value: "halal" }
   ],
   culture: [
     { key: "tourism", value: "artwork" },
@@ -579,8 +594,10 @@ function buildStyleQueryKeys(travelStyle = "") {
     keys.add("temple");
     keys.add("food");
     keys.add("market");
+    keys.add("park");
   }
   if (styleKey === "luxury") {
+    keys.add("stay");
     keys.add("mall");
     keys.add("food");
     keys.add("waterfront");
@@ -592,6 +609,11 @@ function buildStyleQueryKeys(travelStyle = "") {
   if (styleKey === "adventure" || styleKey === "wellness") {
     keys.add("nature");
     keys.add("park");
+    keys.add("waterfront");
+  }
+  if (styleKey === "wellness") {
+    keys.add("wellness");
+    keys.add("stay");
   }
   if (styleKey === "urban") {
     keys.add("market");
@@ -620,6 +642,8 @@ out body center 160;`;
 
 function inferOsmCategory(tags = {}, name = "") {
   const source = normalizeToken(`${name} ${Object.entries(tags || {}).map(([k, v]) => `${k} ${v}`).join(" ")}`);
+  if (/tourism hotel|tourism resort|tourism guest_house|hotel|resort|guest house|riad|lodge/.test(source)) return "stay";
+  if (/leisure spa|amenity spa|wellness|hammam|thermal bath|fitness centre/.test(source)) return "wellness";
   if (/place of worship|building mosque|religion muslim|mosque|masjid|cathedral|church|temple|synagogue|shrine/.test(source)) return "temple";
   if (/tourism museum|tourism gallery|museum|gallery/.test(source)) return "museum";
   if (/amenity marketplace|market|bazaar|souk/.test(source)) return "market";
@@ -643,6 +667,8 @@ function buildOsmPlaceDescription(name, category, destinationLabel, tags = {}) {
     museum: `${name} is a museum or gallery stop${area ? ` in ${area}` : ""} in ${destinationLabel}, suitable for deeper culture coverage.`,
     market: `${name} is a local market stop${area ? ` in ${area}` : ""} in ${destinationLabel}, good for street texture and casual browsing.`,
     mall: `${name} is a shopping hub${area ? ` in ${area}` : ""} in ${destinationLabel}, with comfortable indoor pacing.`,
+    stay: `${name} is a stay or hospitality anchor${area ? ` in ${area}` : ""} in ${destinationLabel}, useful for comfort-led routing and premium pacing.`,
+    wellness: `${name} is a wellness-oriented stop${area ? ` in ${area}` : ""} in ${destinationLabel}, suited for slower recovery-focused pacing.`,
     park: `${name} is a green urban pause${area ? ` in ${area}` : ""} in ${destinationLabel}, ideal for a slower walking stretch.`,
     beach: `${name} offers an open coastal setting${area ? ` in ${area}` : ""} around ${destinationLabel}, rewarding in calmer light.`,
     waterfront: `${name} gives a waterfront or viewpoint moment${area ? ` in ${area}` : ""} in ${destinationLabel}, with strong scenic value.`,
@@ -827,6 +853,7 @@ function inferPlaceKind(place = {}) {
   if (/waterfront|harbour|harbor|river|lake|marina|boat/.test(source)) return "waterfront";
   if (/nature reserve|forest|nature|trail|hill|marsh|peak|valley|cliff/.test(source)) return "nature";
   if (/stay|hotel|palace|resort|grand chola|taj coromandel|leela palace/.test(source)) return "stay";
+  if (/spa|wellness|hammam|thermal bath|fitness centre|fitness center|meditation|yoga/.test(source)) return "wellness";
   if (/park|garden/.test(source)) return "park";
   if (/restaurant|dining|cuisine|halal|cafe|bistro|eatery|food/.test(source)) return "food";
   if (/mall|shopping centre|shopping center/.test(source)) return "mall";
@@ -839,10 +866,11 @@ function inferPlaceKind(place = {}) {
 function isPlaceExcludedForStyle(place = {}, travelStyle = "") {
   const styleKey = resolveStyleProfileKey(travelStyle);
   const source = normalizeToken(`${place.title || ""} ${place.description || ""} ${place.category || ""} ${Object.entries(place.tags || {}).map(([key, value]) => `${key} ${value}`).join(" ")}`);
+  const halalFoodSignal = /(halal|diet halal yes|diet:halal yes|cuisine halal|buhari|palmshore|zaitoon|confidentiel|great chase|mian bar|arab|arabic|middle eastern|lebanese|turkish|pakistani|indian|malaysian|indonesian|mughlai|kebab|shawarma|biryani)/;
   if (styleKey === "halal" && /(bar|pub|club|nightclub|wine|brewery|cocktail|casino|liquor|alcohol)/.test(source)) return true;
   if (styleKey === "halal" && /( vr chennai |marketcity|shopping centre|shopping center|\bmall\b)/.test(` ${source} `)) return true;
   if (styleKey === "halal" && inferPlaceKind(place) === "mall") return true;
-  if (styleKey === "halal" && inferPlaceKind(place) === "food" && !/(halal|buhari|palmshore|zaitoon|confidentiel|great chase|mian bar)/.test(source)) return true;
+  if (styleKey === "halal" && inferPlaceKind(place) === "food" && !halalFoodSignal.test(source)) return true;
   if (styleKey === "wellness" && /(nightclub|casino|liquor|cocktail)/.test(source)) return true;
   return false;
 }
@@ -860,6 +888,7 @@ function scorePlaceForStyle(place, travelStyle, slotName, day, totalDays) {
   if (kind === "market" && /urban|halal|cultural/.test(styleKey)) score += 3;
   if (kind === "mall" && /luxury|urban/.test(styleKey)) score += 4;
   if (kind === "stay" && /luxury|wellness/.test(styleKey)) score += 8;
+  if (kind === "wellness" && /wellness|luxury/.test(styleKey)) score += 8;
   if (kind === "park" && /wellness|adventure|cinematic|coastal/.test(styleKey)) score += 3;
   if (kind === "nature" && /wellness|adventure|cinematic|coastal/.test(styleKey)) score += 4;
   if (kind === "museum" && /cultural|urban|luxury/.test(styleKey)) score += 3;
@@ -869,7 +898,7 @@ function scorePlaceForStyle(place, travelStyle, slotName, day, totalDays) {
 
   if (styleKey === "halal") {
     if (kind === "temple") score += 12;
-    if (kind === "food") score += 10;
+    if (kind === "food" && /(halal|diet halal yes|diet:halal yes|arab|middle eastern|lebanese|turkish|pakistani|indian|malaysian|indonesian|mughlai|kebab|shawarma|biryani|buhari|palmshore|zaitoon)/.test(source)) score += 10;
     if (kind === "market" || kind === "park" || kind === "neighborhood") score += 4;
     if (/mosque|masjid|halal|family/.test(source)) score += 10;
     if (kind === "mall") score -= 8;
@@ -887,6 +916,7 @@ function scorePlaceForStyle(place, travelStyle, slotName, day, totalDays) {
     if (kind === "mall") score -= 5;
     if (kind === "museum") score -= 2;
   } else if (styleKey === "wellness") {
+    if (kind === "wellness" || kind === "stay") score += 8;
     if (kind === "park" || kind === "nature" || kind === "temple" || kind === "food") score += 6;
     if (kind === "mall") score -= 6;
   } else if (styleKey === "urban") {
@@ -979,26 +1009,54 @@ function isInsideBoundingBox(place, boundingBox) {
   return place.lat >= boundingBox.south && place.lat <= boundingBox.north && place.lng >= boundingBox.west && place.lng <= boundingBox.east;
 }
 
-function makeSyntheticPlace(destination, day, slot, fallbackBase) {
+function makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle = "balanced") {
   const destinationLabel = formatDisplayName(destination) || destination;
-  const slotName = [
-    "Sunrise Orientation",
-    "Heritage Walk",
-    "Local Lunch Discovery",
-    "Museum Or Craft Session",
-    "Golden Hour Viewpoint",
-    "Neighborhood Food Trail",
-    "Night Lights Route",
-    "Stay Wind-Down",
-  ][slot] || "City Exploration";
+  const styleKey = resolveStyleProfileKey(travelStyle);
+  const styleSlotNames = {
+    luxury: ["Premium Stay Arrival", "Signature Landmark", "Design District Lunch", "Boutique Culture", "Scenic Lounge Hour", "Waterfront Chauffeur Loop", "Fine Dining", "Suite Wind-Down"],
+    cultural: ["Old Quarter Orientation", "Sacred Landmark", "Traditional Lunch", "Museum Session", "Architecture Walk", "Craft Quarter", "Story-Led Dinner", "Heritage Night Stroll"],
+    adventure: ["Outdoor Sunrise Start", "Active Landmark Route", "Local Fuel Stop", "Trail Or Park Push", "Viewpoint Reward", "Open-Air Route", "Recovery Dinner", "Easy Night Reset"],
+    cinematic: ["Golden-Light Arrival", "Panorama Walk", "Textured Local Lunch", "Architecture Frames", "Blue-Hour Viewpoint", "Atmospheric Streets", "Photo-Friendly Dinner", "Night Scene Close"],
+    urban: ["City Pulse Start", "Boulevard Route", "Market Lunch", "Design District", "Skyline View", "Lifestyle Neighborhood", "Modern Dining", "City Lights Close"],
+    wellness: ["Slow Sunrise Reset", "Garden Or Spa Start", "Nourishing Lunch", "Quiet Culture Pause", "Waterfront Breathing Space", "Gentle Scenic Walk", "Restorative Dinner", "Calm Stay Finish"],
+    halal: ["Prayer-Aware Start", "Mosque Or Sacred Landmark", "Halal Lunch Plan", "Family-Friendly Culture", "Comfortable Scenic Stop", "Market Without Rush", "Halal Dinner Window", "Quiet Reflection Close"],
+    coastal: ["Sea-Breeze Morning", "Promenade Walk", "Coastal Lunch", "Harbour Or Island Stop", "Beach Golden Hour", "Waterfront Stroll", "Sea-View Dinner", "Shoreline Night Close"],
+    balanced: ["Sunrise Orientation", "Heritage Walk", "Local Lunch Discovery", "Museum Or Craft Session", "Golden Hour Viewpoint", "Neighborhood Food Trail", "Night Lights Route", "Stay Wind-Down"],
+  };
+  const slotName = (styleSlotNames[styleKey] || styleSlotNames.balanced)[slot] || "City Exploration";
+  const categoryByStyle = {
+    luxury: ["stay", "landmark", "food", "culture", "waterfront", "waterfront", "food", "stay"],
+    cultural: ["neighborhood", "temple", "food", "museum", "landmark", "culture", "food", "neighborhood"],
+    adventure: ["nature", "landmark", "food", "park", "waterfront", "nature", "food", "park"],
+    cinematic: ["landmark", "waterfront", "food", "culture", "waterfront", "neighborhood", "food", "landmark"],
+    urban: ["landmark", "neighborhood", "market", "culture", "waterfront", "neighborhood", "food", "landmark"],
+    wellness: ["park", "wellness", "food", "culture", "waterfront", "park", "food", "stay"],
+    halal: ["temple", "temple", "food", "culture", "park", "market", "food", "culture"],
+    coastal: ["beach", "waterfront", "food", "waterfront", "beach", "waterfront", "food", "waterfront"],
+    balanced: ["landmark", "culture", "food", "museum", "waterfront", "neighborhood", "food", "stay"],
+  };
   return {
     title: `${destinationLabel} Route ${day} - ${slotName}`,
-    description: `A curated ${slotName.toLowerCase()} in ${destinationLabel}.`,
+    description: `A curated ${slotName.toLowerCase()} in ${destinationLabel}, shaped for a ${styleKey} travel style when live local data is limited.`,
     lat: Number((fallbackBase.lat + seededOffset(day * 31 + slot * 7)).toFixed(6)),
     lng: Number((fallbackBase.lng + seededOffset(day * 37 + slot * 11)).toFixed(6)),
     imageUrl: null,
+    category: (categoryByStyle[styleKey] || categoryByStyle.balanced)[slot] || "generic",
+    syntheticDay: day,
+    syntheticSlot: slot,
     synthetic: true
   };
+}
+
+function buildSyntheticPlacePool(destination, days, travelStyle, fallbackBase) {
+  const totalDays = Math.max(1, Number(days) || 1);
+  const pool = [];
+  for (let day = 1; day <= totalDays; day++) {
+    for (let slot = 0; slot < 8; slot++) {
+      pool.push(makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle));
+    }
+  }
+  return pool;
 }
 
 function pickPlaceForSlot(candidates, usedKeys, globalUsage, lastDayUsed, travelStyle, slotName, day, totalDays, slotIndex = 0) {
@@ -1178,10 +1236,10 @@ const STYLE_CITY_PROFILES = {
       "Farewell Through Soft Rituals",
     ],
     slotCategories: {
-      morning: ["park", "nature", "temple", "beach"],
-      afternoon: ["park", "culture", "museum", "waterfront"],
+      morning: ["wellness", "park", "nature", "temple", "beach"],
+      afternoon: ["wellness", "stay", "park", "culture", "museum", "waterfront"],
       evening: ["waterfront", "beach", "park", "culture"],
-      night: ["culture", "food", "waterfront", "park", "neighborhood"],
+      night: ["stay", "wellness", "culture", "food", "waterfront", "park", "neighborhood"],
     },
     note: "Protect calm, recovery, and low-friction pacing instead of maximizing stop count.",
   },
@@ -1265,9 +1323,12 @@ export async function createCityItinerary(destination, days, budget, travelStyle
 
     places = places.filter((place) => !isPlaceExcludedForStyle(place, travelStyle));
     places = uniqueBy(places, (p) => normalizeToken(p.title));
-    if (places.length < 3) return null;
 
     const fallbackBase = geo ? { lat: geo.lat, lng: geo.lng } : { lat: 0, lng: 0 };
+    if (places.length < 3) {
+      places = buildSyntheticPlacePool(destination, days, travelStyle, fallbackBase);
+    }
+
     const placeImageCache = new Map();
     const globalUsage = new Map();
     const lastDayUsed = new Map();
@@ -1292,18 +1353,21 @@ export async function createCityItinerary(destination, days, budget, travelStyle
       const dayTheme = buildStyleDayTheme(travelStyle, day, days);
       const rotatedPlaces = rotateUnique(places, day * 7 + destination.length, Math.max(places.length, 8));
       const dayUsedKeys = new Map();
-      const eligiblePlaces = rotatedPlaces.filter((candidate) => !isPlaceExcludedForStyle(candidate, travelStyle));
+      const syntheticDayPlaces = rotatedPlaces.filter((candidate) => candidate.synthetic && candidate.syntheticDay === day);
+      const eligiblePlaces = (syntheticDayPlaces.length ? syntheticDayPlaces : rotatedPlaces).filter((candidate) => !isPlaceExcludedForStyle(candidate, travelStyle));
       for (let slot = 0; slot < 8; slot++) {
         const slotName = slotNames[slot] || "morning";
-        const preferredPool = eligiblePlaces.filter((candidate) =>
+        const slotScopedPlaces = eligiblePlaces.filter((candidate) => !candidate.synthetic || candidate.syntheticSlot === slot);
+        const slotBasePlaces = slotScopedPlaces.length ? slotScopedPlaces : eligiblePlaces;
+        const preferredPool = slotBasePlaces.filter((candidate) =>
           (styleProfile.slotCategories?.[slotName] || []).includes(inferPlaceKind(candidate))
         );
         const sourcePool = buildSlotCandidatePool(
           preferredPool,
-          eligiblePlaces.length ? eligiblePlaces : rotatedPlaces,
+          slotBasePlaces.length ? slotBasePlaces : rotatedPlaces,
           globalUsage
         );
-        const place = pickPlaceForSlot(sourcePool, dayUsedKeys, globalUsage, lastDayUsed, travelStyle, slotName, day, days, slot) || makeSyntheticPlace(destination, day, slot, fallbackBase);
+        const place = pickPlaceForSlot(sourcePool, dayUsedKeys, globalUsage, lastDayUsed, travelStyle, slotName, day, days, slot) || makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle);
         const key = normalizeToken(place.title);
         const images = placeImageCache.get(key) || [createStaticMapImageUrl(place.lat, place.lng, 14, place.title)];
         activities.push(makePlaceActivity({
