@@ -68,7 +68,23 @@ function normalizeBudget(raw) {
 }
 
 function normalizeTravelStyle(raw) {
-  return String(pickScalar(raw, "balanced") || "balanced").trim().toLowerCase() || "balanced";
+  const normalized = String(pickScalar(raw, "balanced") || "balanced")
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, "-");
+
+  if (!normalized) return "balanced";
+  if (["luxury", "premium"].includes(normalized)) return "luxury";
+  if (["history", "cultural", "culture", "heritage"].includes(normalized)) return "cultural";
+  if (["adventure", "active"].includes(normalized)) return "adventure";
+  if (["scenery", "cinematic", "photography"].includes(normalized)) return "cinematic";
+  if (["urban", "city"].includes(normalized)) return "urban";
+  if (["wellness", "relaxation", "relaxed"].includes(normalized)) return "wellness";
+  if (["halal", "halal-friendly", "halalfriendly"].includes(normalized)) return "halal";
+  if (["coastal", "beach"].includes(normalized)) return "coastal";
+  if (["packed"].includes(normalized)) return "urban";
+  if (["balanced"].includes(normalized)) return "balanced";
+  return normalized;
 }
 
 function normalizeCostBreakdown(raw, fallback = {}) {

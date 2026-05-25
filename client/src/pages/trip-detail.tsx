@@ -84,6 +84,31 @@ function parseCosts(rawCosts: unknown) {
   return rawCosts && typeof rawCosts === "object" ? rawCosts as Record<string, any> : {};
 }
 
+function formatTravelStyleLabel(value: unknown) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, "-");
+
+  const labels: Record<string, string> = {
+    luxury: "Luxury",
+    cultural: "History",
+    history: "History",
+    heritage: "History",
+    adventure: "Adventure",
+    cinematic: "Scenery",
+    scenery: "Scenery",
+    urban: "Urban",
+    wellness: "Wellness",
+    halal: "Halal Friendly",
+    "halal-friendly": "Halal Friendly",
+    coastal: "Coastal",
+    balanced: "Curated",
+  };
+
+  return labels[normalized] || String(value || "Curated");
+}
+
 export default function TripDetail() {
   const [, params] = useRoute("/trips/:id");
   const tripId = params?.id || "";
@@ -146,7 +171,7 @@ export default function TripDetail() {
                   <Wallet className="mr-1 h-3 w-3" /> {trip.budget}
                 </Badge>
                 <Badge variant="secondary" className="border border-border px-3 py-1 font-medium capitalize">
-                  <Clock className="mr-1 h-3 w-3" /> {trip.travelStyle}
+                  <Clock className="mr-1 h-3 w-3" /> {formatTravelStyleLabel(trip.travelStyle)}
                 </Badge>
                 <Badge className="bg-primary/10 px-3 py-1 font-medium text-primary hover:bg-primary/20">
                   <Sparkles className="mr-1 h-3 w-3" /> AI Generated

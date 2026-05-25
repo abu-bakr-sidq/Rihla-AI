@@ -14,6 +14,53 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 
+const TRAVEL_STYLES = [
+  {
+    value: "luxury",
+    label: "Luxury",
+    description: "Elite stays, fine dining, private comfort",
+  },
+  {
+    value: "history",
+    label: "History",
+    description: "Ancient monuments, museums, sacred heritage",
+  },
+  {
+    value: "adventure",
+    label: "Adventure",
+    description: "Treks, outdoor thrills, active exploration",
+  },
+  {
+    value: "scenery",
+    label: "Scenery",
+    description: "Viewpoints, landscapes, photography spots",
+  },
+  {
+    value: "urban",
+    label: "Urban",
+    description: "Modern districts, skyline, premium shopping",
+  },
+  {
+    value: "wellness",
+    label: "Wellness",
+    description: "Spas, calm rituals, restorative pacing",
+  },
+  {
+    value: "halal-friendly",
+    label: "Halal Friendly",
+    description: "Halal dining and prayer-aware routing",
+  },
+  {
+    value: "coastal",
+    label: "Coastal",
+    description: "Beaches, promenades, marine experiences",
+  },
+] as const;
+
+function getTravelStyleLabel(value: string) {
+  return TRAVEL_STYLES.find((style) => style.value === value)?.label || value;
+}
+
 const INTERESTS = [
   "Culture & History",
   "Food & Culinary",
@@ -37,7 +84,7 @@ export default function TripPlanner() {
   const [startDate, setStartDate] = useState("");
   const [days, setDays] = useState(3);
   const [budget, setBudget] = useState("moderate");
-  const [travelStyle, setTravelStyle] = useState("balanced");
+  const [travelStyle, setTravelStyle] = useState("luxury");
   const [interests, setInterests] = useState<string[]>([]);
 
   const isPending = generateTrip.isPending || createTrip.isPending;
@@ -200,16 +247,17 @@ export default function TripPlanner() {
               </div>
 
               <div className="space-y-4">
-                <Label className="text-base">Travel Pace</Label>
-                <RadioGroup value={travelStyle} onValueChange={setTravelStyle} className="grid grid-cols-3 gap-4">
-                  {["relaxed", "balanced", "packed"].map((value) => (
-                    <div key={value}>
-                      <RadioGroupItem value={value} id={`pace-${value}`} className="peer sr-only" />
+                <Label className="text-base">Travel Style</Label>
+                <RadioGroup value={travelStyle} onValueChange={setTravelStyle} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {TRAVEL_STYLES.map((style) => (
+                    <div key={style.value}>
+                      <RadioGroupItem value={style.value} id={`style-${style.value}`} className="peer sr-only" />
                       <Label
-                        htmlFor={`pace-${value}`}
-                        className="flex cursor-pointer flex-col items-center justify-between rounded-xl border-2 border-border bg-transparent p-4 transition-all hover:bg-secondary/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5"
+                        htmlFor={`style-${style.value}`}
+                        className="flex min-h-28 cursor-pointer flex-col items-start justify-between rounded-xl border-2 border-border bg-transparent p-4 text-left transition-all hover:bg-secondary/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5"
                       >
-                        <span className="font-semibold capitalize">{value}</span>
+                        <span className="font-semibold">{style.label}</span>
+                        <span className="mt-2 text-sm leading-relaxed text-muted-foreground">{style.description}</span>
                       </Label>
                     </div>
                   ))}
@@ -284,7 +332,7 @@ export default function TripPlanner() {
 
             <h2 className="mb-4 font-display text-3xl font-bold text-foreground">Ready to Generate!</h2>
             <p className="mx-auto mb-8 max-w-md text-lg leading-relaxed text-muted-foreground">
-              We'll create a {days}-day {budget} itinerary for <span className="font-bold text-foreground">{destination}</span> based on your interests and travel pace.
+              We'll create a {days}-day {budget} itinerary for <span className="font-bold text-foreground">{destination}</span> shaped around your <span className="font-bold text-foreground">{getTravelStyleLabel(travelStyle)}</span> travel style and interests.
             </p>
           </motion.div>
         );

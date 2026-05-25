@@ -17,9 +17,19 @@ export function getGrokClient() {
 
 export function buildPlannerPrompt({ destination, days, budget, travelStyle, interests, preferences }) {
   const interestStr = Array.isArray(interests) && interests.length ? interests.join(", ") : "sightseeing";
+  const styleGuide = `Travel style definitions:
+- LUXURY: elite stays, private guided tours, fine dining, premium comfort.
+- HISTORY: ancient monuments, archaeology, museums, sacred heritage.
+- ADVENTURE: hiking, adrenaline, outdoor thrills, active exploration.
+- SCENERY: panoramic viewpoints, epic landscapes, nature reserves, photography.
+- URBAN: skylines, modern architecture, premium shopping, high-energy districts.
+- WELLNESS: spas, mindfulness, yoga, hot springs, rejuvenating dining.
+- HALAL FRIENDLY: verified halal dining and prayer-space-aware routing.
+- COASTAL: beaches, sea views, marine activity, tropical waterfront rhythm.`;
   return `Create a detailed ${days}-day travel itinerary for ${destination}.
 Budget: ${budget}. Style: ${travelStyle}. Interests: ${interestStr}.
 ${preferences?.specialRequests ? `Special requests: ${preferences.specialRequests}.` : ""}
+${styleGuide}
 
 Return strictly valid JSON with this structure:
 {
@@ -103,11 +113,21 @@ Chain-of-Thought approach:
   const styleString = String(travelStyle || "").toLowerCase();
   const styleBlock = styleString.includes("halal")
     ? "STYLE ENFORCEMENT (HALAL): You MUST prioritize mosques, halal-certified dining, family-friendly spaces, and alcohol-free environments. STRICTLY EXCLUDE bars, pubs, clubs, nightlife venues, and non-halal food recommendations."
+    : styleString.includes("luxury")
+      ? "STYLE ENFORCEMENT (LUXURY): Prioritize elite stays, private-feeling access, signature fine dining, premium neighborhoods, and polished comfort. Avoid weak generic filler."
+      : styleString.includes("history") || styleString.includes("cultural") || styleString.includes("heritage")
+        ? "STYLE ENFORCEMENT (HISTORY): Prioritize ancient monuments, sacred heritage, archaeological sites, museums, old quarters, and story-led cultural routes."
     : styleString.includes("adventure")
       ? "STYLE ENFORCEMENT (ADVENTURE): Prioritize hiking, water sports, outdoor trails, and high-energy activities. Exclude slow, purely passive sightseeing."
-      : styleString.includes("coastal")
-        ? "STYLE ENFORCEMENT (COASTAL): Prioritize beaches, waterfronts, sea-breeze walks, and coastal views. Stay near the water where possible."
-        : `STYLE ENFORCEMENT: Ensure activities strictly align with the ${travelStyle} travel style.`;
+      : styleString.includes("scenery") || styleString.includes("cinematic")
+        ? "STYLE ENFORCEMENT (SCENERY): Prioritize viewpoints, dramatic coastlines, skyline terraces, scenic roads, photo stops, gardens, and atmosphere-led places."
+        : styleString.includes("urban")
+          ? "STYLE ENFORCEMENT (URBAN): Prioritize modern districts, skyline stops, shopping streets, premium cafes, nightlife-safe city energy, and contemporary landmarks."
+          : styleString.includes("wellness")
+            ? "STYLE ENFORCEMENT (WELLNESS): Prioritize quiet gardens, restorative stays, spa rituals, yoga-friendly spaces, calm waterfronts, and nourishing dining."
+        : styleString.includes("coastal")
+          ? "STYLE ENFORCEMENT (COASTAL): Prioritize beaches, waterfronts, sea-breeze walks, marine experiences, boardwalks, and coastal views. Stay near the water where possible."
+          : `STYLE ENFORCEMENT: Ensure activities strictly align with the ${travelStyle} travel style.`;
 
   const userPrompt = `Design an optimized ${days}-day travel itinerary for ${destination}.
 
