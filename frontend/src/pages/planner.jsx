@@ -1105,7 +1105,11 @@ function buildItinerary(fd) {
     const slotAverage = (profile.slotWeights || []).reduce((sum, weight) => sum + (Number(weight) || 0), 0) / Math.max(1, profile.slotWeights?.length || 0);
     return Math.max(1, profile.stayWeight + profile.foodWeight + profile.transportWeight + profile.activityWeight + slotAverage);
   });
-  const dayTotals = splitByWeights(budgetSummary.costBreakdown.total, dayAllocationWeights);
+  const dayTotals = splitDistinctByWeights(
+    budgetSummary.costBreakdown.total,
+    dayAllocationWeights,
+    `${fd.destination}|${fd.travelStyle}|days`
+  );
   const categoryNeeds = { morning: daysNum * 2, afternoon: daysNum * 2, evening: daysNum * 2, night: daysNum * 2 };
   const categoryPools = {
     morning: buildExpandedActivityPool([], 'morning', categoryNeeds.morning, fd),
@@ -1174,7 +1178,11 @@ function buildItinerary(fd) {
         act,
       };
     });
-    const slotCosts = splitByWeights(dayTotals[i] || 0, buildPlanSlotWeights(slotEntries.map(({ slotKey, act }) => ({ slotKey, act }))));
+    const slotCosts = splitDistinctByWeights(
+      dayTotals[i] || 0,
+      buildPlanSlotWeights(slotEntries.map(({ slotKey, act }) => ({ slotKey, act }))),
+      `${fd.destination}|${dNum}|slots`
+    );
     const slots = slotEntries.reduce((acc, { slotKey, payload }, si) => {
       acc[slotKey] = {
         ...payload,
@@ -1667,6 +1675,32 @@ const getInclusiveDayCount = (startDate, endDate, fallback = 1) => {
 const stableBudgetSeed = (value = "") => Array.from(String(value)).reduce((sum, char, index) => {
   return sum + (char.charCodeAt(0) * (index + 1));
 }, 0);
+
+const splitDistinctByWeights = (total, weights = [], seed = "") => {
+  const safeWeights = Array.isArray(weights) && weights.length ? weights : [1];
+  const safeTotal = Math.max(0, Math.round(Number(total) || 0));
+  const distinctFloor = (safeWeights.length * (safeWeights.length - 1)) / 2;
+
+  if (safeWeights.length <= 1 || safeTotal < distinctFloor) {
+    return splitByWeights(safeTotal, safeWeights);
+  }
+
+  const order = safeWeights
+    .map((weight, index) => ({
+      index,
+      weight: Math.max(0, Number(weight) || 0),
+      tie: stableBudgetSeed(`${seed}|${index}`),
+    }))
+    .sort((a, b) => (a.weight - b.weight) || (a.tie - b.tie));
+
+  const offsets = Array.from({ length: safeWeights.length }, () => 0);
+  order.forEach(({ index }, rank) => {
+    offsets[index] = rank;
+  });
+
+  const weightedValues = splitByWeights(safeTotal - distinctFloor, safeWeights);
+  return weightedValues.map((value, index) => value + offsets[index]);
+};
 
 const buildPlanSlotWeights = (entries = []) => {
   return entries.map(({ slotKey, act }, index) => {

@@ -27,6 +27,36 @@ function splitBudgetByWeights(total, weights = []) {
   return values;
 }
 
+function buildBudgetSeed(value = "") {
+  return Array.from(String(value)).reduce((sum, char, index) => sum + (char.charCodeAt(0) * (index + 1)), 0);
+}
+
+function splitDistinctBudgetByWeights(total, weights = [], seed = "") {
+  const safeWeights = Array.isArray(weights) && weights.length ? weights : [1];
+  const safeTotal = Math.max(0, Math.round(Number(total) || 0));
+  const distinctFloor = (safeWeights.length * (safeWeights.length - 1)) / 2;
+
+  if (safeWeights.length <= 1 || safeTotal < distinctFloor) {
+    return splitBudgetByWeights(safeTotal, safeWeights);
+  }
+
+  const order = safeWeights
+    .map((weight, index) => ({
+      index,
+      weight: Math.max(0, Number(weight) || 0),
+      tie: buildBudgetSeed(`${seed}|${index}`),
+    }))
+    .sort((a, b) => (a.weight - b.weight) || (a.tie - b.tie));
+
+  const offsets = Array.from({ length: safeWeights.length }, () => 0);
+  order.forEach(({ index }, rank) => {
+    offsets[index] = rank;
+  });
+
+  const weightedValues = splitBudgetByWeights(safeTotal - distinctFloor, safeWeights);
+  return weightedValues.map((value, index) => value + offsets[index]);
+}
+
 function resolveBudgetParts(costBreakdown = {}, total = 0) {
   const safeTotal = Math.max(0, Math.round(Number(total) || 0));
   const stay = parseCost(costBreakdown?.stay);
@@ -1403,7 +1433,11 @@ export function reconcileItineraryBudget(itinerary = {}, costBreakdown = {}) {
     const slotTotal = BUDGET_SLOT_KEYS.reduce((sum, slotKey) => sum + parseCost(day?.[slotKey]?.cost), 0);
     return Math.max(1, slotTotal);
   });
-  const dayTotals = splitBudgetByWeights(total, dayWeights);
+  const dayTotals = splitDistinctBudgetByWeights(
+    total,
+    dayWeights,
+    `${cloned.trip_overview?.destination || ""}|days`
+  );
 
   cloned.days = cloned.days.map((day, dayIndex) => {
     const nextDay = { ...day };
@@ -1413,7 +1447,11 @@ export function reconcileItineraryBudget(itinerary = {}, costBreakdown = {}) {
     );
     const existingSlots = BUDGET_SLOT_KEYS.filter((slotKey) => nextDay[slotKey]);
     const slotWeights = existingSlots.map((slotKey) => Math.max(1, parseCost(nextDay[slotKey]?.cost)));
-    const slotCosts = splitBudgetByWeights(dayActivities || 0, slotWeights);
+    const slotCosts = splitDistinctBudgetByWeights(
+      dayTotals[dayIndex] || 0,
+      slotWeights,
+      `${cloned.trip_overview?.destination || ""}|day-${dayIndex + 1}`
+    );
 
     existingSlots.forEach((slotKey, slotIndex) => {
       nextDay[slotKey] = {
