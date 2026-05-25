@@ -813,6 +813,10 @@ export default function TripDetail() {
   const deleteMutation = useDeleteTrip();
   const { toast } = useToast();
   const isLightDetail = detailTheme === 'light';
+  const driftX = useMotionValue(0);
+  const driftY = useMotionValue(0);
+  const smoothDriftX = useSpring(driftX, { stiffness: 42, damping: 18, mass: 1.05 });
+  const smoothDriftY = useSpring(driftY, { stiffness: 42, damping: 18, mass: 1.05 });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -926,10 +930,6 @@ export default function TripDetail() {
 
   const AI_GEMS = res.ai_suggestions?.hidden_gems || [];
   const AI_TIPS = res.ai_suggestions?.tips || [];
-  const driftX = useMotionValue(0);
-  const driftY = useMotionValue(0);
-  const smoothDriftX = useSpring(driftX, { stiffness: 42, damping: 18, mass: 1.05 });
-  const smoothDriftY = useSpring(driftY, { stiffness: 42, damping: 18, mass: 1.05 });
 
   const handleBackdropPointerMove = (event) => {
     if (typeof window === 'undefined') return;
