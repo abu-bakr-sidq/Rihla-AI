@@ -2369,8 +2369,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
       return () => { alive = false; };
     }, [queryKey, cardIndex]);
 
-  const fallbackImages = _activityImageFallbacks(imageQueries, cardIndex);
-  const activeImageSrc = imgSrc || fallbackImages[0] || "";
+  const activeImageSrc = imgSrc || "";
 
   return (
     <div
@@ -2391,10 +2390,6 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
               e.target.onerror = null;
               if (imgSrc) {
                 setImgSrc("");
-                return;
-              }
-              if (fallbackImages[1] && e.currentTarget.src !== fallbackImages[1]) {
-                e.currentTarget.src = fallbackImages[1];
                 return;
               }
               e.target.style.display = 'none';
@@ -4151,21 +4146,6 @@ export default function Planner() {
                 // Tier 1: curated photo ID embedded directly on the activity object
                 if (act?.knownId && act?.image?.length >= 10 && !act.image.includes(' ')) {
                   const b = "https://images.unsplash.com/photo-" + act.image + "?auto=format&fit=crop&q=80";
-                  return { card: b + "&w=600&h=440", panel: b + "&w=640&h=420" };
-                }
-
-                // Tier 2: deterministic keyword match for more relevant style-aware visuals
-                const imageNeedle = `${act?.imageQuery || ''} ${act?.place || ''} ${act?.activity || ''}`.toLowerCase();
-                const matchedKeyword = KW.find(([keyword]) => imageNeedle.includes(keyword));
-                if (matchedKeyword?.[1]) {
-                  const b = "https://images.unsplash.com/photo-" + matchedKeyword[1] + "?auto=format&fit=crop&q=80";
-                  return { card: b + "&w=600&h=440", panel: b + "&w=640&h=420" };
-                }
-
-                // Tier 3: Mathematical global uniqueness mapping (Guaranteed Infinite Scale for 100+ days)
-                const globalSeed = idx;
-                if (globalSeed < POOL.length) {
-                  const b = "https://images.unsplash.com/photo-" + POOL[globalSeed] + "?auto=format&fit=crop&q=80";
                   return { card: b + "&w=600&h=440", panel: b + "&w=640&h=420" };
                 }
 
