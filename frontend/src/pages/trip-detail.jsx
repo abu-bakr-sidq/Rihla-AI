@@ -804,6 +804,7 @@ export default function TripDetail() {
   const [exportingPreview, setExportingPreview] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
   const [detailTheme, setDetailTheme] = useState(() => {
     if (typeof window === 'undefined') return 'dark';
     return localStorage.getItem('trip-detail-theme') || 'dark';
@@ -817,6 +818,19 @@ export default function TripDetail() {
     if (typeof window === 'undefined') return;
     localStorage.setItem('trip-detail-theme', detailTheme);
   }, [detailTheme]);
+
+  useEffect(() => {
+    if (!isThemeTransitioning) return undefined;
+    const timer = window.setTimeout(() => setIsThemeTransitioning(false), 360);
+    return () => window.clearTimeout(timer);
+  }, [isThemeTransitioning]);
+
+  const handleDetailThemeToggle = () => {
+    setIsThemeTransitioning(true);
+    startTransition(() => {
+      setDetailTheme((curr) => curr === 'light' ? 'dark' : 'light');
+    });
+  };
 
   // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ Auth guard: only redirect once we KNOW user is not logged in ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬
   useEffect(() => {
@@ -921,7 +935,7 @@ export default function TripDetail() {
 
   return (
     <AppInnerLayout>
-      <div className={`trip-detail-shell ${isLightDetail ? 'detail-light bg-[#eef4fb]' : 'detail-dark'} relative w-full min-h-screen pb-10 overflow-hidden transition-colors duration-300`}>
+      <div className={`trip-detail-shell ${isThemeTransitioning ? 'theme-transitioning' : ''} ${isLightDetail ? 'detail-light bg-[#eef4fb]' : 'detail-dark'} relative w-full min-h-screen pb-10 overflow-hidden transition-colors duration-300`}>
         <div className="fixed inset-0 -z-10 overflow-hidden">
           {backgroundSlides.length > 0 ? (
             backgroundSlides.map((src, index) => (
@@ -931,11 +945,11 @@ export default function TripDetail() {
                 initial={{ opacity: 0 }}
                 animate={{
                   opacity: index === 0 ? 0.56 : 0.28,
-                  scale: [1.04, 1.11, 1.04],
-                  x: index === 0 ? [0, -18, 0] : [0, 16, 0],
-                  y: index === 0 ? [0, 12, 0] : [0, -14, 0],
+                  scale: isThemeTransitioning ? 1.04 : [1.04, 1.11, 1.04],
+                  x: isThemeTransitioning ? 0 : (index === 0 ? [0, -18, 0] : [0, 16, 0]),
+                  y: isThemeTransitioning ? 0 : (index === 0 ? [0, 12, 0] : [0, -14, 0]),
                 }}
-                transition={{ duration: index === 0 ? 24 : 28, repeat: Infinity, ease: "easeInOut" }}
+                transition={isThemeTransitioning ? { duration: 0.24, ease: "easeOut" } : { duration: index === 0 ? 24 : 28, repeat: Infinity, ease: "easeInOut" }}
               >
                 <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${src})` }} />
               </motion.div>
@@ -948,13 +962,13 @@ export default function TripDetail() {
             : 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.2),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.16),transparent_22%),linear-gradient(180deg,rgba(6,11,20,0.14)_0%,rgba(6,11,20,0.58)_45%,rgba(6,11,20,0.9)_100%)]'}`} />
           <motion.div
             className={`absolute -top-24 left-[8%] h-[300px] w-[300px] rounded-full blur-[90px] ${isLightDetail ? 'bg-[#38BDF8]/5' : 'bg-[#38BDF8]/10'}`}
-            animate={{ x: [0, 44, 0], y: [0, 18, 0], scale: [1, 1.1, 1] }}
-            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+            animate={isThemeTransitioning ? { x: 0, y: 0, scale: 1 } : { x: [0, 44, 0], y: [0, 18, 0], scale: [1, 1.1, 1] }}
+            transition={isThemeTransitioning ? { duration: 0.24, ease: "easeOut" } : { duration: 18, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
             className={`absolute top-[18%] right-[10%] h-[240px] w-[240px] rounded-full blur-[82px] ${isLightDetail ? 'bg-[#D4AF37]/5' : 'bg-[#D4AF37]/10'}`}
-            animate={{ x: [0, -32, 0], y: [0, 24, 0], scale: [1, 1.08, 1] }}
-            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+            animate={isThemeTransitioning ? { x: 0, y: 0, scale: 1 } : { x: [0, -32, 0], y: [0, 24, 0], scale: [1, 1.08, 1] }}
+            transition={isThemeTransitioning ? { duration: 0.24, ease: "easeOut" } : { duration: 20, repeat: Infinity, ease: "easeInOut" }}
           />
         </div>
 
@@ -998,7 +1012,7 @@ export default function TripDetail() {
                       compact={true}
                       isDarkOverride={!isLightDetail}
                       className="shadow-none"
-                      onClick={() => startTransition(() => setDetailTheme((curr) => curr === 'light' ? 'dark' : 'light'))}
+                      onClick={handleDetailThemeToggle}
                     />
                   </div>
                 </div>
@@ -1241,8 +1255,15 @@ export default function TripDetail() {
         .trip-detail-shell {
           transition: background 520ms cubic-bezier(0.22, 1, 0.36, 1), color 360ms ease, box-shadow 420ms ease, border-color 360ms ease;
         }
-        .trip-detail-shell * {
-          transition: background-color 420ms ease, color 320ms ease, border-color 360ms ease, box-shadow 420ms ease, opacity 320ms ease;
+        .trip-detail-shell .trip-glass-panel,
+        .trip-detail-shell .trip-theme-surface,
+        .trip-detail-shell .trip-detail-card,
+        .trip-detail-shell .trip-detail-pill,
+        .trip-detail-shell .trip-detail-chip {
+          transition: background-color 320ms ease, color 240ms ease, border-color 280ms ease, box-shadow 320ms ease, opacity 240ms ease;
+        }
+        .trip-detail-shell.theme-transitioning {
+          will-change: background, color;
         }
         .trip-detail-shell.detail-light {
           background:
