@@ -822,21 +822,10 @@ export default function TripDetail() {
 
   const handleDetailThemeToggle = () => {
     const nextTheme = detailTheme === 'light' ? 'dark' : 'light';
-    const applyThemeChange = () => {
-      startTransition(() => {
-        setDetailTheme(nextTheme);
-        setTheme(nextTheme);
-      });
-    };
-
-    if (typeof document !== 'undefined' && typeof document.startViewTransition === 'function') {
-      document.startViewTransition(() => {
-        applyThemeChange();
-      });
-      return;
-    }
-
-    applyThemeChange();
+    startTransition(() => {
+      setDetailTheme(nextTheme);
+      setTheme(nextTheme);
+    });
   };
 
   // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ Auth guard: only redirect once we KNOW user is not logged in ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬
@@ -991,7 +980,7 @@ export default function TripDetail() {
             }}
           >
             <div className="trip-detail-hero-grid mb-6 items-center gap-4 xl:gap-6">
-              <div className="min-w-0 text-center md:text-left">
+              <div className="min-w-0 text-center md:text-left trip-detail-copy">
                 <p className="text-[9px] font-black text-[#D4AF37] uppercase tracking-[0.6em] mb-3">Rihla AI - Your Journey</p>
                 <h1 className={`text-[clamp(2rem,4.3vw,3.6rem)] font-black uppercase tracking-tight leading-[0.94] mb-4 ${isLightDetail ? 'text-slate-950' : 'text-white'}`} style={{ letterSpacing: '-0.05em' }}>{DEST_SHORT}</h1>
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5">
@@ -1004,7 +993,7 @@ export default function TripDetail() {
                 </div>
               </div>
               <div className="trip-detail-hero-center flex flex-col sm:flex-row items-stretch justify-center gap-3">
-                <div className={`rounded-[18px] border px-3 py-2.5 shadow-[0_14px_34px_rgba(15,23,42,0.14)] backdrop-blur-xl ${
+                <div className={`trip-theme-surface rounded-[18px] border px-3 py-2.5 shadow-[0_14px_34px_rgba(15,23,42,0.14)] backdrop-blur-xl ${
                   isLightDetail
                     ? 'border-slate-300/70 bg-white/88'
                     : 'border-white/10 bg-[rgba(7,17,29,0.76)]'
@@ -1023,7 +1012,7 @@ export default function TripDetail() {
                     />
                   </div>
                 </div>
-                <div className={`rounded-[20px] border px-4 py-3 text-center backdrop-blur-xl transition-colors duration-300 ${isLightDetail ? 'border-[#D4AF37]/24 bg-white/90' : 'border-[#D4AF37]/16 bg-black/18'}`}>
+                <div className={`trip-theme-surface rounded-[20px] border px-4 py-3 text-center backdrop-blur-xl transition-colors duration-500 ${isLightDetail ? 'border-[#D4AF37]/24 bg-white/90' : 'border-[#D4AF37]/16 bg-black/18'}`}>
                   <p className={`text-[9px] uppercase tracking-[0.26em] mb-1 ${isLightDetail ? 'text-slate-500' : 'text-white/45'}`}>Total Budget</p>
                   <p className="text-[clamp(1.75rem,3vw,2.7rem)] font-black text-[#D4AF37] tracking-tight leading-none">{fmtCur(TOTAL_BUDGET, tripCurrency)}</p>
                 </div>
@@ -1103,7 +1092,7 @@ export default function TripDetail() {
                   <button
                     key={d.day}
                     onClick={() => { setSelectedDay(d.day); setPlanFocusAct(null); }}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-full transition-all duration-200 flex-shrink-0 font-black text-[10px] sm:text-[11px] uppercase tracking-widest"
+                    className="trip-detail-pill flex items-center gap-2 px-4 py-2.5 rounded-full transition-all duration-500 flex-shrink-0 font-black text-[10px] sm:text-[11px] uppercase tracking-widest"
                     style={{
                       background: isActive ? '#D4AF37' : (isLightDetail ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.06)'),
                       color: isActive ? '#000' : (isLightDetail ? 'rgba(15,23,42,0.65)' : 'rgba(255,255,255,0.52)'),
@@ -1133,7 +1122,7 @@ export default function TripDetail() {
               {activeDay && (
                 <AnimatePresence mode="wait">
                   <motion.div key={activeDay.day} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.28, ease: 'easeOut' }}>
-                    <div className="flex items-center gap-3 mb-5">
+                    <div className="trip-detail-copy flex items-center gap-3 mb-5">
                       <div className="w-9 h-9 rounded-xl bg-[#D4AF37] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#D4AF37]/30">
                         <span className="text-sm font-black text-black">{activeDay.day}</span>
                       </div>
@@ -1259,23 +1248,19 @@ export default function TripDetail() {
         variant="destructive"
       />
       <style>{`
-        ::view-transition-old(root),
-        ::view-transition-new(root) {
-          animation-duration: 420ms;
-          animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-        }
         .trip-detail-shell {
-          transition: background 520ms cubic-bezier(0.22, 1, 0.36, 1), color 360ms ease, box-shadow 420ms ease, border-color 360ms ease;
+          transition: background-color 560ms cubic-bezier(0.22, 1, 0.36, 1), color 360ms ease;
         }
         .trip-detail-shell .trip-glass-panel,
         .trip-detail-shell .trip-theme-surface,
         .trip-detail-shell .trip-detail-card,
         .trip-detail-shell .trip-detail-pill,
         .trip-detail-shell .trip-detail-chip {
-          transition: background-color 320ms ease, color 240ms ease, border-color 280ms ease, box-shadow 320ms ease, opacity 240ms ease;
+          transition: background-color 420ms cubic-bezier(0.22, 1, 0.36, 1), color 300ms ease, border-color 360ms ease, box-shadow 420ms ease, opacity 240ms ease;
         }
-        .trip-detail-shell.theme-transitioning {
-          will-change: background, color;
+        .trip-detail-shell .trip-detail-copy,
+        .trip-detail-shell .trip-detail-copy * {
+          transition: color 300ms ease, opacity 240ms ease, border-color 300ms ease, background-color 300ms ease;
         }
         .trip-detail-shell.detail-light {
           background:
