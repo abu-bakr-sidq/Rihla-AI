@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, startTransition } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useUser } from '@/hooks/use-auth';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
 import AppInnerLayout from '@/components/AppInnerLayout';
 import { Calendar, Clock, Sun, CloudSun, Sunset, Moon, Lightbulb, AlertTriangle, Users, Compass, MapPin, ChevronDown, ChevronLeft, ChevronRight, Utensils, Gem, Camera, Bed, ExternalLink, Download, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { usePrayerTimes } from '@/hooks/usePrayerTimes';
@@ -926,10 +926,31 @@ export default function TripDetail() {
 
   const AI_GEMS = res.ai_suggestions?.hidden_gems || [];
   const AI_TIPS = res.ai_suggestions?.tips || [];
+  const driftX = useMotionValue(0);
+  const driftY = useMotionValue(0);
+  const smoothDriftX = useSpring(driftX, { stiffness: 42, damping: 18, mass: 1.05 });
+  const smoothDriftY = useSpring(driftY, { stiffness: 42, damping: 18, mass: 1.05 });
+
+  const handleBackdropPointerMove = (event) => {
+    if (typeof window === 'undefined') return;
+    const xRatio = (event.clientX / window.innerWidth) - 0.5;
+    const yRatio = (event.clientY / window.innerHeight) - 0.5;
+    driftX.set(xRatio * 26);
+    driftY.set(yRatio * 18);
+  };
+
+  const handleBackdropPointerLeave = () => {
+    driftX.set(0);
+    driftY.set(0);
+  };
 
   return (
     <AppInnerLayout>
-      <div className={`trip-detail-shell ${isLightDetail ? 'detail-light bg-[#eef4fb]' : 'detail-dark'} relative w-full min-h-screen pb-10 overflow-hidden transition-[background-color,color] duration-500`}>
+      <div
+        className={`trip-detail-shell ${isLightDetail ? 'detail-light bg-[#eef4fb]' : 'detail-dark'} relative w-full min-h-screen pb-10 overflow-hidden transition-[background-color,color] duration-500`}
+        onMouseMove={handleBackdropPointerMove}
+        onMouseLeave={handleBackdropPointerLeave}
+      >
         <div className="fixed inset-0 -z-10 overflow-hidden">
           {backgroundSlides.length > 0 ? (
             backgroundSlides.map((src, index) => (
@@ -966,7 +987,45 @@ export default function TripDetail() {
           />
         </div>
 
-        <div className="mx-auto w-full max-w-[1320px] px-[clamp(12px,1.6vw,24px)] pt-[clamp(78px,7vh,100px)]">
+        <div className="pointer-events-none absolute inset-x-0 top-[84px] bottom-0 z-0 overflow-hidden">
+          <div className="mx-auto h-full w-full max-w-[1320px] px-[clamp(12px,1.6vw,24px)]">
+            <div className="trip-scene-shell relative h-full w-full overflow-hidden rounded-[36px]">
+              {backgroundSlides[0] ? (
+                <motion.div
+                  className="absolute inset-0"
+                  style={{ x: smoothDriftX, y: smoothDriftY }}
+                  animate={{ scale: [1.05, 1.1, 1.05], opacity: isLightDetail ? [0.2, 0.27, 0.2] : [0.18, 0.24, 0.18] }}
+                  transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <div
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${backgroundSlides[0]})`, filter: isLightDetail ? 'saturate(0.92) blur(2px)' : 'saturate(0.82) blur(2px)' }}
+                  />
+                </motion.div>
+              ) : null}
+              {backgroundSlides[1] ? (
+                <motion.div
+                  className="absolute inset-0"
+                  animate={{ scale: [1.08, 1.14, 1.08], x: [0, 18, 0], y: [0, -10, 0], opacity: isLightDetail ? [0.08, 0.14, 0.08] : [0.1, 0.16, 0.1] }}
+                  transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <div
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${backgroundSlides[1]})`, filter: 'blur(7px) saturate(0.78)' }}
+                  />
+                </motion.div>
+              ) : null}
+              <div className={`absolute inset-0 ${isLightDetail
+                ? 'bg-[linear-gradient(180deg,rgba(248,251,255,0.5)_0%,rgba(238,244,250,0.72)_18%,rgba(231,239,246,0.86)_48%,rgba(231,239,246,0.96)_100%)]'
+                : 'bg-[linear-gradient(180deg,rgba(5,11,19,0.12)_0%,rgba(5,11,19,0.38)_16%,rgba(5,11,19,0.74)_44%,rgba(5,11,19,0.95)_100%)]'}`} />
+              <div className={`absolute inset-x-[4%] top-[38px] h-[280px] rounded-[32px] blur-[58px] ${isLightDetail ? 'bg-[#38BDF8]/8' : 'bg-[#38BDF8]/10'}`} />
+              <div className={`absolute inset-x-[18%] top-[238px] h-[210px] rounded-[32px] blur-[72px] ${isLightDetail ? 'bg-[#D4AF37]/6' : 'bg-[#D4AF37]/8'}`} />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_30%)] opacity-70" />
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 mx-auto w-full max-w-[1320px] px-[clamp(12px,1.6vw,24px)] pt-[clamp(78px,7vh,100px)]">
           <div
             className="trip-glass-panel mb-4 rounded-[28px] border px-4 py-4 md:px-5 md:py-5 shadow-[0_28px_90px_rgba(0,0,0,0.18)]"
             style={{
@@ -1259,6 +1318,12 @@ export default function TripDetail() {
         .trip-detail-shell .trip-detail-copy,
         .trip-detail-shell .trip-detail-copy * {
           transition: color 300ms ease, opacity 240ms ease, border-color 300ms ease, background-color 300ms ease;
+        }
+        .trip-scene-shell {
+          border: ${isLightDetail ? '1px solid rgba(255,255,255,0.26)' : '1px solid rgba(255,255,255,0.05)'};
+          box-shadow: ${isLightDetail ? 'inset 0 1px 0 rgba(255,255,255,0.34)' : 'inset 0 1px 0 rgba(255,255,255,0.04)'};
+          mask-image: linear-gradient(180deg, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.9) 58%, rgba(0,0,0,0.34) 84%, transparent 100%);
+          -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.9) 58%, rgba(0,0,0,0.34) 84%, transparent 100%);
         }
         .trip-detail-shell.detail-light {
           background:
