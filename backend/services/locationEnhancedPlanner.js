@@ -99,6 +99,28 @@ const CURATED_CITY_CENTERS = {
       west: 76.84,
       east: 77.08,
     }
+  },
+  bangalore: {
+    lat: 12.9716,
+    lng: 77.5946,
+    displayName: "Bengaluru, Karnataka",
+    boundingBox: {
+      south: 12.84,
+      north: 13.10,
+      west: 77.46,
+      east: 77.74,
+    }
+  },
+  hyderabad: {
+    lat: 17.385,
+    lng: 78.4867,
+    displayName: "Hyderabad, Telangana",
+    boundingBox: {
+      south: 17.25,
+      north: 17.53,
+      west: 78.33,
+      east: 78.62,
+    }
   }
 };
 
@@ -309,6 +331,44 @@ const COIMBATORE_CURATED_PLACES = [
   { title: "Ukkadam Lake View", area: "Ukkadam", category: "waterfront", lat: 10.9869, lng: 76.9517 },
 ];
 
+const BANGALORE_CURATED_PLACES = [
+  { title: "Bangalore Palace", area: "Vasanth Nagar", category: "landmark", lat: 12.9987, lng: 77.5920 },
+  { title: "Cubbon Park", area: "Central Bengaluru", category: "park", lat: 12.9763, lng: 77.5929 },
+  { title: "Lalbagh Botanical Garden", area: "Mavalli", category: "park", lat: 12.9507, lng: 77.5848 },
+  { title: "Vidhana Soudha Viewpoint", area: "Central Bengaluru", category: "landmark", lat: 12.9797, lng: 77.5913 },
+  { title: "National Gallery of Modern Art Bengaluru", area: "Palace Road", category: "museum", lat: 12.9895, lng: 77.5848 },
+  { title: "Church Street", area: "MG Road", category: "neighborhood", lat: 12.9757, lng: 77.6076 },
+  { title: "UB City", area: "Ashok Nagar", category: "mall", lat: 12.9717, lng: 77.5962 },
+  { title: "Commercial Street", area: "Shivaji Nagar", category: "market", lat: 12.9825, lng: 77.6080 },
+  { title: "Bengaluru Palace Grounds Heritage Circuit", area: "Palace Grounds", category: "culture", lat: 12.9991, lng: 77.5910 },
+  { title: "Visvesvaraya Industrial and Technological Museum", area: "Kasturba Road", category: "museum", lat: 12.9758, lng: 77.5969 },
+  { title: "The Leela Palace Bengaluru", area: "Old Airport Road", category: "stay", lat: 12.9607, lng: 77.6489 },
+  { title: "The Ritz-Carlton Bangalore", area: "Residency Road", category: "stay", lat: 12.9674, lng: 77.6012 },
+  { title: "Karavalli", area: "Residency Road", category: "food", lat: 12.9670, lng: 77.6010 },
+  { title: "Toit Indiranagar", area: "Indiranagar", category: "food", lat: 12.9719, lng: 77.6412 },
+  { title: "Nandi Hills Sunrise Ridge", area: "Nandi Hills", category: "nature", lat: 13.3702, lng: 77.6835 },
+  { title: "Bangalore Golf Club Outlook", area: "High Grounds", category: "landmark", lat: 12.9866, lng: 77.5806 },
+];
+
+const HYDERABAD_CURATED_PLACES = [
+  { title: "Charminar", area: "Old City", category: "landmark", lat: 17.3616, lng: 78.4747 },
+  { title: "Mecca Masjid", area: "Old City", category: "temple", lat: 17.3605, lng: 78.4736 },
+  { title: "Chowmahalla Palace", area: "Old City", category: "landmark", lat: 17.3578, lng: 78.4717 },
+  { title: "Salar Jung Museum", area: "Darulshifa", category: "museum", lat: 17.3713, lng: 78.4804 },
+  { title: "Golconda Fort", area: "Ibrahim Bagh", category: "landmark", lat: 17.3833, lng: 78.4011 },
+  { title: "Qutb Shahi Tombs", area: "Ibrahim Bagh", category: "culture", lat: 17.3967, lng: 78.3961 },
+  { title: "Hussain Sagar Lakefront", area: "Tank Bund", category: "waterfront", lat: 17.4239, lng: 78.4738 },
+  { title: "Birla Mandir Hyderabad", area: "Hill Fort", category: "temple", lat: 17.4062, lng: 78.4691 },
+  { title: "Laad Bazaar", area: "Old City", category: "market", lat: 17.3609, lng: 78.4732 },
+  { title: "Shilparamam", area: "HITEC City", category: "culture", lat: 17.4526, lng: 78.3790 },
+  { title: "Banjara Hills Design District", area: "Banjara Hills", category: "neighborhood", lat: 17.4163, lng: 78.4382 },
+  { title: "Falaknuma Palace", area: "Falaknuma", category: "stay", lat: 17.3317, lng: 78.4676 },
+  { title: "Taj Falaknuma Palace", area: "Falaknuma", category: "stay", lat: 17.3315, lng: 78.4678 },
+  { title: "The Park Hyderabad", area: "Somajiguda", category: "stay", lat: 17.4234, lng: 78.4672 },
+  { title: "Pista House Charminar", area: "Old City", category: "food", lat: 17.3624, lng: 78.4739 },
+  { title: "Jewel of Nizam", area: "Golconda", category: "food", lat: 17.3828, lng: 78.4017 },
+];
+
 function logDebug(msg) {
   try {
     const timestamp = new Date().toISOString();
@@ -337,6 +397,8 @@ function detectCuratedCityKey(destination) {
   if (d.includes("pondicherry") || d.includes("puducherry")) return "pondicherry";
   if (d.includes("madurai")) return "madurai";
   if (d.includes("coimbatore") || d.includes("kovai")) return "coimbatore";
+  if (d.includes("bangalore") || d.includes("bengaluru")) return "bangalore";
+  if (d.includes("hyderabad")) return "hyderabad";
   return null;
 }
 
@@ -439,6 +501,28 @@ function getCuratedCityPlaces(destination) {
   }
   if (key === "coimbatore") {
     return COIMBATORE_CURATED_PLACES.map((place) => ({
+      title: place.title,
+      description: buildCuratedPlaceDescription(place, destinationLabel),
+      lat: Number(place.lat),
+      lng: Number(place.lng),
+      imageUrl: null,
+      area: place.area,
+      category: place.category
+    }));
+  }
+  if (key === "bangalore") {
+    return BANGALORE_CURATED_PLACES.map((place) => ({
+      title: place.title,
+      description: buildCuratedPlaceDescription(place, destinationLabel),
+      lat: Number(place.lat),
+      lng: Number(place.lng),
+      imageUrl: null,
+      area: place.area,
+      category: place.category
+    }));
+  }
+  if (key === "hyderabad") {
+    return HYDERABAD_CURATED_PLACES.map((place) => ({
       title: place.title,
       description: buildCuratedPlaceDescription(place, destinationLabel),
       lat: Number(place.lat),
@@ -1923,11 +2007,24 @@ export async function createCityItinerary(destination, days, budget, travelStyle
       const dayTheme = buildStyleDayTheme(travelStyle, day, days);
       const rotatedPlaces = rotateUnique(places, day * 7 + destination.length, Math.max(places.length, 8));
       const dayUsedKeys = new Map();
+      const realDayPlaces = rotatedPlaces.filter((candidate) => !candidate.synthetic);
       const syntheticDayPlaces = rotatedPlaces.filter((candidate) => candidate.synthetic && candidate.syntheticDay === day);
-      const eligiblePlaces = (syntheticDayPlaces.length ? syntheticDayPlaces : rotatedPlaces).filter((candidate) => !isPlaceExcludedForStyle(candidate, travelStyle));
+      const eligiblePlaces = uniqueBy(
+        [
+          ...realDayPlaces.filter((candidate) => !isPlaceExcludedForStyle(candidate, travelStyle)),
+          ...syntheticDayPlaces.filter((candidate) => !isPlaceExcludedForStyle(candidate, travelStyle)),
+        ],
+        (candidate) => normalizeToken(candidate.title)
+      );
       for (let slot = 0; slot < 8; slot++) {
         const slotName = slotNames[slot] || "morning";
-        const slotScopedPlaces = eligiblePlaces.filter((candidate) => !candidate.synthetic || candidate.syntheticSlot === slot);
+        const slotScopedPlaces = uniqueBy(
+          [
+            ...eligiblePlaces.filter((candidate) => !candidate.synthetic),
+            ...eligiblePlaces.filter((candidate) => candidate.synthetic && candidate.syntheticSlot === slot),
+          ],
+          (candidate) => normalizeToken(candidate.title)
+        );
         const slotBasePlaces = slotScopedPlaces.length ? slotScopedPlaces : eligiblePlaces;
         const preferredPool = slotBasePlaces.filter((candidate) =>
           (styleProfile.slotCategories?.[slotName] || []).includes(inferPlaceKind(candidate))
@@ -1940,7 +2037,18 @@ export async function createCityItinerary(destination, days, budget, travelStyle
         const relaxedPool = sourcePool.length
           ? sourcePool
           : filterSlotPoolByQuality(slotBasePlaces.length ? slotBasePlaces : rotatedPlaces, travelStyle, slotName, day, days, slot);
-        const place = pickPlaceForSlot(relaxedPool, dayUsedKeys, globalUsage, lastDayUsed, travelStyle, slotName, day, days, slot) || makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle);
+        const realRelaxedPool = relaxedPool.filter((candidate) => !candidate.synthetic);
+        const place = pickPlaceForSlot(
+          realRelaxedPool.length ? realRelaxedPool : relaxedPool,
+          dayUsedKeys,
+          globalUsage,
+          lastDayUsed,
+          travelStyle,
+          slotName,
+          day,
+          days,
+          slot
+        ) || makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle);
         const key = normalizeToken(place.title);
         let images = placeImageCache.get(key) || [];
         if (!images.length && shouldAttachExternalImage(place, destination)) {
