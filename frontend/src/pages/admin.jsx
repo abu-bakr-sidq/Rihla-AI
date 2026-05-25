@@ -6,7 +6,6 @@ import { useDeleteTrip } from "@/hooks/use-trips";
 import { useTourPackages, useCreateTourPackage, useDeleteTourPackage } from "@/hooks/use-tour-packages";
 import { useToast } from "@/hooks/use-toast";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { useTheme } from "next-themes";
 import {
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
@@ -943,6 +942,9 @@ export default function Admin() {
   const { data: user, isLoading: userLoading } = useUser();
   const { data: adminData, isLoading: adminLoading, refetch } = useAdmin();
   const [localTheme, setLocalTheme] = useState("dark");
+  const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
+  const [themeCurtain, setThemeCurtain] = useState(null);
+  const themeTransitionTimers = useRef([]);
   const logout = useLogout();
 
   const { toast } = useToast();
@@ -983,6 +985,26 @@ export default function Admin() {
 
   const activeTheme = mounted ? localTheme : "dark";
   const isDark = activeTheme === "dark";
+
+  useEffect(() => () => {
+    themeTransitionTimers.current.forEach((timer) => window.clearTimeout(timer));
+    themeTransitionTimers.current = [];
+  }, []);
+
+  const handleAdminThemeToggle = () => {
+    const nextTheme = isDark ? "light" : "dark";
+    themeTransitionTimers.current.forEach((timer) => window.clearTimeout(timer));
+    themeTransitionTimers.current = [];
+    setIsThemeTransitioning(true);
+    setThemeCurtain(nextTheme);
+    themeTransitionTimers.current.push(window.setTimeout(() => {
+      setLocalTheme(nextTheme);
+    }, 120));
+    themeTransitionTimers.current.push(window.setTimeout(() => {
+      setThemeCurtain(null);
+      setIsThemeTransitioning(false);
+    }, 380));
+  };
 
   const [formData, setFormData] = useState({
     username: user?.username || "",
@@ -1672,11 +1694,20 @@ export default function Admin() {
   };
 
   return (
-    <div className={`min-h-screen relative overflow-x-hidden no-scrollbar admin-root ${isDark ? "dark" : ""}`}>
+    <div className={`min-h-screen relative overflow-x-hidden no-scrollbar admin-root ${isThemeTransitioning ? "theme-transitioning" : ""} ${isDark ? "dark" : ""}`}>
       <div className="fixed inset-0 z-[-2]">
         <DashboardSlideshow />
       </div>
       <div className="fixed inset-0 z-[-1] pointer-events-none transition-colors duration-700 bg-[var(--admin-panel-bg)] backdrop-blur-[30px]" />
+      <div
+        className={`pointer-events-none fixed inset-0 z-[45] transition-opacity duration-200 ${themeCurtain ? "opacity-100" : "opacity-0"}`}
+        style={{
+          background: themeCurtain === "light"
+            ? "linear-gradient(180deg, rgba(248,251,255,0.94) 0%, rgba(238,244,248,0.97) 100%)"
+            : "linear-gradient(180deg, rgba(11,23,40,0.92) 0%, rgba(7,17,29,0.97) 100%)",
+          backdropFilter: "blur(10px)",
+        }}
+      />
 
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -1699,7 +1730,8 @@ export default function Admin() {
           --admin-chart-grid: rgba(255, 255, 255, 0.05);
         }
         
-        .admin-root { color: var(--admin-text-main); transition: color 0.3s ease; }
+        .admin-root { color: var(--admin-text-main); transition: color 0.3s ease, background-color 0.3s ease; }
+        .admin-root.theme-transitioning { will-change: color, background-color; }
         
         .admin-panel {
           background: var(--admin-panel-bg);
@@ -1787,24 +1819,12 @@ export default function Admin() {
               className="flex items-center justify-end gap-3"
             >
               {/* Theme Toggle */}
-              <button
-                onClick={() => setLocalTheme(isDark ? 'light' : 'dark')}
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--admin-text-muted)] hover:text-[var(--admin-text-main)] transition-all duration-300 hover:bg-[var(--admin-hover-bg)]"
-                style={{ border: '1px solid var(--admin-panel-border)' }}
-                title={isDark ? 'Switch to Light' : 'Switch to Dark'}
-              >
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={isDark ? 'moon' : 'sun'}
-                    initial={{ rotate: -90, opacity: 0, scale: 0 }}
-                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                    exit={{ rotate: 90, opacity: 0, scale: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {isDark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                  </motion.div>
-                </AnimatePresence>
-              </button>
+              <ThemeToggle
+                compact={true}
+                isDarkOverride={isDark}
+                onClick={handleAdminThemeToggle}
+                className="shadow-none"
+              />
 
               {/* Divider */}
               <div className="w-px h-7" style={{ background: 'var(--admin-panel-border)' }} />
