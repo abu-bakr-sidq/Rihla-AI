@@ -1,7 +1,7 @@
 import { appendFileSync } from "fs";
 import OpenAI from "openai";
 import { getTopPlaces } from "./placesService.js";
-import { getGooglePlaceImageUrl } from "./placeImageService.js";
+import { getGooglePlaceImageUrl, getGooglePlaceImageUrls } from "./placeImageService.js";
 
 const EXTERNAL_FETCH_TIMEOUT_MS = 3000;
 const commonsImageCache = new Map();
@@ -710,15 +710,27 @@ async function buildVerifiedImageSet(destination, placeTitle, fallbackImageUrl, 
     `${placeTitle} ${destination}`,
     `${placeTitle} ${destination} landmark`,
   ];
-  const googleCandidates = await Promise.all(
-    googleQueries.map((query, idx) =>
+  const [googlePrimaryCandidates, googleExpandedCandidates] = await Promise.all([
+    Promise.all(googleQueries.map((query, idx) =>
       getGooglePlaceImageUrl(query, {
         photoIndex: photoIndex + idx,
         maxwidth: 1200,
       }).catch(() => null)
-    )
-  );
-  const googleUrls = googleCandidates.map((entry) => entry?.url).filter(Boolean);
+    )),
+    Promise.all(
+      googleQueries.map((query, idx) =>
+        getGooglePlaceImageUrls(query, {
+          startIndex: (photoIndex + idx) % 2,
+          maxResults: idx === 0 ? 4 : 3,
+          maxwidth: 1200,
+        }).catch(() => [])
+      )
+    ),
+  ]);
+  const googleUrls = [
+    ...googlePrimaryCandidates.map((entry) => entry?.url).filter(Boolean),
+    ...googleExpandedCandidates.flat().map((entry) => entry?.url).filter(Boolean),
+  ];
   const [q1, q2, q3] = await Promise.all([
     fetchCommonsImages(`${placeTitle} ${destination} landmark`, destination, placeTitle, 10),
     fetchCommonsImages(`${placeTitle} tourist attraction`, destination, placeTitle, 8),
@@ -737,6 +749,25 @@ async function buildVerifiedImageSet(destination, placeTitle, fallbackImageUrl, 
     if (destinationImage) merged = [destinationImage];
   }
   return merged.filter((url) => imageUrlPassesCrossLocationCheck(url, destination)).slice(0, 8);
+}
+
+function pickUniqueCardImages(images = [], usedImageUrls = new Set(), seed = 0) {
+  const uniqueImages = uniqueBy(
+    (Array.isArray(images) ? images : []).filter(Boolean),
+    (url) => String(url).toLowerCase()
+  );
+  if (!uniqueImages.length) return [];
+
+  const normalizedSeed = Math.max(0, Number(seed) || 0);
+  const rotated = uniqueImages.map((_, index) => uniqueImages[(index + (normalizedSeed % uniqueImages.length)) % uniqueImages.length]);
+  const fresh = rotated.filter((url) => !usedImageUrls.has(String(url).toLowerCase()));
+  const repeated = rotated.filter((url) => usedImageUrls.has(String(url).toLowerCase()));
+  const ordered = [...fresh, ...repeated];
+
+  if (ordered[0]) {
+    usedImageUrls.add(String(ordered[0]).toLowerCase());
+  }
+  return ordered;
 }
 
 async function fetchWikipediaBulkThumbnails(titles) {
@@ -2002,6 +2033,7 @@ export async function createCityItinerary(destination, days, budget, travelStyle
     const dayPlans = [];
     const styleProfile = getStyleProfile(travelStyle);
     const slotNames = ["morning", "morning", "afternoon", "afternoon", "evening", "evening", "night", "night"];
+    const usedImageUrls = new Set();
     for (let day = 1; day <= days; day++) {
       const activities = [];
       const dayTheme = buildStyleDayTheme(travelStyle, day, days);
@@ -2055,12 +2087,13 @@ export async function createCityItinerary(destination, days, budget, travelStyle
           images = await buildVerifiedImageSet(destination, place.title, place.imageUrl || null, day * 10 + slot);
           placeImageCache.set(key, uniqueBy(images.filter(Boolean), (url) => String(url).toLowerCase()));
         }
+        const selectedImages = pickUniqueCardImages(images, usedImageUrls, day * 17 + slot * 5 + key.length);
         activities.push(makePlaceActivity({
           ...place,
           title: formatDisplayName(place.title),
           description: `${normalizePlaceDescription(place.description, destination)} This stop supports the day's ${dayTheme.toLowerCase()} rhythm.`,
-          imageUrl: images[0] || null,
-          imageAlternatives: images.slice(1)
+          imageUrl: selectedImages[0] || null,
+          imageAlternatives: selectedImages.slice(1)
         }, destination, budget, slot, travelStyle, interests, day, days, dayTheme));
       }
       dayPlans.push({ day, title: `Day ${day} in ${destination}`, theme: dayTheme, activities });

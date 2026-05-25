@@ -89,6 +89,72 @@ async function fetchGooglePhotoRef(query, photoIndex = 0) {
   return null;
 }
 
+async function fetchGooglePhotoRefs(query, maxPhotos = 6) {
+  const safeMax = Math.max(1, Math.min(12, Number(maxPhotos) || 6));
+  const cacheKey = `${String(query || "").trim().toLowerCase()}__refs_${safeMax}`;
+  const cached = getCachedValue(cacheKey);
+  if (cached !== null) return cached;
+
+  const googleKey = getGooglePlacesKey();
+  if (!googleKey || !query) {
+    setCachedValue(cacheKey, []);
+    return [];
+  }
+
+  const refs = [];
+  const seen = new Set();
+  const pushRef = (photoRef, name = query, source = "google_places") => {
+    if (!photoRef || seen.has(photoRef) || refs.length >= safeMax) return;
+    seen.add(photoRef);
+    refs.push({ photoRef, name, source });
+  };
+
+  try {
+    const findPlaceUrl =
+      `https://maps.googleapis.com/maps/api/place/findplacefromtext/json` +
+      `?input=${encodeURIComponent(query)}` +
+      `&inputtype=textquery` +
+      `&fields=place_id,photos,name` +
+      `&key=${googleKey}`;
+
+    const res = await fetch(findPlaceUrl, { signal: AbortSignal.timeout(7000) });
+    if (res.ok) {
+      const data = await res.json();
+      const place = data?.candidates?.[0];
+      for (const photo of place?.photos || []) {
+        pushRef(photo?.photo_reference, place?.name || query, "findplace");
+      }
+    }
+  } catch (error) {
+    console.warn("[PlaceImageService] findplace refs error:", error.message);
+  }
+
+  if (refs.length < safeMax) {
+    try {
+      const textSearchUrl =
+        `https://maps.googleapis.com/maps/api/place/textsearch/json` +
+        `?query=${encodeURIComponent(query)}` +
+        `&key=${googleKey}`;
+
+      const res = await fetch(textSearchUrl, { signal: AbortSignal.timeout(7000) });
+      if (res.ok) {
+        const data = await res.json();
+        for (const place of data?.results || []) {
+          for (const photo of place?.photos || []) {
+            pushRef(photo?.photo_reference, place?.name || query, "textsearch");
+          }
+          if (refs.length >= safeMax) break;
+        }
+      }
+    } catch (error) {
+      console.warn("[PlaceImageService] textsearch refs error:", error.message);
+    }
+  }
+
+  setCachedValue(cacheKey, refs);
+  return refs;
+}
+
 export function buildGooglePlacePhotoProxyUrl(photoRef, maxwidth = 800, baseUrl = "") {
   if (!photoRef) return null;
   const base = String(baseUrl || process.env.BACKEND_URL || "").trim().replace(/\/$/, "");
@@ -119,6 +185,23 @@ export async function getGooglePlaceImageUrl(query, {
     place: refResult.name || query,
     source: "google_places",
   };
+}
+
+export async function getGooglePlaceImageUrls(query, {
+  startIndex = 0,
+  maxResults = 6,
+  maxwidth = 800,
+  baseUrl = "",
+} = {}) {
+  const refs = await fetchGooglePhotoRefs(query, Math.max(1, startIndex + maxResults));
+  return refs
+    .slice(Math.max(0, startIndex), Math.max(0, startIndex) + Math.max(1, maxResults))
+    .map((entry) => ({
+      url: buildGooglePlacePhotoProxyUrl(entry.photoRef, maxwidth, baseUrl),
+      place: entry.name || query,
+      source: "google_places",
+    }))
+    .filter((entry) => entry.url);
 }
 
 export function hasGooglePlacesKey() {
