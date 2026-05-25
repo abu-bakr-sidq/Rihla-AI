@@ -7,6 +7,7 @@ import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, MapPin, Star, Globe, Sparkles, X, Loader2, ArrowRight } from "lucide-react";
 import { sanitizeVisibleText } from "@/lib/display-text";
+import { resolveApiUrl } from "@/lib/api-contract";
 import AppInnerLayout from "@/components/AppInnerLayout";
 import DashboardSlideshow from "@/components/ui/DashboardSlideshow";
 import { DestinationCard } from "@/components/ui/card-21";
@@ -33,6 +34,21 @@ function isValidPlaceLabel(name = "") {
   if (/^(.)\1+$/.test(compact)) return false;
   return new Set(compact.split("")).size >= 3;
 }
+
+const TRUSTED_DESTINATION_TYPES = new Set([
+  "city",
+  "town",
+  "village",
+  "municipality",
+  "county",
+  "state",
+  "province",
+  "region",
+  "country",
+  "island",
+  "archipelago",
+  "hamlet",
+]);
 
 // ─── All static destinations ──────────────────────────────────────────────────
 const DESTINATIONS = [
@@ -83,14 +99,14 @@ const EXPLORE_IMAGES = [
 // ─── Search hook: Nominatim + Google Places API ──────────────────────────────
 function useDestSearch(query) {
   const [isSearching, setIsSearching] = useState(false);
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState(POPULAR);
   const [empty, setEmpty] = useState(false);
 
   useEffect(() => {
     setEmpty(false);
     const normalizedQuery = normalizeSearchValue(query);
     if (!query || query.trim().length < 2) {
-      setResults([]);
+      setResults(POPULAR);
       setIsSearching(false);
       return;
     }
@@ -124,14 +140,16 @@ function useDestSearch(query) {
               country,
               normalizedName: normalizeSearchValue(rawName),
               importance: Number(place.importance) || 0,
-              place,
+              destinationType: String(place.addresstype || place.type || "").toLowerCase(),
+              destinationClass: String(place.class || "").toLowerCase(),
             };
           })
-          .filter(({ rawName, country, normalizedName }) =>
+          .filter(({ rawName, country, normalizedName, destinationType, destinationClass }) =>
             rawName &&
             country &&
             isValidPlaceLabel(rawName) &&
-            normalizedName.includes(normalizedQuery)
+            normalizedName.includes(normalizedQuery) &&
+            (TRUSTED_DESTINATION_TYPES.has(destinationType) || destinationClass === "place" || destinationClass === "boundary")
           );
 
         const exactMatches = mappedPlaces.filter(({ normalizedName }) => normalizedName === normalizedQuery);
@@ -155,19 +173,20 @@ function useDestSearch(query) {
 
         // 3. Fetch Google Places photo for each via backend proxy
         const cards = await Promise.all(
-          unique.slice(0, 4).map(async ({ rawName, country }) => {
+          unique.slice(0, 6).map(async ({ rawName, country }, idx) => {
             const displayName = sanitizeVisibleText(rawName, "Destination");
-            // Use Google Places via backend proxy — query includes country context for accuracy
             const searchQuery = `${rawName}${country ? " " + country : ""}`;
             let src = null;
             try {
-              const r = await fetch(`/api/place-image?query=${encodeURIComponent(searchQuery)}`, { signal: ctrl.signal });
+              const r = await fetch(
+                resolveApiUrl(`/api/place-image?query=${encodeURIComponent(searchQuery)}&photoIndex=${idx}&onlyGoogle=1`),
+                { signal: ctrl.signal }
+              );
               if (r.ok) {
                 const d = await r.json();
                 src = d?.url || null;
               }
             } catch { }
-            if (!src) src = `https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=80&w=720`;
             return { title: displayName, location: country, src, query: searchQuery };
           })
         );
@@ -244,12 +263,16 @@ function SearchResultCard({ card, idx, onSelect }) {
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent z-20 pointer-events-none" />
 
       {/* Image */}
+      {card.src ? (
         <img
           src={card.src}
           alt={safeTitle}
-        className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-        onError={e => { e.target.src = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=80&w=720"; }}
-      />
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+          onError={e => { e.target.style.display = "none"; }}
+        />
+      ) : (
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(212,175,55,0.16),transparent_45%),linear-gradient(180deg,#0f172a_0%,#111827_100%)]" />
+      )}
       {/* Gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
       {/* Hover glow */}
