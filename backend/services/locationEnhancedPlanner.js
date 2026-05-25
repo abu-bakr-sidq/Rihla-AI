@@ -20,6 +20,7 @@ const GENERIC_IMAGE_PATTERN = /(map(_of|s)|location_map|locator_map|blank_map|fl
 const BAD_IMAGE_SUBJECT_PATTERN = /\b(cat|kitten|dog|puppy|pet|animal|motorcycle|bike|bicycle|scooter|helmet|car|truck|bus|train|auto rickshaw|toy|poster|selfie|portrait|people at home|indoor room)\b/i;
 const HARD_BLOCK_PLACE_PATTERN = /\b(police|police station|station house|substation|supermarket|grocery|hypermarket|department store|convenience store|hardware|warehouse|depot|wholesale|bus depot|vehicle yard|petrol pump|gas station|fuel station|atm|bank|clinic|hospital|medical|pharmacy|school|college|university|tuition|hostel|government office|municipal office|corporation office|passport office|court complex|jail|prison|cemetery|crematorium|dump yard|sewage|drain|warehouse|industrial estate)\b/i;
 const LOW_SIGNAL_PLACE_PATTERN = /\b(playground|mini park|municipal park|roadside|exterior only|surroundings|service road|bus stand|junction|intersection|parking|empty lot|market complex)\b/i;
+const USER_FACING_PLACEHOLDER_PATTERN = /\bplaceholder\b|used only when verified local place data is limited|local attraction|city exploration/i;
 
 const CURATED_CITY_CENTERS = {
   chennai: {
@@ -75,6 +76,28 @@ const CURATED_CITY_CENTERS = {
       north: 12.04,
       west: 79.76,
       east: 79.87
+    }
+  },
+  madurai: {
+    lat: 9.9252,
+    lng: 78.1198,
+    displayName: "Madurai, Tamil Nadu",
+    boundingBox: {
+      south: 9.84,
+      north: 10.02,
+      west: 78.02,
+      east: 78.21,
+    }
+  },
+  coimbatore: {
+    lat: 11.0168,
+    lng: 76.9558,
+    displayName: "Coimbatore, Tamil Nadu",
+    boundingBox: {
+      south: 10.92,
+      north: 11.14,
+      west: 76.84,
+      east: 77.08,
     }
   }
 };
@@ -236,6 +259,56 @@ const PONDICHERRY_CURATED_PLACES = [
   { title: "Jawahar Toy Museum", area: "White Town", category: "museum", lat: 11.9349, lng: 79.8313 }
 ];
 
+const MADURAI_CURATED_PLACES = [
+  { title: "Meenakshi Amman Temple", area: "Temple City Core", category: "temple", lat: 9.9195, lng: 78.1193 },
+  { title: "Puthu Mandapam", area: "Temple City Core", category: "market", lat: 9.9187, lng: 78.1196 },
+  { title: "Thirumalai Nayakkar Mahal", area: "Mahal Area", category: "landmark", lat: 9.9147, lng: 78.1247 },
+  { title: "Gandhi Memorial Museum", area: "Tamukkam", category: "museum", lat: 9.9321, lng: 78.1325 },
+  { title: "Vandiyur Mariamman Teppakulam", area: "Vandiyur", category: "waterfront", lat: 9.9182, lng: 78.1463 },
+  { title: "Aayiram Kaal Mandapam", area: "Temple City Core", category: "culture", lat: 9.9192, lng: 78.1194 },
+  { title: "St. Mary's Cathedral Madurai", area: "East Veli Street", category: "temple", lat: 9.9216, lng: 78.1244 },
+  { title: "Kazimar Big Mosque", area: "Kazimar Street", category: "temple", lat: 9.9181, lng: 78.1128 },
+  { title: "Banana Market Madurai", area: "Mattuthavani", category: "market", lat: 9.9464, lng: 78.1598 },
+  { title: "Madurai Heritage Streets", area: "Old City", category: "neighborhood", lat: 9.9199, lng: 78.1184 },
+  { title: "Vilakkuthoon", area: "Old City", category: "landmark", lat: 9.9226, lng: 78.1177 },
+  { title: "Mappillai Vinayagar Theatre Street Food Stretch", area: "Town Hall Road", category: "food", lat: 9.9187, lng: 78.1138 },
+  { title: "Murugan Idli Shop", area: "West Masi Street", category: "food", lat: 9.9224, lng: 78.1146 },
+  { title: "The Banyan Courtyard", area: "KK Nagar", category: "food", lat: 9.9392, lng: 78.1289 },
+  { title: "Heritage Madurai", area: "Mellakkal", category: "stay", lat: 9.9794, lng: 78.0654 },
+  { title: "The Gateway Hotel Pasumalai", area: "Pasumalai", category: "stay", lat: 9.8884, lng: 78.0935 },
+  { title: "Regency Madurai by GRT Hotels", area: "Melur Road", category: "stay", lat: 9.9385, lng: 78.1454 },
+  { title: "Samanar Hills Viewpoint", area: "Keelakuyilkudi", category: "nature", lat: 9.8782, lng: 78.0764 },
+  { title: "Keelakuyilkudi Jain Beds", area: "Keelakuyilkudi", category: "culture", lat: 9.8775, lng: 78.0776 },
+  { title: "Yanaikkal Bridge View", area: "Vaigai Riverside", category: "waterfront", lat: 9.9254, lng: 78.1219 },
+  { title: "Town Hall Road Night Bazaar", area: "Town Hall Road", category: "market", lat: 9.9189, lng: 78.1143 },
+  { title: "Aruppukottai Road Textile Boutiques", area: "South Gate", category: "mall", lat: 9.9104, lng: 78.1221 },
+];
+
+const COIMBATORE_CURATED_PLACES = [
+  { title: "Arulmigu Patteeswarar Swamy Temple", area: "Perur", category: "temple", lat: 10.9736, lng: 76.9124 },
+  { title: "Marudhamalai Temple", area: "Marudhamalai", category: "temple", lat: 11.0443, lng: 76.8614 },
+  { title: "Gass Forest Museum", area: "R.S. Puram", category: "museum", lat: 11.0089, lng: 76.9445 },
+  { title: "Gedee Car Museum", area: "Avinashi Road", category: "museum", lat: 11.0005, lng: 76.9708 },
+  { title: "VOC Park and Zoo", area: "Town Hall", category: "park", lat: 10.9988, lng: 76.9562 },
+  { title: "Race Course Coimbatore", area: "Race Course", category: "park", lat: 10.9942, lng: 76.9676 },
+  { title: "Brookefields Mall", area: "R.S. Puram", category: "mall", lat: 11.0128, lng: 76.9566 },
+  { title: "Prozone Mall Coimbatore", area: "Sivanandhapuram", category: "mall", lat: 11.0709, lng: 76.9965 },
+  { title: "RS Puram Shopping Streets", area: "R.S. Puram", category: "neighborhood", lat: 11.0107, lng: 76.9475 },
+  { title: "Town Hall Market Coimbatore", area: "Town Hall", category: "market", lat: 10.9961, lng: 76.9612 },
+  { title: "Siruvani Viewpoint Drive", area: "Siruvani Road", category: "nature", lat: 10.9164, lng: 76.8122 },
+  { title: "Isha Yoga Center", area: "Velliangiri Foothills", category: "wellness", lat: 10.9868, lng: 76.7354 },
+  { title: "Adiyogi Complex", area: "Velliangiri Foothills", category: "landmark", lat: 10.9861, lng: 76.7357 },
+  { title: "Eachanari Vinayagar Temple", area: "Eachanari", category: "temple", lat: 10.9571, lng: 76.9904 },
+  { title: "Sree Annapoorna Sree Gowrishankar", area: "R.S. Puram", category: "food", lat: 11.0101, lng: 76.9494 },
+  { title: "Haribhavanam", area: "Peelamedu", category: "food", lat: 11.0288, lng: 77.0021 },
+  { title: "Kove", area: "Race Course", category: "food", lat: 10.9951, lng: 76.9704 },
+  { title: "The Residency Towers Coimbatore", area: "Avinashi Road", category: "stay", lat: 11.0046, lng: 76.9679 },
+  { title: "Vivanta Coimbatore", area: "Race Course", category: "stay", lat: 10.9956, lng: 76.9688 },
+  { title: "Welcomhotel by ITC Hotels RaceCourse", area: "Race Course", category: "stay", lat: 10.9953, lng: 76.9711 },
+  { title: "Kovai Kutralam Eco Stretch", area: "Siruvani Foothills", category: "nature", lat: 10.9865, lng: 76.8072 },
+  { title: "Ukkadam Lake View", area: "Ukkadam", category: "waterfront", lat: 10.9869, lng: 76.9517 },
+];
+
 function logDebug(msg) {
   try {
     const timestamp = new Date().toISOString();
@@ -262,6 +335,8 @@ function detectCuratedCityKey(destination) {
   if (d.includes("paris")) return "paris";
   if (d.includes("new york") || d.includes("newyork") || d.includes("nyc") || d.includes("manhattan")) return "new-york";
   if (d.includes("pondicherry") || d.includes("puducherry")) return "pondicherry";
+  if (d.includes("madurai")) return "madurai";
+  if (d.includes("coimbatore") || d.includes("kovai")) return "coimbatore";
   return null;
 }
 
@@ -342,6 +417,28 @@ function getCuratedCityPlaces(destination) {
   }
   if (key === "pondicherry") {
     return PONDICHERRY_CURATED_PLACES.map((place) => ({
+      title: place.title,
+      description: buildCuratedPlaceDescription(place, destinationLabel),
+      lat: Number(place.lat),
+      lng: Number(place.lng),
+      imageUrl: null,
+      area: place.area,
+      category: place.category
+    }));
+  }
+  if (key === "madurai") {
+    return MADURAI_CURATED_PLACES.map((place) => ({
+      title: place.title,
+      description: buildCuratedPlaceDescription(place, destinationLabel),
+      lat: Number(place.lat),
+      lng: Number(place.lng),
+      imageUrl: null,
+      area: place.area,
+      category: place.category
+    }));
+  }
+  if (key === "coimbatore") {
+    return COIMBATORE_CURATED_PLACES.map((place) => ({
       title: place.title,
       description: buildCuratedPlaceDescription(place, destinationLabel),
       lat: Number(place.lat),
@@ -1359,7 +1456,7 @@ function makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle = 
   };
   return {
     title: `${destinationLabel} ${slotName}`,
-    description: `A placeholder ${slotName.toLowerCase()} in ${destinationLabel}, used only when verified local place data is limited for a ${styleKey} itinerary.`,
+    description: `${slotName} in ${destinationLabel}, held as a backup when stronger verified local place data is unavailable for this ${styleKey} itinerary.`,
     lat: Number((fallbackBase.lat + seededOffset(day * 31 + slot * 7)).toFixed(6)),
     lng: Number((fallbackBase.lng + seededOffset(day * 37 + slot * 11)).toFixed(6)),
     imageUrl: null,
@@ -1368,6 +1465,61 @@ function makeSyntheticPlace(destination, day, slot, fallbackBase, travelStyle = 
     syntheticSlot: slot,
     synthetic: true
   };
+}
+
+function buildBackupCardTitle(destination, travelStyle, slotIndex) {
+  const destinationLabel = formatDisplayName(destination) || destination;
+  const styleKey = resolveStyleProfileKey(travelStyle);
+  const slotNames = {
+    luxury: ["Arrival Lounge", "Heritage Signature", "Refined Lunch", "Boutique Culture", "Golden-Hour Leisure", "Evening Drive", "Signature Dinner", "Suite Wind-Down"],
+    cultural: ["Old Quarter Start", "Sacred Landmark", "Traditional Lunch", "Museum Chapter", "Architecture Walk", "Craft Quarter", "Story-Led Dinner", "Heritage Close"],
+    adventure: ["Trail Start", "Outdoor Push", "Fuel Stop", "Active Route", "Viewpoint Reward", "Open-Air Circuit", "Recovery Dinner", "Night Reset"],
+    cinematic: ["First Frames", "Panoramic Chapter", "Photo Lunch", "Architecture Frames", "Blue-Hour View", "Atmospheric Streets", "Visual Dinner", "Night Scene Close"],
+    urban: ["City Start", "District Route", "Cafe Lunch", "Design Chapter", "Skyline Pause", "Lifestyle District", "City Dinner", "After-Dark Close"],
+    wellness: ["Calm Start", "Garden or Spa", "Nourishing Lunch", "Quiet Chapter", "Breathing Space", "Gentle Walk", "Restorative Dinner", "Slow Close"],
+    halal: ["Comfort Start", "Prayer-Aware Landmark", "Halal Lunch", "Family Culture", "Scenic Pause", "Market Walk", "Halal Dinner", "Quiet Reflection"],
+    coastal: ["Sea-Breeze Start", "Promenade Route", "Coastal Lunch", "Harbour Chapter", "Sunset Shore", "Waterfront Walk", "Sea-View Dinner", "Shoreline Close"],
+    balanced: ["Morning Start", "Local Highlight", "Lunch Chapter", "Culture Chapter", "Evening View", "Neighborhood Walk", "Dinner Chapter", "Night Close"],
+  };
+  return `${destinationLabel} ${((slotNames[styleKey] || slotNames.balanced)[slotIndex] || "Trip Chapter")}`;
+}
+
+function buildBackupCardDescription(destination, travelStyle, slotIndex, dayTheme = "") {
+  const destinationLabel = formatDisplayName(destination) || destination;
+  const styleRule = getStyleExperienceRule(travelStyle);
+  const slotFocus = SLOT_ACTIVITY_FOCUS[slotIndex] || "Enjoy a well-paced city moment.";
+  return `${slotFocus} Keep this stop grounded in ${destinationLabel} while following the ${dayTheme || "day's"} rhythm. ${styleRule.openingFocus}`;
+}
+
+function validateItineraryOutput(dayPlans, destination, travelStyle) {
+  return (Array.isArray(dayPlans) ? dayPlans : []).map((dayPlan, dayIndex) => {
+    const theme = dayPlan?.theme || buildStyleDayTheme(travelStyle, dayIndex + 1, dayPlans.length);
+    const activities = Array.isArray(dayPlan?.activities) ? dayPlan.activities : [];
+    const sanitizedActivities = activities.map((activity, slotIndex) => {
+      const title = String(activity?.title || "").trim();
+      const description = String(activity?.description || "").trim();
+      const titleLooksWeak = !title || USER_FACING_PLACEHOLDER_PATTERN.test(title);
+      const descriptionLooksWeak = !description || USER_FACING_PLACEHOLDER_PATTERN.test(description);
+      const isSynthetic = Boolean(activity?.synthetic || activity?.syntheticSource);
+      return {
+        ...activity,
+        title: titleLooksWeak ? buildBackupCardTitle(destination, travelStyle, slotIndex) : title,
+        description: descriptionLooksWeak
+          ? buildBackupCardDescription(destination, travelStyle, slotIndex, theme)
+          : description.replace(/A placeholder\s+/gi, "").replace(/used only when verified local place data is limited[^.]*\.\s*/gi, ""),
+        imageUrl: isSynthetic ? null : (activity?.imageUrl || null),
+        imageAlternatives: isSynthetic ? [] : (Array.isArray(activity?.imageAlternatives) ? activity.imageAlternatives : []),
+      };
+    });
+    return {
+      ...dayPlan,
+      title: USER_FACING_PLACEHOLDER_PATTERN.test(String(dayPlan?.title || ""))
+        ? `Day ${dayIndex + 1} in ${formatDisplayName(destination) || destination}`
+        : (dayPlan?.title || `Day ${dayIndex + 1} in ${destination}`),
+      theme,
+      activities: sanitizedActivities,
+    };
+  });
 }
 
 function buildSyntheticPlacePool(destination, days, travelStyle, fallbackBase) {
@@ -1806,9 +1958,10 @@ export async function createCityItinerary(destination, days, budget, travelStyle
       dayPlans.push({ day, title: `Day ${day} in ${destination}`, theme: dayTheme, activities });
     }
 
+    const validatedDayPlans = validateItineraryOutput(dayPlans, destination, travelStyle);
     const total = (budget === "luxury" ? 340 : budget === "moderate" ? 180 : 95) * days;
     return {
-      itinerary: dayPlans,
+      itinerary: validatedDayPlans,
       costBreakdown: { total, currency: "USD", source: usingCurated ? "curated" : "verified" }
     };
   } catch (err) {
