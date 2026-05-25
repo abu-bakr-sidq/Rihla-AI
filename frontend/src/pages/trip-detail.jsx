@@ -987,42 +987,40 @@ export default function TripDetail() {
           />
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 top-[86px] bottom-0 z-0 overflow-hidden">
-          <div className="mx-auto h-full w-full max-w-[1480px] px-[clamp(12px,1.6vw,24px)]">
-            <div className="trip-cinematic-backdrop relative h-full w-full overflow-hidden rounded-[42px]">
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+          <div className="trip-cinematic-backdrop relative h-full w-full overflow-hidden">
               {backgroundSlides[0] ? (
                 <motion.div
                   className="absolute inset-0"
                   style={{ x: smoothDriftX, y: smoothDriftY }}
-                  animate={{ scale: [1.02, 1.08, 1.02], opacity: isLightDetail ? [0.28, 0.4, 0.28] : [0.24, 0.36, 0.24] }}
-                  transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+                  animate={{ scale: [1.08, 1.16, 1.08], opacity: isLightDetail ? [0.34, 0.5, 0.34] : [0.28, 0.42, 0.28] }}
+                  transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
                 >
                   <div
                     className="absolute inset-0 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${backgroundSlides[0]})`, filter: isLightDetail ? 'saturate(1) contrast(0.92)' : 'saturate(0.95) contrast(1.02)' }}
+                    style={{ backgroundImage: `url(${backgroundSlides[0]})`, filter: isLightDetail ? 'saturate(1.04) contrast(0.96)' : 'saturate(1) contrast(1.04)' }}
                   />
                 </motion.div>
               ) : null}
               {backgroundSlides[1] ? (
                 <motion.div
                   className="absolute inset-0"
-                  animate={{ scale: [1.06, 1.12, 1.06], x: [0, 20, 0], y: [0, -16, 0], opacity: isLightDetail ? [0.14, 0.22, 0.14] : [0.14, 0.24, 0.14] }}
-                  transition={{ duration: 28, repeat: Infinity, ease: "easeInOut" }}
+                  animate={{ scale: [1.12, 1.2, 1.12], x: [0, 26, 0], y: [0, -20, 0], opacity: isLightDetail ? [0.18, 0.28, 0.18] : [0.18, 0.3, 0.18] }}
+                  transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
                 >
                   <div
                     className="absolute inset-0 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${backgroundSlides[1]})`, filter: 'blur(4px) saturate(0.88)' }}
+                    style={{ backgroundImage: `url(${backgroundSlides[1]})`, filter: 'blur(3px) saturate(0.92)' }}
                   />
                 </motion.div>
               ) : null}
               <div className={`absolute inset-0 ${isLightDetail
-                ? 'bg-[linear-gradient(180deg,rgba(248,251,255,0.22)_0%,rgba(241,246,251,0.36)_12%,rgba(236,243,249,0.56)_34%,rgba(234,241,247,0.72)_58%,rgba(231,239,246,0.9)_100%)]'
-                : 'bg-[linear-gradient(180deg,rgba(5,11,19,0.16)_0%,rgba(5,11,19,0.22)_12%,rgba(5,11,19,0.36)_28%,rgba(5,11,19,0.58)_54%,rgba(5,11,19,0.86)_100%)]'}`} />
+                ? 'bg-[linear-gradient(180deg,rgba(248,251,255,0.16)_0%,rgba(241,246,251,0.26)_12%,rgba(236,243,249,0.48)_34%,rgba(234,241,247,0.66)_58%,rgba(231,239,246,0.88)_100%)]'
+                : 'bg-[linear-gradient(180deg,rgba(5,11,19,0.1)_0%,rgba(5,11,19,0.16)_10%,rgba(5,11,19,0.28)_26%,rgba(5,11,19,0.52)_52%,rgba(5,11,19,0.84)_100%)]'}`} />
               <div className="absolute inset-x-0 top-0 h-[34%] bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,0.14),transparent_56%)]" />
-              <div className={`absolute -left-[8%] top-[14%] h-[280px] w-[36%] rounded-full blur-[86px] ${isLightDetail ? 'bg-[#38BDF8]/12' : 'bg-[#38BDF8]/10'}`} />
-              <div className={`absolute right-[4%] top-[8%] h-[240px] w-[28%] rounded-full blur-[80px] ${isLightDetail ? 'bg-[#D4AF37]/12' : 'bg-[#D4AF37]/10'}`} />
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,11,19,0.22),transparent_14%,transparent_86%,rgba(5,11,19,0.22))]" />
-            </div>
+              <div className={`absolute -left-[8%] top-[12%] h-[320px] w-[40%] rounded-full blur-[96px] ${isLightDetail ? 'bg-[#38BDF8]/14' : 'bg-[#38BDF8]/12'}`} />
+              <div className={`absolute right-[0%] top-[6%] h-[280px] w-[30%] rounded-full blur-[88px] ${isLightDetail ? 'bg-[#D4AF37]/14' : 'bg-[#D4AF37]/12'}`} />
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,11,19,0.12),transparent_10%,transparent_90%,rgba(5,11,19,0.12))]" />
           </div>
         </div>
 
@@ -1309,10 +1307,8 @@ export default function TripDetail() {
           transition: color 300ms ease, opacity 240ms ease, border-color 300ms ease, background-color 300ms ease;
         }
         .trip-cinematic-backdrop {
-          border: ${isLightDetail ? '1px solid rgba(255,255,255,0.22)' : '1px solid rgba(255,255,255,0.04)'};
-          box-shadow: ${isLightDetail ? 'inset 0 1px 0 rgba(255,255,255,0.24)' : 'inset 0 1px 0 rgba(255,255,255,0.03)'};
-          mask-image: linear-gradient(180deg, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.95) 38%, rgba(0,0,0,0.82) 62%, rgba(0,0,0,0.4) 84%, transparent 100%);
-          -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.95) 38%, rgba(0,0,0,0.82) 62%, rgba(0,0,0,0.4) 84%, transparent 100%);
+          mask-image: linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.98) 28%, rgba(0,0,0,0.9) 58%, rgba(0,0,0,0.48) 82%, transparent 100%);
+          -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.98) 28%, rgba(0,0,0,0.9) 58%, rgba(0,0,0,0.48) 82%, transparent 100%);
         }
         .trip-detail-shell.detail-light {
           background:
