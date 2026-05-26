@@ -1209,9 +1209,9 @@ export default function TripDetail() {
                       })}
                     </div>
 
-                    <div className={`flex flex-wrap gap-x-5 gap-y-1 text-[10px] font-mono pt-3 border-t ${isLightDetail ? 'text-slate-400 border-slate-300/40' : 'text-white/20 border-white/5'}`}>
+                    <div className={`flex flex-wrap gap-x-5 gap-y-1 rounded-2xl border px-4 py-3 text-[10px] font-mono backdrop-blur-2xl ${isLightDetail ? 'border-white/75 bg-white/80 text-slate-600 shadow-[0_14px_34px_rgba(15,23,42,0.10)]' : 'border-white/10 bg-black/36 text-white/62 shadow-[0_14px_40px_rgba(0,0,0,0.28)]'}`}>
                       {[{ l: 'Stay', v: activeDay.budget?.stay }, { l: 'Food', v: activeDay.budget?.food }, { l: 'Transport', v: activeDay.budget?.transport }, { l: 'Activities', v: activeDay.budget?.activities }].map(({ l, v }) => (
-                        <span key={l}>{l} <span className={isLightDetail ? 'text-slate-700 font-black' : 'text-white/45 font-black'}>{fmtCur(v || 0, tripCurrency)}</span></span>
+                        <span key={l}>{l} <span className={isLightDetail ? 'text-slate-950 font-black' : 'text-white font-black'}>{fmtCur(v || 0, tripCurrency)}</span></span>
                       ))}
                     </div>
                   </motion.div>

@@ -4574,9 +4574,9 @@ export default function Planner() {
                               </div>
 
                               {/* Day cost footer */}
-                              <div className={cn("flex flex-wrap gap-x-5 gap-y-1 text-[10px] font-mono pt-3 border-t", isLightPlannerResult ? "text-slate-400 border-slate-300/45" : "text-white/20 border-white/5")}>
+                              <div className={cn("flex flex-wrap gap-x-5 gap-y-1 rounded-2xl border px-4 py-3 text-[10px] font-mono backdrop-blur-2xl", isLightPlannerResult ? "border-white/75 bg-white/80 text-slate-600 shadow-[0_14px_34px_rgba(15,23,42,0.10)]" : "border-white/10 bg-black/36 text-white/62 shadow-[0_14px_40px_rgba(0,0,0,0.28)]")}>
                                 {[{ l: 'Stay', v: activeDay.budget?.stay }, { l: 'Food', v: activeDay.budget?.food }, { l: 'Transport', v: activeDay.budget?.transport }, { l: 'Activities', v: activeDay.budget?.activities }].map(({ l, v }) => (
-                                  <span key={l}>{l} <span className={cn("font-black", isLightPlannerResult ? "text-slate-700" : "text-white/45")}>{fmtCur(v || 0, formData.currency)}</span></span>
+                                  <span key={l}>{l} <span className={cn("font-black", isLightPlannerResult ? "text-slate-950" : "text-white")}>{fmtCur(v || 0, formData.currency)}</span></span>
                                 ))}
                               </div>
                             </motion.div>
@@ -4594,20 +4594,20 @@ export default function Planner() {
                             isLight={isLightPlannerResult}
                           />
                         </div>
-                        <div className={cn("mt-8 md:mt-10 pt-6 md:pt-8 flex items-center justify-between gap-6 flex-wrap border-t", isLightPlannerResult ? "border-slate-300/45" : "border-white/10")}>
+                        <div className={cn("mt-8 md:mt-10 flex items-center justify-between gap-6 flex-wrap rounded-[28px] border px-5 py-5 backdrop-blur-2xl", isLightPlannerResult ? "border-white/80 bg-white/82 shadow-[0_22px_60px_rgba(15,23,42,0.14)]" : "border-white/10 bg-black/38 shadow-[0_24px_70px_rgba(0,0,0,0.34)]")}>
                           <div>
-                            <p className={cn("text-[9px] uppercase tracking-widest mb-2", isLightPlannerResult ? "text-slate-500" : "text-white/28")}>Total Trip Cost</p>
-                            <p className={cn("text-4xl font-display font-black tracking-tight", isLightPlannerResult ? "text-slate-950" : "text-white")}>{fmtCur(res.total_budget?.total || 0, formData.currency)}</p>
-                            <p className={cn("text-[10px] mt-1 uppercase tracking-widest", isLightPlannerResult ? "text-slate-500" : "text-white/28")}>{ov.total_days} days - {ov.passengers || formData.travelers} travellers</p>
+                            <p className={cn("text-[9px] font-black uppercase tracking-[0.24em] mb-2", isLightPlannerResult ? "text-slate-600" : "text-white/68")}>Total Trip Cost</p>
+                            <p className={cn("text-4xl font-display font-black tracking-tight", isLightPlannerResult ? "text-slate-950" : "text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.65)]")}>{fmtCur(res.total_budget?.total || 0, formData.currency)}</p>
+                            <p className={cn("text-[10px] mt-1 font-black uppercase tracking-widest", isLightPlannerResult ? "text-slate-600" : "text-white/68")}>{ov.total_days} days - {ov.passengers || formData.travelers} travellers</p>
                           </div>
                           <div className="flex gap-3 items-center flex-wrap">
                             {createTripMutation.isPending && (
                               <span className="text-[10px] text-[#D4AF37] font-black uppercase tracking-widest animate-pulse">Saving...</span>
                             )}
                             {(createTripMutation.isSuccess || generatedTripId) && (
-                              <span className="text-[10px] text-[#34D399] font-black uppercase tracking-widest mr-2">Saved to My Trips</span>
+                              <span className={cn("rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-widest", isLightPlannerResult ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-emerald-400/10 text-emerald-300 border border-emerald-300/18")}>Saved to My Trips</span>
                             )}
-                            <button onClick={() => setStep(4)} className={cn("px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", isLightPlannerResult ? "border border-slate-300/70 bg-white/75 text-slate-600 hover:border-slate-400 hover:text-slate-950" : "border border-white/12 text-white/50 hover:border-white/30 hover:text-white")}>Customize</button>
+                            <button onClick={() => setStep(4)} className={cn("px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all", isLightPlannerResult ? "border border-slate-300/90 bg-white text-slate-800 shadow-[0_10px_24px_rgba(15,23,42,0.10)] hover:border-slate-500 hover:text-slate-950" : "border border-white/22 bg-white/8 text-white/82 hover:border-white/40 hover:text-white")}>Customize</button>
                             {generatedTripId && (
                               <button onClick={() => nav(`/trips/${generatedTripId}`)} className="px-6 py-2.5 rounded-xl bg-[#D4AF37] text-black text-[11px] font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:scale-105 active:scale-95 transition-all">
                                 View Trip

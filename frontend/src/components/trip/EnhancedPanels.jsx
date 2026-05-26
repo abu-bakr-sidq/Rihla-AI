@@ -193,16 +193,16 @@ function AccordionShell({ title, Icon, accent, defaultOpen = true, children, isL
   return (
     <div
       className={cn(
-        "rounded-[28px] overflow-hidden border backdrop-blur-xl transition-colors duration-300",
-        isLight ? "border-slate-300/55" : "border-white/10"
+        "rounded-[28px] overflow-hidden border backdrop-blur-2xl transition-colors duration-300",
+        isLight ? "border-white/80" : "border-white/12"
       )}
       style={{
         background: isLight
-          ? "linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(243,247,251,0.99) 100%)"
-          : "linear-gradient(180deg, rgba(16,23,37,0.96) 0%, rgba(8,13,24,0.92) 100%)",
+          ? "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.98) 100%)"
+          : "linear-gradient(180deg, rgba(8,15,28,0.98) 0%, rgba(4,9,18,0.96) 100%)",
         boxShadow: isLight
-          ? "0 18px 46px rgba(148,163,184,0.16)"
-          : "0 18px 50px rgba(0,0,0,0.25)",
+          ? "0 24px 52px rgba(15,23,42,0.18), inset 0 1px 0 rgba(255,255,255,0.95)"
+          : "0 24px 64px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.08)",
       }}
     >
       <button
@@ -220,8 +220,8 @@ function AccordionShell({ title, Icon, accent, defaultOpen = true, children, isL
             <Icon size={16} />
           </div>
           <div>
-            <p className={cn("text-[14px] font-black tracking-tight", isLight ? "text-slate-900" : "text-white")}>{title}</p>
-            <p className={cn("text-[10px] uppercase tracking-[0.28em]", isLight ? "text-slate-400" : "text-white/25")}>Curated For This Journey</p>
+            <p className={cn("text-[14px] font-black tracking-tight", isLight ? "text-slate-950" : "text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]")}>{title}</p>
+            <p className={cn("text-[10px] font-black uppercase tracking-[0.28em]", isLight ? "text-slate-600" : "text-white/52")}>Curated For This Journey</p>
           </div>
         </div>
         <ChevronDown
@@ -315,17 +315,22 @@ export function AIExplorationDeck({ destination, aiSuggestions, travelStyle, day
   ].map((title) => buildSectionItems({ title, destination, aiSuggestions, travelStyle, dayTheme }))), [destination, aiSuggestions, travelStyle, dayTheme]);
 
   return (
-    <div className={cn("mt-12 pt-8 pb-4", isLight ? "border-t border-slate-300/45" : "border-t border-white/10")}>
+    <div
+      className={cn(
+        "mt-12 rounded-[34px] border px-4 py-5 sm:px-6 sm:py-6 backdrop-blur-2xl",
+        isLight ? "border-white/75 bg-white/72 shadow-[0_24px_70px_rgba(15,23,42,0.16)]" : "border-white/10 bg-[#06101f]/72 shadow-[0_28px_80px_rgba(0,0,0,0.42)]"
+      )}
+    >
       <div className="flex items-center gap-3 mb-6">
         <div className={cn(
           "w-10 h-10 rounded-2xl flex items-center justify-center",
-          isLight ? "bg-[#38BDF8]/12 shadow-[0_10px_30px_rgba(56,189,248,0.14)]" : "bg-[#38BDF8]/10 shadow-[0_0_24px_rgba(56,189,248,0.18)]"
+          isLight ? "bg-white text-[#0369A1] shadow-[0_10px_30px_rgba(56,189,248,0.18)]" : "bg-[#38BDF8]/12 shadow-[0_0_24px_rgba(56,189,248,0.2)]"
         )}>
           <Sparkles size={17} className="text-[#38BDF8]" />
         </div>
         <div>
-          <h3 className={cn("text-[15px] font-black uppercase tracking-[0.16em]", isLight ? "text-slate-900" : "text-white")}>AI Exploration Deck</h3>
-          <p className={cn("text-[11px]", isLight ? "text-slate-500" : "text-white/45")}>Richer visuals, stronger place links, and destination-aware discovery prompts.</p>
+          <h3 className={cn("text-[15px] font-black uppercase tracking-[0.16em]", isLight ? "text-slate-950" : "text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.65)]")}>AI Exploration Deck</h3>
+          <p className={cn("text-[11px] font-semibold", isLight ? "text-slate-700" : "text-white/70")}>Richer visuals, stronger place links, and destination-aware discovery prompts.</p>
         </div>
       </div>
 
