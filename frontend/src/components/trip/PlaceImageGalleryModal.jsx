@@ -20,6 +20,7 @@ const buildPlaceVideoUrl = (queries, title = "") => {
 export function GalleryPhotoBadge({ queries, title = "", accent = "#D4AF37", isLight = false, onClick }) {
   const { images, loading } = usePlaceImageGallery(queries, { maxResults: 9, onlyGoogle: true });
   const count = images.length;
+  const videoUrl = buildPlaceVideoUrl(queries, title);
 
   return (
     <div className="absolute bottom-3 left-3 z-20 flex flex-wrap items-center gap-2">
@@ -36,6 +37,21 @@ export function GalleryPhotoBadge({ queries, title = "", accent = "#D4AF37", isL
         <Camera size={12} style={{ color: accent }} />
         {loading ? "Scanning" : `${count || 0} photos`}
       </button>
+      <a
+        href={videoUrl}
+        target="_blank"
+        rel="noreferrer"
+        onClick={(event) => event.stopPropagation()}
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] shadow-lg backdrop-blur-xl transition-transform hover:scale-[1.03]",
+          isLight ? "border-white/70 bg-white/88 text-slate-900" : "border-white/14 bg-black/45 text-white"
+        )}
+        style={{ boxShadow: `0 12px 30px ${accent}18` }}
+        aria-label="Open exact place video walkthrough"
+      >
+        <PlayCircle size={12} style={{ color: accent }} />
+        Video
+      </a>
     </div>
   );
 }

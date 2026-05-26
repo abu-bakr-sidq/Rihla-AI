@@ -20,6 +20,27 @@ function fmtCur(amount, currency = 'USD') {
   try { return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount); } catch { return '$' + amount; }
 }
 
+function parseDisplayCost(value) {
+  if (value == null) return 0;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  const parts = [...String(value).replace(/(?<=\d),(?=\d)/g, '').matchAll(/\d+(?:\.\d+)?/g)]
+    .map((match) => Number(match[0]))
+    .filter(Number.isFinite);
+  if (!parts.length) return 0;
+  return parts.length > 1 ? Math.round(parts.reduce((sum, part) => sum + part, 0) / parts.length) : parts[0];
+}
+
+function resolveStopDisplayCost(value, { dayTotal = 0, slotCount = 8, travelStyle = '' } = {}) {
+  const raw = parseDisplayCost(value);
+  const total = parseDisplayCost(dayTotal);
+  if (!total) return Math.max(0, Math.round(raw));
+  const style = String(travelStyle || '').toLowerCase();
+  const styleFactor = style.includes('luxury') ? 1.12 : style.includes('premium') ? 0.98 : style.includes('budget') ? 0.62 : 0.82;
+  const floor = Math.max(1, Math.round((total / Math.max(1, slotCount || 8)) * styleFactor));
+  if (!raw || raw < floor * 0.45) return floor;
+  return Math.round(raw);
+}
+
 const PLAN_SLOT_COLORS = {
   morning: '#FBBF24',
   morningActivity: '#F59E0B',
@@ -1244,6 +1265,11 @@ export default function TripDetail() {
                       {activeDay.slots.map(({ sk, act }, cardIdx) => {
                         const cfg = SLOT_CFG[sk];
                         const isSelected = planFocusAct?.place === act.place && planFocusAct?.sk === sk;
+                        const displayCost = resolveStopDisplayCost(act.cost, {
+                          dayTotal: activeDay.budget?.total || TOTAL_BUDGET / Math.max(1, daysData.length || 1),
+                          slotCount: activeDay.slots.length,
+                          travelStyle: effectiveTravelStyle,
+                        });
                         return (
                           <PlannerDetailCard
                             key={`${act.place}-${sk}-${activeDay.day}`}
@@ -1255,7 +1281,7 @@ export default function TripDetail() {
                             slotIcon={cfg.Icon}
                             slotColor={cfg.color}
                             slotTime={cfg.time}
-                            cost={act.cost}
+                            cost={displayCost}
                             destination={DEST_SHORT}
                             cardIndex={activeDayIdx * 8 + cardIdx}
                             currency={tripCurrency}
@@ -1263,7 +1289,7 @@ export default function TripDetail() {
                             preferences={effectivePreferences}
                             isSelected={isSelected}
                             isLight={isLightDetail}
-                            onClick={() => setPlanFocusAct(isSelected ? null : { ...act, sk })}
+                            onClick={() => setPlanFocusAct(isSelected ? null : { ...act, cost: displayCost, sk })}
                           />
                         );
                       })}
