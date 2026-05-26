@@ -567,7 +567,31 @@ export function TripPreviewCard({ destination, imageUrl, selectedItem, currency,
   );
 }
 
-export function TripHighlightsCard({ destination, totalDays, travelers, travelStyle, isLight = false }) {
+function getPlannedStopNames(dayPlan = {}, destination = "") {
+  const dest = normalizeDestination(destination);
+  const values = Object.values(dayPlan || {});
+  const names = [];
+
+  values.forEach((value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return;
+    const name = sanitizeVisibleText(value.place || value.name || value.title || "");
+    if (name && !names.includes(name)) names.push(name);
+  });
+
+  return ensureFourItems(names, [
+    `${dest} signature landmark`,
+    `${dest} local quarter`,
+    `${dest} scenic viewpoint`,
+    `${dest} evening food street`,
+  ]);
+}
+
+function compactInsight(text = "", fallback = "") {
+  const clean = sanitizeVisibleText(text || fallback);
+  return clean.split(/\s+/).slice(0, 16).join(" ").replace(/[,.!?;:]*$/, "");
+}
+
+export function TripHighlightsCard({ destination, totalDays, travelers, travelStyle, activeDay, isLight = false }) {
   const dest = normalizeDestination(destination);
   const style = sanitizeVisibleText(travelStyle || "Balanced");
   const days = Math.max(1, Number(totalDays) || 1);
@@ -583,28 +607,34 @@ export function TripHighlightsCard({ destination, totalDays, travelers, travelSt
         : /culture|cultural/.test(styleKey)
           ? "heritage anchors, museum timing, and slower neighbourhood texture"
           : "headline anchors, local texture, and comfortable daily rhythm";
+  const stops = getPlannedStopNames(activeDay, dest);
 
   const rows = [
     {
-      title: "Prime Movement Window",
-      text: `Start anchor stops before 10:30 AM, protect midday for indoor or cafe buffers, then reserve 4:30-6:30 PM for the strongest ${dest} atmosphere.`,
+      title: "Morning Anchor",
+      text: `Lead with ${stops[0]} while energy and light are clean.`,
       icon: Sun,
       accent: "#D4AF37",
+      imageQuery: `${stops[0]} ${dest}`,
+      badge: "08:00",
     },
     {
-      title: "Pacing Architecture",
-      text: `Across ${days} days, each day keeps one headline anchor, one flexible discovery slot, and one recovery pocket so the route feels designed, not packed.`,
+      title: "Comfort Flow",
+      text: `${travellerCount} traveller route: one anchor, one flexible stop, one recovery pocket.`,
       icon: Users,
       accent: "#34D399",
+      imageQuery: `${stops[1]} ${dest}`,
+      badge: `${days}D`,
     },
     {
-      title: `${style} Intelligence`,
-      text: `The ${cadence} workflow prioritizes ${styleDirective}, with backtracking reduced wherever the day has a stronger natural sequence.`,
+      title: `${style} Lens`,
+      text: compactInsight(`This ${cadence} plan prioritizes ${styleDirective}.`),
       icon: Compass,
       accent: "#818CF8",
+      imageQuery: `${stops[2]} ${dest}`,
+      badge: "AI",
     },
   ];
-  const chips = ["Golden-hour bias", "Low backtrack", `${travellerCount} traveller comfort`, `${cadence} cadence`];
 
   return (
     <div className={cn(
@@ -615,35 +645,41 @@ export function TripHighlightsCard({ destination, totalDays, travelers, travelSt
         <p className={cn("text-[9px] font-black uppercase tracking-[0.46em]", isLight ? "text-slate-600" : "text-white/36")}>Trip Highlights</p>
         <span className={cn("rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.22em]", isLight ? "bg-[#D4AF37]/15 text-slate-700" : "bg-[#D4AF37]/12 text-[#F8E7A0]")}>Concierge Logic</span>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {rows.map((row) => (
-          <div key={row.title} className={cn("flex items-start gap-3 rounded-[20px] border p-3.5", isLight ? "border-slate-200 bg-white/78" : "border-white/[0.06] bg-white/[0.035]")}>
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]" style={{ background: isLight ? `${row.accent}1f` : `${row.accent}16` }}>
-              <row.icon size={15} className="shrink-0" style={{ color: row.accent }} />
+          <div key={row.title} className={cn("group overflow-hidden rounded-[22px] border", isLight ? "border-slate-200 bg-white/82" : "border-white/[0.06] bg-white/[0.035]")}>
+            <div className="relative h-24 overflow-hidden">
+              <PlaceImage
+                queries={[row.imageQuery, `${dest} travel`, `${dest} landmark`]}
+                alt={row.title}
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                photoIndex={rows.indexOf(row)}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-black/24 to-transparent" />
+              <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-white/14 bg-black/42 px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.18em] text-white backdrop-blur-md">
+                <row.icon size={12} style={{ color: row.accent }} />
+                {row.badge}
+              </div>
             </div>
-            <div>
-              <p className={cn("text-[13px] font-black", isLight ? "text-slate-900" : "text-white")}>{row.title}</p>
-              <p className={cn("text-[11px] mt-1 leading-relaxed", isLight ? "text-slate-700" : "text-white/56")}>{row.text}</p>
+            <div className="p-3.5">
+              <p className={cn("text-[13px] font-black", isLight ? "text-slate-950" : "text-white")}>{row.title}</p>
+              <p className={cn("text-[11px] mt-1 leading-relaxed", isLight ? "text-slate-700" : "text-white/58")}>{row.text}</p>
             </div>
           </div>
-        ))}
-      </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {chips.map((chip) => (
-          <span key={chip} className={cn("rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em]", isLight ? "border-slate-200 bg-slate-50 text-slate-700" : "border-white/8 bg-white/[0.035] text-white/52")}>{chip}</span>
         ))}
       </div>
     </div>
   );
 }
 
-export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelStyle, isLight = false }) {
+export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelStyle, activeDay, isLight = false }) {
   const dest = normalizeDestination(destination);
   const style = sanitizeVisibleText(travelStyle || "balanced");
   const gems = sanitizeTextList(aiSuggestions.hidden_gems || []).slice(0, 2);
   const photos = sanitizeTextList(aiSuggestions.photo_spots || []).slice(0, 2);
   const tips = sanitizeTextList(aiSuggestions.tips || []).slice(0, 2);
   const avoid = sanitizeTextList(aiSuggestions.avoid || []).slice(0, 2);
+  const stops = getPlannedStopNames(activeDay, dest);
 
   const groups = [
     {
@@ -651,28 +687,36 @@ export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelSty
       label: "Hidden Gems",
       color: "#D4AF37",
       Icon: Compass,
-      items: gems.length ? gems : [`Look one street behind ${dest}'s headline stop for smaller shrines, tea rooms, craft counters, or residential lanes.`, `Best discovery window: after the first anchor stop, before lunch crowds flatten the atmosphere.`],
+      title: stops[0],
+      imageQuery: `${stops[0]} ${dest}`,
+      text: compactInsight(gems[0], `Check the quieter lane near ${stops[0]} before crowds arrive.`),
     },
     {
       key: "photos",
       label: "Photo Spots",
       color: "#818CF8",
       Icon: Camera,
-      items: photos.length ? photos : [`Shoot from edges, balconies, lakeside bends, or shoreline diagonals instead of the main entrance line.`, `Keep one clean wide frame plus one human-scale detail so the ${dest} story feels editorial, not random.`],
+      title: photos[0] || stops[1],
+      imageQuery: `${photos[0] || stops[1]} ${dest}`,
+      text: compactInsight(photos[1], `Use side angles at ${photos[0] || stops[1]} for a cleaner frame.`),
     },
     {
       key: "tips",
       label: "Local Tips",
       color: "#34D399",
       Icon: Lightbulb,
-      items: tips.length ? tips : [`Ask staff or vendors for the quieter parallel lane or family-run snack counter; those signals usually beat generic lists.`, `For a ${style} trip, keep one unscheduled pocket daily so real local discoveries can enter the route.`],
+      title: "Local Move",
+      imageQuery: `${stops[2]} ${dest} local street`,
+      text: compactInsight(tips[0], `For a ${style} trip, keep one open pocket for a real local find.`),
     },
     {
       key: "avoid",
       label: "Avoid",
       color: "#F87171",
       Icon: Sunset,
-      items: avoid.length ? avoid : [`Do not chain distant landmarks without a cafe or rest buffer; it makes the day feel expensive but not premium.`, `Avoid open-air midday walking when ${dest} has stronger indoor, shaded, or food-led alternatives.`],
+      title: "Skip Friction",
+      imageQuery: `${stops[3]} ${dest}`,
+      text: compactInsight(avoid[0], `Do not chain distant stops without a cafe or rest buffer.`),
     },
   ];
 
@@ -685,23 +729,26 @@ export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelSty
         <p className={cn("text-[9px] font-black uppercase tracking-[0.46em]", isLight ? "text-slate-600" : "text-white/36")}>Curated Insights</p>
         <span className={cn("rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.22em]", isLight ? "bg-sky-100 text-sky-900" : "bg-sky-400/10 text-sky-200")}>Field Notes</span>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {groups.map((group) => (
-          <div key={group.key} className={cn("rounded-[22px] p-4 min-h-[172px] border", isLight ? "bg-white/78 border-slate-200 shadow-[0_10px_24px_rgba(148,163,184,0.12)]" : "bg-white/[0.035] border-white/[0.055]")}>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: isLight ? `${group.color}1f` : `${group.color}16` }}>
-                <group.Icon size={13} style={{ color: group.color }} />
-              </span>
-              <span className="text-[10px] font-black uppercase tracking-[0.32em]" style={{ color: group.color }}>{group.label}</span>
+          <div key={group.key} className={cn("group flex min-h-[104px] overflow-hidden rounded-[22px] border", isLight ? "bg-white/82 border-slate-200 shadow-[0_10px_24px_rgba(148,163,184,0.12)]" : "bg-white/[0.035] border-white/[0.055]")}>
+            <div className="relative w-[104px] shrink-0 overflow-hidden">
+              <PlaceImage
+                queries={[group.imageQuery, `${dest} travel`, `${dest} landmark`]}
+                alt={group.title}
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                photoIndex={groups.indexOf(group)}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/16 to-transparent" />
             </div>
-            <ul className="space-y-2">
-              {group.items.map((item, index) => (
-                <li key={`${group.key}-${index}`} className={cn("flex gap-2 text-[11px] leading-relaxed", isLight ? "text-slate-700" : "text-white/62")}>
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: group.color }} />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="min-w-0 flex-1 p-3">
+              <div className="mb-1.5 flex items-center gap-2">
+                <group.Icon size={12} style={{ color: group.color }} />
+                <span className="text-[8px] font-black uppercase tracking-[0.24em]" style={{ color: group.color }}>{group.label}</span>
+              </div>
+              <p className={cn("truncate text-[12px] font-black", isLight ? "text-slate-950" : "text-white")}>{group.title}</p>
+              <p className={cn("mt-1 text-[10.5px] leading-relaxed", isLight ? "text-slate-700" : "text-white/60")}>{group.text}</p>
+            </div>
           </div>
         ))}
       </div>

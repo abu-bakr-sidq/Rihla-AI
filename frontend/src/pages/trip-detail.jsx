@@ -1240,6 +1240,7 @@ export default function TripDetail() {
                 totalDays={ov.total_days || daysData.length}
                 travelers={trip.travelers || 1}
                 travelStyle={trip.travelStyle || "Balanced"}
+                activeDay={activeDay}
                 isLight={isLightDetail}
               />
 
@@ -1247,6 +1248,7 @@ export default function TripDetail() {
                 aiSuggestions={res.ai_suggestions}
                 destination={DEST_SHORT}
                 travelStyle={trip.travelStyle || "Balanced"}
+                activeDay={activeDay}
                 isLight={isLightDetail}
               />
             </div>

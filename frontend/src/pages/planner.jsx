@@ -13,7 +13,6 @@ import {
   Library, ConciergeBell, ShoppingBag, Music, Car, Trees, UtensilsCrossed,
   Leaf, Sprout, CloudSun, Bed, ArrowRight, Tent, Ship, PenLine, ExternalLink, Plane, Download, X
 } from "lucide-react";
-import { SpiralAnimation } from "@/components/ui/spiral-animation";
 import { GlowingCard } from "@/components/ui/glowing-card";
 import ScrollExpandMedia from "@/components/blocks/scroll-expansion-hero";
 import PlannerBackground from "@/components/ui/PlannerBackground";
@@ -4043,13 +4042,21 @@ export default function Planner() {
 
             {step === 6 && (
               <motion.div style={{ animation: 'cf-in 0.8s ease-out' }} className="fixed inset-0 z-[80] flex items-center justify-center px-4">
-                <style>{`@keyframes cf-in { from{opacity:0; filter:blur(20px)} to{opacity:1; filter:blur(0px)} } @keyframes cf-out { from{opacity:1; filter:blur(0px)} to{opacity:0; filter:blur(20px)} }`}</style>
+                <style>{`@keyframes cf-in { from{opacity:0; filter:blur(20px)} to{opacity:1; filter:blur(0px)} } @keyframes rihla-orbit { to { transform: rotate(360deg); } } @keyframes rihla-scan { 0%,100%{opacity:.35; transform:scaleX(.68)} 50%{opacity:1; transform:scaleX(1)} }`}</style>
                 <div className="absolute inset-0 bg-black/14 backdrop-blur-[1px]" />
                 <div className="relative w-full max-w-[420px] overflow-hidden rounded-[24px] border border-white/14 bg-[linear-gradient(145deg,rgba(3,8,16,0.84),rgba(8,16,28,0.76))] px-5 py-6 text-center shadow-[0_24px_70px_rgba(0,0,0,0.5)] backdrop-blur-xl">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.16),transparent_34%),linear-gradient(180deg,rgba(0,0,0,0.12),rgba(0,0,0,0.36))]" />
                   <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/70 to-transparent" />
                   <div className="relative z-10">
-                    <SpiralAnimation text="" className="gap-0 scale-[0.62] -my-12" />
+                    <div className="relative mx-auto mb-5 flex h-32 w-32 items-center justify-center">
+                      <div className="absolute inset-0 rounded-full border border-[#D4AF37]/20 shadow-[0_0_40px_rgba(212,175,55,0.16)]" />
+                      <div className="absolute inset-2 rounded-full border border-dashed border-[#D4AF37]/35" style={{ animation: "rihla-orbit 8s linear infinite" }} />
+                      <div className="absolute inset-7 rounded-full bg-[#D4AF37]/10 blur-xl" />
+                      <div className="absolute left-1/2 top-1/2 h-2 w-2 rounded-full bg-[#D4AF37] shadow-[0_0_18px_rgba(212,175,55,0.95)]" style={{ transform: "translate(45px,-6px)", animation: "rihla-orbit 3.8s linear infinite", transformOrigin: "-45px 6px" }} />
+                      <div className="relative flex h-20 w-20 items-center justify-center rounded-[24px] border border-white/12 bg-black/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_18px_36px_rgba(0,0,0,0.45)]">
+                        <img src="/assets/rihla-logo-hq.png" alt="Rihla AI" className="h-12 w-12 object-contain drop-shadow-[0_0_18px_rgba(212,175,55,0.35)]" />
+                      </div>
+                    </div>
                     <div className="mt-2 space-y-2">
                       <p className="text-[8px] font-black uppercase tracking-[0.34em] text-[#D4AF37] drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">Rihla AI is architecting your route</p>
                       <h3 className="font-display text-lg md:text-xl font-black tracking-tight text-white uppercase drop-shadow-[0_4px_18px_rgba(0,0,0,0.9)]">
@@ -4062,6 +4069,7 @@ export default function Planner() {
                           animate={{ width: `${loadPct}%` }}
                         />
                       </div>
+                      <div className="mx-auto h-px w-44 origin-center bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent" style={{ animation: "rihla-scan 1.8s ease-in-out infinite" }} />
                       <p className="mt-3 text-[8px] font-black tracking-[0.2em] text-[#F8E7A0] uppercase drop-shadow-[0_3px_12px_rgba(0,0,0,0.85)]">
                         Processing Node: {loadPct}% complete
                       </p>
@@ -4606,6 +4614,7 @@ export default function Planner() {
                           totalDays={ov.total_days || 0}
                           travelers={ov.passengers || formData.travelers || 1}
                           travelStyle={formData.travelStyle || "Balanced"}
+                          activeDay={activeDay}
                           isLight={isLightPlannerResult}
                         />
 
@@ -4617,6 +4626,7 @@ export default function Planner() {
                           aiSuggestions={res.ai_suggestions}
                           destination={DEST_SHORT}
                           travelStyle={formData.travelStyle || "Balanced"}
+                          activeDay={activeDay}
                           isLight={isLightPlannerResult}
                         />
                       </div>
