@@ -2356,7 +2356,7 @@ function PlannerDayTimeline({ slots, slotCfg, isLight = false }) {
                   {cfg.time.replace(' AM', '').replace(' PM', '')}
                 </span>
                 <div className="flex items-start justify-center w-full px-1 mt-1">
-                  <span className={cn("text-[9px] sm:text-[10px] font-bold transition-colors text-center leading-tight", isLight ? "text-slate-500 group-hover:text-slate-900" : "text-white/60 group-hover:text-white")}>
+                  <span className={cn("text-[9px] sm:text-[10px] font-black transition-colors text-center leading-tight", isLight ? "text-slate-700 group-hover:text-slate-950" : "text-white/60 group-hover:text-white")}>
                     {act.place}
                   </span>
                 </div>
@@ -2444,7 +2444,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
             <div className={cn("max-w-[280px] text-lg font-black leading-tight", isLight ? "text-slate-900" : "text-white")}>
               {place}
             </div>
-            <div className={cn("mt-2 max-w-[260px] text-xs leading-relaxed", isLight ? "text-slate-500" : "text-white/45")}>
+            <div className={cn("mt-2 max-w-[260px] text-xs leading-relaxed", isLight ? "text-slate-700" : "text-white/45")}>
               Live place photo unavailable right now. We kept this stop accurate instead of showing the wrong location.
             </div>
           </div>
@@ -2480,11 +2480,11 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
       {/* ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ Content body ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ */}
       <div className="p-5 flex flex-col gap-0 flex-1">
         <h3 className={cn("text-[17px] font-black leading-tight mb-2 tracking-wide transition-colors", isLight ? "text-slate-950 group-hover:text-sky-600" : "text-white group-hover:text-[#38BDF8]")}>{place}</h3>
-        <p className={cn("text-[12px] leading-relaxed mb-4 line-clamp-3", isLight ? "text-slate-600" : "text-white/55")}>{activity}</p>
+        <p className={cn("text-[12px] leading-relaxed mb-4 line-clamp-3 font-medium", isLight ? "text-slate-700" : "text-white/55")}>{activity}</p>
 
         {/* Cultural context */}
         {cultural_context && (
-          <p className="text-[11px] text-[#38BDF8]/75 leading-relaxed italic border-l-2 border-[#38BDF8]/20 pl-3 mb-4">
+          <p className={cn("text-[11px] leading-relaxed italic border-l-2 pl-3 mb-4", isLight ? "text-sky-800 border-sky-300/70" : "text-[#38BDF8]/75 border-[#38BDF8]/20")}>
             {cultural_context}
           </p>
         )}
@@ -2493,7 +2493,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1.5 h-3.5 rounded-full" style={{ background: accentColor }} />
-            <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-500" : "text-white/40")}>Time Plan</span>
+            <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-700" : "text-white/40")}>Time Plan</span>
           </div>
           <div className="space-y-2 pl-1">
             {schedule.map((step, i) => (
@@ -2502,7 +2502,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
                   <div className="absolute inset-0 rounded-full blur-[2px]" style={{ background: accentColor, opacity: 0.6 }} />
                   <div className="relative w-1.5 h-1.5 rounded-full z-10" style={{ background: accentColor }} />
                 </div>
-                <p className={cn("text-[11.5px] leading-relaxed font-medium", isLight ? "text-slate-600" : "text-white/60")}>{step}</p>
+                <p className={cn("text-[11.5px] leading-relaxed font-semibold", isLight ? "text-slate-700" : "text-white/60")}>{step}</p>
               </div>
             ))}
           </div>
@@ -2512,7 +2512,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
         <div className={cn("mb-4 pt-4 border-t", isLight ? "border-slate-200/80" : "border-white/[0.04]")}>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1.5 h-3.5 rounded-full bg-[#38BDF8]" />
-            <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-500" : "text-white/40")}>Street Finds</span>
+            <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-700" : "text-white/40")}>Street Finds</span>
           </div>
           <div className="flex flex-wrap gap-2 pl-1">
             {streetFinds.map((s, i) => (
@@ -2521,7 +2521,11 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
                 target="_blank"
                 rel="noreferrer"
                 className="text-[10px] px-2.5 py-1 rounded-[6px] font-bold tracking-wide hover:scale-[1.02] transition-transform"
-                style={{ background: 'rgba(56,189,248,0.06)', border: '1px solid rgba(56,189,248,0.2)', color: '#7DD3FC' }}
+                style={{
+                  background: isLight ? 'rgba(2,132,199,0.1)' : 'rgba(56,189,248,0.06)',
+                  border: isLight ? '1px solid rgba(2,132,199,0.28)' : '1px solid rgba(56,189,248,0.2)',
+                  color: isLight ? '#075985' : '#7DD3FC',
+                }}
               >
                 {s}
               </a>
@@ -2533,7 +2537,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
         <div className={cn("pt-4 border-t mt-auto flex flex-col h-[252px]", isLight ? "border-slate-200/80" : "border-white/[0.04]")}>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1.5 h-3.5 rounded-full bg-[#10B981]" />
-            <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-500" : "text-white/40")}>Explore Options</span>
+            <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-700" : "text-white/40")}>Explore Options</span>
           </div>
           <div
             className={expanded ? "space-y-2.5 pl-1 h-[176px] overflow-y-auto overscroll-contain pr-2" : "space-y-2.5 pl-1 h-[176px] overflow-hidden"}
@@ -2546,7 +2550,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
             {ideas.slice(0, expanded ? ideas.length : 2).map((idea, i) => (
               <div key={i} className={cn("flex gap-2.5 items-start p-2.5 rounded-xl border", isLight ? "bg-slate-50 border-slate-200/80" : "bg-white/[0.02] border-white/[0.02]")}>
                 <span className="text-[12px] shrink-0 font-bold" style={{ color: '#10B981' }}>-</span>
-                <p className={cn("text-[11.5px] leading-relaxed italic", isLight ? "text-slate-600" : "text-white/60")}>{idea}</p>
+                <p className={cn("text-[11.5px] leading-relaxed italic font-medium", isLight ? "text-slate-700" : "text-white/60")}>{idea}</p>
               </div>
             ))}
           </div>
@@ -2573,7 +2577,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
         {transport && (
           <div className="flex items-start gap-2 mt-2">
             <span className={cn("text-[9px] font-black uppercase tracking-widest shrink-0 mt-0.5", isLight ? "text-slate-400" : "text-white/25")}>How to get there</span>
-            <span className={cn("text-[11px] leading-relaxed", isLight ? "text-slate-600" : "text-white/40")}>{transport}</span>
+            <span className={cn("text-[11px] leading-relaxed", isLight ? "text-slate-700" : "text-white/40")}>{transport}</span>
           </div>
         )}
       </div>
@@ -4278,12 +4282,12 @@ export default function Planner() {
                           <p className="text-[9px] font-black text-[#D4AF37] uppercase tracking-[0.6em] mb-2">Rihla AI - Your Journey</p>
                           <h1 className={cn("text-[clamp(1.85rem,7vw,3.6rem)] font-display font-black uppercase tracking-tight leading-[0.94] mb-4", isLightPlannerResult ? "text-slate-950" : "text-white")} style={{ letterSpacing: '-0.05em' }}>{DEST_SHORT}</h1>
                           <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5">
-                            <span className={cn("text-xs font-mono", isLightPlannerResult ? "text-slate-600" : "text-white/45")}>{ov.dates}</span>
+                            <span className={cn("text-xs font-mono font-semibold", isLightPlannerResult ? "text-slate-800 drop-shadow-[0_1px_8px_rgba(255,255,255,0.75)]" : "text-white/45")}>{ov.dates}</span>
                             <span className={cn("w-0.5 h-0.5 rounded-full", isLightPlannerResult ? "bg-slate-300" : "bg-white/20")} />
-                            <span className={cn("text-xs font-mono", isLightPlannerResult ? "text-slate-600" : "text-white/45")}>{ov.total_days} days</span>
+                            <span className={cn("text-xs font-mono font-semibold", isLightPlannerResult ? "text-slate-800 drop-shadow-[0_1px_8px_rgba(255,255,255,0.75)]" : "text-white/45")}>{ov.total_days} days</span>
                             <span className={cn("w-0.5 h-0.5 rounded-full", isLightPlannerResult ? "bg-slate-300" : "bg-white/20")} />
-                            <span className={cn("text-xs font-mono", isLightPlannerResult ? "text-slate-600" : "text-white/45")}>{ov.passengers || formData.travelers} traveller{+(ov.passengers || formData.travelers) > 1 ? 's' : ''}</span>
-                            {formData.travelStyle && <><span className={cn("w-0.5 h-0.5 rounded-full", isLightPlannerResult ? "bg-slate-300" : "bg-white/20")} /><span className={cn("text-xs font-mono capitalize", isLightPlannerResult ? "text-slate-600" : "text-white/45")}>{formData.travelStyle}</span></>}
+                            <span className={cn("text-xs font-mono font-semibold", isLightPlannerResult ? "text-slate-800 drop-shadow-[0_1px_8px_rgba(255,255,255,0.75)]" : "text-white/45")}>{ov.passengers || formData.travelers} traveller{+(ov.passengers || formData.travelers) > 1 ? 's' : ''}</span>
+                            {formData.travelStyle && <><span className={cn("w-0.5 h-0.5 rounded-full", isLightPlannerResult ? "bg-slate-500" : "bg-white/20")} /><span className={cn("text-xs font-mono font-semibold capitalize", isLightPlannerResult ? "text-slate-800 drop-shadow-[0_1px_8px_rgba(255,255,255,0.75)]" : "text-white/45")}>{formData.travelStyle}</span></>}
                           </div>
                         </div>
                         <div className="planner-result-hero-center flex flex-col sm:flex-row items-stretch justify-center gap-3">
@@ -4463,7 +4467,7 @@ export default function Planner() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <h2 className={cn("text-[18px] font-display font-black uppercase tracking-wide", isLightPlannerResult ? "text-slate-950" : "text-white")}>{activeDay.theme}</h2>
-                                  <p className={cn("text-[10px] font-mono mt-0.5", isLightPlannerResult ? "text-slate-500" : "text-white/35")}>{activeDay.date}</p>
+                                  <p className={cn("text-[10px] font-mono mt-0.5 font-semibold", isLightPlannerResult ? "text-slate-700" : "text-white/35")}>{activeDay.date}</p>
                                 </div>
                                 <span
                                   className={cn(

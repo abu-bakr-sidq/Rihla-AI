@@ -90,7 +90,7 @@ function PlannerDetailTimeline({ slots, slotCfg, isLight = false }) {
                   {cfg.time.replace(' AM', '').replace(' PM', '')}
                 </span>
                 <div className="flex items-start justify-center w-full px-1 mt-1">
-                  <span className={`text-[9px] sm:text-[10px] font-bold text-center leading-tight ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{act.place}</span>
+                  <span className={`text-[9px] sm:text-[10px] font-black text-center leading-tight ${isLight ? 'text-slate-700' : 'text-white/60'}`}>{act.place}</span>
                 </div>
               </div>
             );
@@ -149,7 +149,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
 
       <div className="p-5 flex flex-col gap-0 flex-1">
         <h3 className={`text-[17px] font-black leading-tight mb-2 tracking-wide transition-colors ${isLight ? 'text-slate-900 group-hover:text-sky-600' : 'text-white group-hover:text-[#38BDF8]'}`}>{displayPlace}</h3>
-        <p className={`text-[12px] leading-relaxed mb-4 line-clamp-3 ${isLight ? 'text-slate-600' : 'text-white/55'}`}>{activity}</p>
+        <p className={`text-[12px] leading-relaxed mb-4 line-clamp-3 font-medium ${isLight ? 'text-slate-700' : 'text-white/55'}`}>{activity}</p>
 
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
@@ -163,7 +163,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
                   <div className="absolute inset-0 rounded-full blur-[2px]" style={{ background: accentColor, opacity: 0.6 }} />
                   <div className="relative w-1.5 h-1.5 rounded-full z-10" style={{ background: accentColor }} />
                 </div>
-                <p className={`text-[11.5px] leading-relaxed font-medium ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{step}</p>
+                <p className={`text-[11.5px] leading-relaxed font-semibold ${isLight ? 'text-slate-700' : 'text-white/60'}`}>{step}</p>
               </div>
             ))}
           </div>
@@ -181,7 +181,11 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
                 target="_blank"
                 rel="noreferrer"
                 className={`text-[10px] px-2.5 py-1 rounded-[6px] font-bold tracking-wide hover:scale-[1.02] transition-transform ${isLight ? 'hover:bg-sky-50' : ''}`}
-                style={{ background: isLight ? 'rgba(255,255,255,0.82)' : 'rgba(56,189,248,0.06)', border: isLight ? '1px solid rgba(56,189,248,0.22)' : '1px solid rgba(56,189,248,0.2)', color: isLight ? '#0284C7' : '#7DD3FC' }}
+                style={{
+                  background: isLight ? 'rgba(2,132,199,0.1)' : 'rgba(56,189,248,0.06)',
+                  border: isLight ? '1px solid rgba(2,132,199,0.28)' : '1px solid rgba(56,189,248,0.2)',
+                  color: isLight ? '#075985' : '#7DD3FC',
+                }}
               >
                 {s.label}
               </a>
@@ -205,7 +209,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
             {ideas.slice(0, expanded ? ideas.length : 2).map((idea, i) => (
               <div key={i} className={`flex gap-2.5 items-start p-2.5 rounded-xl border ${isLight ? 'bg-white/70 border-slate-300/45' : 'bg-white/[0.02] border-white/[0.02]'}`}>
                 <span className="text-[12px] shrink-0 font-bold" style={{ color: '#10B981' }}>-</span>
-                <p className={`text-[11.5px] leading-relaxed italic ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{idea}</p>
+                <p className={`text-[11.5px] leading-relaxed italic font-medium ${isLight ? 'text-slate-700' : 'text-white/60'}`}>{idea}</p>
               </div>
             ))}
           </div>
