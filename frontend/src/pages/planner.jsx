@@ -3163,10 +3163,11 @@ export default function Planner() {
     if (step === 6) {
       const itv = setInterval(() => {
         setLoadPct(prev => {
-          if (prev >= 100) { clearInterval(itv); return 100; }
-          return prev + 1;
+          if (prev >= 94) return 94;
+          const increment = prev < 35 ? 2 : prev < 70 ? 1 : prev < 88 ? 0.4 : 0.12;
+          return Math.min(94, Number((prev + increment).toFixed(2)));
         });
-      }, 30);
+      }, 140);
       return () => clearInterval(itv);
     }
   }, [step]);
@@ -4105,7 +4106,7 @@ export default function Planner() {
                       </div>
                       <div className="mx-auto h-px w-44 origin-center bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent" style={{ animation: "rihla-scan 1.8s ease-in-out infinite" }} />
                       <p className="mt-3 text-[8px] font-black tracking-[0.2em] text-[#F8E7A0] uppercase drop-shadow-[0_3px_12px_rgba(0,0,0,0.85)]">
-                        Processing Node: {loadPct}% complete
+                        Processing Node: {Math.round(loadPct)}% complete
                       </p>
                     </div>
                   </div>
