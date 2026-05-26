@@ -17,12 +17,9 @@ const buildPlaceVideoUrl = (queries, title = "") => {
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${query} walking tour travel guide`)}`;
 };
 
-const PLACE_PREVIEW_VIDEO_URL = "https://me7aitdbxq.ufs.sh/f/2wsMIGDMQRdYuZ5R8ahEEZ4aQK56LizRdfBSqeDMsmUIrJN1";
-
 export function GalleryPhotoBadge({ queries, title = "", accent = "#D4AF37", isLight = false, onClick }) {
   const { images, loading } = usePlaceImageGallery(queries, { maxResults: 9, onlyGoogle: true });
   const count = images.length;
-  const videoUrl = buildPlaceVideoUrl(queries, title);
 
   return (
     <div className="absolute bottom-3 left-3 z-20 flex flex-wrap items-center gap-2">
@@ -39,19 +36,6 @@ export function GalleryPhotoBadge({ queries, title = "", accent = "#D4AF37", isL
         <Camera size={12} style={{ color: accent }} />
         {loading ? "Scanning" : `${count || 0} photos`}
       </button>
-      <a
-        href={videoUrl}
-        target="_blank"
-        rel="noreferrer"
-        onClick={(event) => event.stopPropagation()}
-        className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] shadow-lg backdrop-blur-xl transition-transform hover:scale-[1.03]",
-          isLight ? "border-white/70 bg-white/88 text-slate-900" : "border-white/14 bg-black/45 text-white"
-        )}
-      >
-        <PlayCircle size={12} style={{ color: accent }} />
-        Video
-      </a>
     </div>
   );
 }
@@ -123,69 +107,18 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
           )}
 
           {!loading && !images.length && (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <div className="relative h-[300px] overflow-hidden rounded-[22px] border border-[#D4AF37]/25 bg-[#050912] shadow-[0_16px_42px_rgba(0,0,0,0.34)] lg:col-span-2">
-                <video
-                  className="absolute inset-0 h-full w-full object-cover"
-                  src={PLACE_PREVIEW_VIDEO_URL}
-                  poster={images[0]?.url}
-                  controls
-                  muted
-                  playsInline
-                  preload="metadata"
-                />
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent p-4">
-                  <p className="text-[9px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">In-Site Preview</p>
-                  <p className="mt-1 text-lg font-black leading-tight text-white">Playable travel mood board</p>
-                </div>
-              </div>
-              <a href={videoUrl} target="_blank" rel="noreferrer" className="flex h-[300px] flex-col items-center justify-center rounded-[22px] border border-white/10 bg-white/[0.04] px-8 text-center transition-transform hover:scale-[1.01]">
+            <div className="grid grid-cols-1 gap-4">
+              <a href={videoUrl} target="_blank" rel="noreferrer" className="flex min-h-[300px] flex-col items-center justify-center rounded-[24px] border border-[#D4AF37]/25 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.16),transparent_42%),linear-gradient(135deg,#0b1423,#050912)] px-8 text-center shadow-[0_16px_42px_rgba(0,0,0,0.34)] transition-transform hover:scale-[1.005]">
                 <PlayCircle size={34} className="mb-4 text-[#7DD3FC]" />
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#7DD3FC]">More Videos</p>
-                <p className="mt-2 text-lg font-black text-white">Open YouTube results</p>
-                <p className="mt-2 max-w-sm text-xs leading-relaxed text-white/56">No verified Google photo set is available yet, so Rihla keeps the photo board empty instead of showing a wrong place.</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">Exact Video Search</p>
+                <p className="mt-2 text-lg font-black text-white">Open real walkthroughs on YouTube</p>
+                <p className="mt-2 max-w-xl text-xs leading-relaxed text-white/60">No verified Google photo set is available yet, so Rihla is not showing random media inside the app.</p>
               </a>
             </div>
           )}
 
           {!!images.length && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="relative h-[300px] overflow-hidden rounded-[22px] border border-[#D4AF37]/25 bg-[radial-gradient(circle_at_30%_20%,rgba(212,175,55,0.24),transparent_38%),linear-gradient(135deg,#0b1423,#050912)] shadow-[0_16px_42px_rgba(0,0,0,0.34)] sm:col-span-2 lg:col-span-2">
-                <video
-                  className="absolute inset-0 h-full w-full object-cover"
-                  src={PLACE_PREVIEW_VIDEO_URL}
-                  poster={images[0]?.url}
-                  controls
-                  muted
-                  playsInline
-                  preload="metadata"
-                />
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/75 to-transparent" />
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent p-4">
-                  <p className="text-[9px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">In-Site Preview</p>
-                  <p className="mt-1 text-lg font-black leading-tight text-white">Playable travel mood board</p>
-                  <p className="mt-1 max-w-xl text-[11px] font-semibold leading-relaxed text-white/68">Watch a stable in-site preview here. Open YouTube for exact walkthroughs from this stop search.</p>
-                </div>
-              </div>
-              <a
-                href={videoUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="group relative h-[230px] overflow-hidden rounded-[22px] border border-white/10 bg-[radial-gradient(circle_at_30%_20%,rgba(56,189,248,0.18),transparent_38%),linear-gradient(135deg,#0b1423,#050912)] shadow-[0_16px_42px_rgba(0,0,0,0.34)] sm:h-[244px]"
-              >
-                <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.08),transparent_42%,rgba(56,189,248,0.10))]" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-white/20 bg-white/8 shadow-[0_0_42px_rgba(56,189,248,0.16)] transition-transform group-hover:scale-110">
-                    <PlayCircle size={30} className="text-[#7DD3FC]" />
-                  </div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#7DD3FC]">More Videos</p>
-                  <p className="mt-2 text-lg font-black leading-tight text-white">Open more walkthroughs</p>
-                  <p className="mt-2 text-[11px] font-semibold leading-relaxed text-white/62">YouTube opens with this exact stop search.</p>
-                </div>
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-white/78">Open YouTube</p>
-                </div>
-              </a>
               {images.map((image, index) => (
                 <a key={`${image.url}-${index}`} href={image.url} target="_blank" rel="noreferrer" className="group relative h-[230px] overflow-hidden rounded-[22px] border border-white/10 bg-black shadow-[0_16px_42px_rgba(0,0,0,0.32)] sm:h-[244px]">
                   <img src={image.url} alt={`${title} ${index + 1}`} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -194,6 +127,21 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
                   </div>
                 </a>
               ))}
+              <a
+                href={videoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="group relative h-[230px] overflow-hidden rounded-[22px] border border-[#D4AF37]/24 bg-[radial-gradient(circle_at_30%_20%,rgba(212,175,55,0.16),transparent_38%),linear-gradient(135deg,#0b1423,#050912)] shadow-[0_16px_42px_rgba(0,0,0,0.34)] sm:h-[244px]"
+              >
+                <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 shadow-[0_0_42px_rgba(212,175,55,0.12)] transition-transform group-hover:scale-110">
+                    <PlayCircle size={26} className="text-[#F8E7A0]" />
+                  </div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">Exact Video Search</p>
+                  <p className="mt-2 text-lg font-black leading-tight text-white">Open real walkthroughs</p>
+                  <p className="mt-2 text-[11px] font-semibold leading-relaxed text-white/62">No unrelated in-app video. This opens YouTube for this exact stop.</p>
+                </div>
+              </a>
             </div>
           )}
         </div>

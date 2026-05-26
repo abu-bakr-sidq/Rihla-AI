@@ -18,6 +18,7 @@ import {
   Utensils,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { PlaceImage, usePlaceImage, usePlaceImageGallery } from "@/hooks/use-place-image";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { sanitizeTextList, sanitizeVisibleText } from "@/lib/display-text";
@@ -609,33 +610,34 @@ function buildPlannedImageQueries(place = "", destination = "", intent = "touris
 
 function PlaceGalleryModal({ open, onClose, title, queries, accent = "#D4AF37", isLight = false }) {
   const { images, loading } = usePlaceImageGallery(queries, { maxResults: 9, onlyGoogle: true });
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
   const countLabel = loading ? "Scanning Google Places" : `${images.length || 0} verified images`;
 
-  return (
-    <div className="fixed inset-0 z-[95] flex items-center justify-center px-4 py-6">
-      <button aria-label="Close gallery" className="absolute inset-0 bg-black/72 backdrop-blur-md" onClick={onClose} />
-      <div className={cn("relative z-10 flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[30px] border shadow-[0_30px_90px_rgba(0,0,0,0.55)]", isLight ? "border-white/80 bg-white/95" : "border-white/12 bg-[#08111f]/95")}>
-        <div className={cn("flex shrink-0 items-center justify-between gap-4 border-b px-5 py-4", isLight ? "border-slate-200" : "border-white/10")}>
+  return createPortal(
+    <div className="fixed inset-0 z-[9998] flex items-center justify-center overflow-hidden bg-[#020711] px-0 py-0 sm:px-6 sm:py-5">
+      <button aria-label="Close gallery" className="absolute inset-0 bg-[#020711]" onClick={onClose} />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(56,189,248,0.12),transparent_30%),radial-gradient(circle_at_82%_78%,rgba(212,175,55,0.10),transparent_34%)]" />
+      <div className={cn("relative z-10 flex h-screen w-screen max-w-none flex-col overflow-hidden rounded-none border-0 shadow-[0_30px_90px_rgba(0,0,0,0.65)] sm:h-[calc(100vh-40px)] sm:max-w-5xl sm:rounded-[30px] sm:border", isLight ? "border-white/20 bg-[#07101f]" : "border-white/12 bg-[#07101f]")}>
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#07101f] px-5 py-4">
           <div>
             <p className="text-[9px] font-black uppercase tracking-[0.34em]" style={{ color: accent }}>Google Places Image Board</p>
-            <h3 className={cn("mt-1 text-xl font-black leading-tight", isLight ? "text-slate-950" : "text-white")}>{title}</h3>
-            <p className={cn("mt-1 text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-500" : "text-white/42")}>{countLabel}</p>
+            <h3 className="mt-1 text-xl font-black leading-tight text-white">{title}</h3>
+            <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/72">{countLabel}</p>
           </div>
-          <button onClick={onClose} className={cn("rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "border-slate-300 text-slate-700" : "border-white/12 text-white/70")}>Close</button>
+          <button onClick={onClose} className="rounded-full border border-white/22 bg-white/5 px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/82 transition-colors hover:border-white/40 hover:text-white">Close</button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-5">
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-[#07101f] p-5">
           {loading && (
-            <div className={cn("flex h-64 items-center justify-center rounded-[24px] border text-[10px] font-black uppercase tracking-[0.26em]", isLight ? "border-slate-200 bg-slate-50 text-slate-500" : "border-white/8 bg-white/[0.03] text-white/45")}>
+            <div className="flex h-64 items-center justify-center rounded-[24px] border border-white/10 bg-white/[0.04] text-[10px] font-black uppercase tracking-[0.26em] text-white/50">
               Loading exact Google place photos...
             </div>
           )}
 
           {!loading && !images.length && (
-            <div className={cn("flex h-64 flex-col items-center justify-center rounded-[24px] border px-8 text-center", isLight ? "border-slate-200 bg-slate-50" : "border-white/8 bg-white/[0.03]")}>
-              <p className={cn("text-sm font-black", isLight ? "text-slate-900" : "text-white")}>No verified Google photo set available yet.</p>
-              <p className={cn("mt-2 max-w-md text-xs leading-relaxed", isLight ? "text-slate-600" : "text-white/50")}>Rihla is avoiding random fallback images here, so this panel only shows photos returned by Google Places for the exact planned stop.</p>
+            <div className="flex h-64 flex-col items-center justify-center rounded-[24px] border border-white/10 bg-white/[0.04] px-8 text-center">
+              <p className="text-sm font-black text-white">No verified Google photo set available yet.</p>
+              <p className="mt-2 max-w-md text-xs leading-relaxed text-white/55">Rihla is avoiding random fallback images here, so this panel only shows photos returned by Google Places for the exact planned stop.</p>
             </div>
           )}
 
@@ -653,7 +655,8 @@ function PlaceGalleryModal({ open, onClose, title, queries, accent = "#D4AF37", 
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
