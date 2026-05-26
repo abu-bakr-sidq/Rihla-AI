@@ -143,7 +143,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
         <div className={`absolute inset-0 transition-opacity duration-300 ${isLight ? 'opacity-100' : 'opacity-0'}`} style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 26%, rgba(255,255,255,0) 45%)' }} />
         <div className={`absolute top-0 inset-x-0 h-24 ${isLight ? 'bg-gradient-to-b from-[rgba(8,15,27,0.22)] via-[rgba(8,15,27,0.08)] to-transparent' : 'bg-gradient-to-b from-[#0E1520]/90 to-transparent'}`} />
         <div className={`absolute bottom-0 inset-x-0 h-32 ${isLight ? 'bg-gradient-to-t from-[rgba(8,15,27,0.72)] via-[rgba(8,15,27,0.26)] to-transparent' : 'bg-gradient-to-t from-[#0E1520] via-[#0E1520]/60 to-transparent'}`} />
-        <GalleryPhotoBadge queries={galleryQueries} accent={accentColor} isLight={isLight} onClick={(event) => { event.stopPropagation(); setGalleryOpen(true); }} />
+        <GalleryPhotoBadge queries={galleryQueries} title={displayPlace} accent={accentColor} isLight={isLight} onClick={(event) => { event.stopPropagation(); setGalleryOpen(true); }} />
         <div className="absolute top-3 left-3 backdrop-blur-xl px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg transition-[background-color,border-color,color] duration-300" style={{ background: isLight ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(226,232,240,0.9)' : `1px solid ${accentColor}40` }}>
           {SlotIcon ? <SlotIcon size={12} strokeWidth={2.5} style={{ color: accentColor }} /> : null}
           <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: accentColor }}>{slotLabel}</span>

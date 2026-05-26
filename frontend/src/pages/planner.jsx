@@ -2457,7 +2457,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
         <div className={cn("absolute inset-0", isLight ? "bg-gradient-to-br from-white/8 via-transparent to-slate-200/8" : "bg-gradient-to-br from-white/[0.01] via-transparent to-black/6")} />
         <div className={cn("absolute top-0 inset-x-0 h-16", isLight ? "bg-gradient-to-b from-white/10 to-transparent" : "bg-gradient-to-b from-[#0E1520]/42 to-transparent")} />
         <div className={cn("absolute bottom-0 inset-x-0 h-20", isLight ? "bg-gradient-to-t from-white/38 via-white/8 to-transparent" : "bg-gradient-to-t from-[#0E1520]/62 via-[#0E1520]/18 to-transparent")} />
-        <GalleryPhotoBadge queries={imageQueries} accent={accentColor} isLight={isLight} onClick={(event) => { event.stopPropagation(); setGalleryOpen(true); }} />
+        <GalleryPhotoBadge queries={imageQueries} title={place} accent={accentColor} isLight={isLight} onClick={(event) => { event.stopPropagation(); setGalleryOpen(true); }} />
 
         {/* Slot badge */}
         <div className="absolute top-3 left-3 backdrop-blur-xl px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg"

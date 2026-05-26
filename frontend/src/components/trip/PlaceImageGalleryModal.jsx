@@ -1,27 +1,56 @@
-import { Camera, X } from "lucide-react";
+import { Camera, PlayCircle, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { usePlaceImageGallery } from "@/hooks/use-place-image";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
-export function GalleryPhotoBadge({ queries, accent = "#D4AF37", isLight = false, onClick }) {
+const getPrimaryQuery = (queries, title = "") => {
+  const list = Array.isArray(queries) ? queries : [queries];
+  return String(title || list.find(Boolean) || "travel place").trim();
+};
+
+const buildPlaceVideoUrl = (queries, title = "") => {
+  const query = getPrimaryQuery(queries, title)
+    .replace(/\b(Google Maps|place photo|tourist attraction)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${query} walking tour travel guide`)}`;
+};
+
+export function GalleryPhotoBadge({ queries, title = "", accent = "#D4AF37", isLight = false, onClick }) {
   const { images, loading } = usePlaceImageGallery(queries, { maxResults: 9, onlyGoogle: true });
   const count = images.length;
+  const videoUrl = buildPlaceVideoUrl(queries, title);
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "absolute bottom-3 left-3 z-20 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] shadow-lg backdrop-blur-xl transition-transform hover:scale-[1.03]",
-        isLight ? "border-white/70 bg-white/88 text-slate-900" : "border-white/14 bg-black/45 text-white"
-      )}
-      style={{ boxShadow: `0 12px 30px ${accent}22` }}
-      aria-label={count ? `Open ${count} place photos` : "Open place photos"}
-    >
-      <Camera size={12} style={{ color: accent }} />
-      {loading ? "Scanning" : `${count || 0} photos`}
-    </button>
+    <div className="absolute bottom-3 left-3 z-20 flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] shadow-lg backdrop-blur-xl transition-transform hover:scale-[1.03]",
+          isLight ? "border-white/70 bg-white/88 text-slate-900" : "border-white/14 bg-black/45 text-white"
+        )}
+        style={{ boxShadow: `0 12px 30px ${accent}22` }}
+        aria-label={count ? `Open ${count} place photos` : "Open place photos"}
+      >
+        <Camera size={12} style={{ color: accent }} />
+        {loading ? "Scanning" : `${count || 0} photos`}
+      </button>
+      <a
+        href={videoUrl}
+        target="_blank"
+        rel="noreferrer"
+        onClick={(event) => event.stopPropagation()}
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] shadow-lg backdrop-blur-xl transition-transform hover:scale-[1.03]",
+          isLight ? "border-white/70 bg-white/88 text-slate-900" : "border-white/14 bg-black/45 text-white"
+        )}
+      >
+        <PlayCircle size={12} style={{ color: accent }} />
+        Video
+      </a>
+    </div>
   );
 }
 
@@ -30,6 +59,7 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
   if (!open || typeof document === "undefined") return null;
 
   const countLabel = loading ? "Scanning Google Places" : `${images.length || 0} verified images`;
+  const videoUrl = buildPlaceVideoUrl(queries, title);
   const lockScrollToBoard = (event) => {
     event.stopPropagation();
   };
@@ -50,10 +80,21 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
             <h3 className={cn("mt-1 truncate text-xl font-black leading-tight", isLight ? "text-slate-950" : "text-white")}>{title}</h3>
             <p className={cn("mt-1 text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-600" : "text-white/72")}>{countLabel}</p>
           </div>
-          <button onClick={onClose} className={cn("inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors", isLight ? "border-slate-300 bg-white text-slate-700 hover:text-slate-950" : "border-white/22 bg-white/5 text-white/82 hover:border-white/40 hover:text-white")}>
-            <X size={13} />
-            Close
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <a
+              href={videoUrl}
+              target="_blank"
+              rel="noreferrer"
+              className={cn("hidden items-center gap-2 rounded-full border px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors sm:inline-flex", isLight ? "border-amber-300/80 bg-amber-50 text-amber-800 hover:text-amber-950" : "border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#F8E7A0] hover:border-[#D4AF37]/60")}
+            >
+              <PlayCircle size={13} />
+              Watch Video
+            </a>
+            <button onClick={onClose} className={cn("inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors", isLight ? "border-slate-300 bg-white text-slate-700 hover:text-slate-950" : "border-white/22 bg-white/5 text-white/82 hover:border-white/40 hover:text-white")}>
+              <X size={13} />
+              Close
+            </button>
+          </div>
         </div>
 
         <div
@@ -85,6 +126,25 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
 
           {!!images.length && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <a
+                href={videoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="group relative h-[230px] overflow-hidden rounded-[22px] border border-[#D4AF37]/25 bg-[radial-gradient(circle_at_30%_20%,rgba(212,175,55,0.24),transparent_38%),linear-gradient(135deg,#0b1423,#050912)] shadow-[0_16px_42px_rgba(0,0,0,0.34)] sm:h-[244px]"
+              >
+                <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.08),transparent_42%,rgba(212,175,55,0.10))]" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/12 shadow-[0_0_42px_rgba(212,175,55,0.22)] transition-transform group-hover:scale-110">
+                    <PlayCircle size={30} className="text-[#F8E7A0]" />
+                  </div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">Place Video</p>
+                  <p className="mt-2 text-lg font-black leading-tight text-white">Open exact video walkthrough</p>
+                  <p className="mt-2 text-[11px] font-semibold leading-relaxed text-white/56">Searches real travel videos for this planned stop.</p>
+                </div>
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-3">
+                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-white/78">Watch Video</p>
+                </div>
+              </a>
               {images.map((image, index) => (
                 <a key={`${image.url}-${index}`} href={image.url} target="_blank" rel="noreferrer" className="group relative h-[230px] overflow-hidden rounded-[22px] border border-white/10 bg-black shadow-[0_16px_42px_rgba(0,0,0,0.32)] sm:h-[244px]">
                   <img src={image.url} alt={`${title} ${index + 1}`} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
