@@ -5,6 +5,7 @@ import {
   getGooglePlaceImageUrl,
   getGooglePlaceImageUrls,
   hasGooglePlacesKey,
+  searchGoogleDestinations,
 } from "../services/placeImageService.js";
 
 const router = express.Router();
@@ -63,6 +64,29 @@ async function getWikimediaImage(words) {
     return null;
   }
 }
+
+router.get("/search", async (req, res) => {
+  const { query, limit = "8" } = req.query;
+  if (!query || String(query).trim().length < 2) {
+    return res.json({ results: [], source: "no_query" });
+  }
+
+  try {
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const results = await searchGoogleDestinations(String(query).trim(), {
+      limit: Math.max(1, Math.min(12, parseInt(limit, 10) || 8)),
+      baseUrl,
+    });
+
+    return res.json({
+      results,
+      source: results.length ? "google_places" : "empty",
+    });
+  } catch (error) {
+    console.error("[PlaceSearch] Error:", error.message);
+    return res.status(500).json({ results: [], source: "error" });
+  }
+});
 
 router.get("/", async (req, res) => {
   const { query, onlyGoogle, photoIndex: rawPhotoIndex, maxResults: rawMaxResults } = req.query;

@@ -82,6 +82,37 @@ const TRUSTED_DESTINATION_TYPES = new Set([
   "hamlet",
 ]);
 
+const CANONICAL_DESTINATION_OVERRIDES = {
+  mecca: {
+    title: "Mecca",
+    location: "Saudi Arabia",
+    query: "Mecca Saudi Arabia",
+    src: null,
+    source: "canonical",
+  },
+  makkah: {
+    title: "Mecca",
+    location: "Saudi Arabia",
+    query: "Mecca Saudi Arabia",
+    src: null,
+    source: "canonical",
+  },
+  madinah: {
+    title: "Madinah",
+    location: "Saudi Arabia",
+    query: "Madinah Saudi Arabia",
+    src: null,
+    source: "canonical",
+  },
+  medina: {
+    title: "Madinah",
+    location: "Saudi Arabia",
+    query: "Madinah Saudi Arabia",
+    src: null,
+    source: "canonical",
+  },
+};
+
 
 
 // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ AI suggestion destinations (shown below search bar by default) ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬
@@ -3021,6 +3052,55 @@ export default function Planner() {
 
     const doSearch = async () => {
       try {
+        const canonical = CANONICAL_DESTINATION_OVERRIDES[normalizeSearchValue(query)];
+        if (canonical) {
+          let src = null;
+          try {
+            const imageRes = await fetch(
+              resolveApiUrl(`/api/place-image?query=${encodeURIComponent(canonical.query)}&photoIndex=0&onlyGoogle=1`),
+              { signal: controller.signal }
+            );
+            if (imageRes.ok) {
+              const imageData = await imageRes.json();
+              src = imageData?.url || null;
+            }
+          } catch { }
+
+          if (!controller.signal.aborted) {
+            setSearchResults([{ ...canonical, src }]);
+            setShowDrop(false);
+            setSearchEmpty(false);
+            setIsSearching(false);
+          }
+          return;
+        }
+
+        const googleRes = await fetch(
+          resolveApiUrl(`/api/place-image/search?query=${encodeURIComponent(query)}&limit=8`),
+          { signal: controller.signal }
+        );
+        if (googleRes.ok) {
+          const googleData = await googleRes.json();
+          const googleCards = Array.isArray(googleData?.results)
+            ? googleData.results
+              .map((card) => ({
+                title: sanitizeVisibleText(card.title, "Destination"),
+                location: sanitizeVisibleText(card.location || card.address, "Global"),
+                src: card.src || null,
+                query: card.query || `${card.title} ${card.location || ""}`.trim(),
+                source: card.source || "google_places",
+              }))
+              .filter((card) => card.title && card.location)
+            : [];
+
+          if (googleCards.length > 0 && !controller.signal.aborted) {
+            setSearchResults(googleCards);
+            setShowDrop(false);
+            setSearchEmpty(false);
+            setIsSearching(false);
+            return;
+          }
+        }
         // 1. Nominatim ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â validates the place is real, returns 0 for made-up names
         const nomRes = await fetch(
           `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=10&addressdetails=1&accept-language=en`,

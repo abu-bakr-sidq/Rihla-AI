@@ -50,6 +50,13 @@ const TRUSTED_DESTINATION_TYPES = new Set([
   "hamlet",
 ]);
 
+const CANONICAL_DESTINATION_OVERRIDES = {
+  mecca: { title: "Mecca", location: "Saudi Arabia", query: "Mecca Saudi Arabia", src: null, source: "canonical" },
+  makkah: { title: "Mecca", location: "Saudi Arabia", query: "Mecca Saudi Arabia", src: null, source: "canonical" },
+  madinah: { title: "Madinah", location: "Saudi Arabia", query: "Madinah Saudi Arabia", src: null, source: "canonical" },
+  medina: { title: "Madinah", location: "Saudi Arabia", query: "Madinah Saudi Arabia", src: null, source: "canonical" },
+};
+
 // ─── All static destinations ──────────────────────────────────────────────────
 const DESTINATIONS = [
   { id: 1, name: "Kyoto", country: "Japan", score: 98, tags: ["Cultural", "Spiritual"], region: "Asia", theme: "30 60% 20%", photo: "1640546088631-fd6e3e88dec0" }, // Fushimi Inari (from planner GALLERY)
@@ -129,6 +136,50 @@ function useDestSearch(query) {
     const ctrl = new AbortController();
     const timeout = setTimeout(async () => {
       try {
+        const canonical = CANONICAL_DESTINATION_OVERRIDES[normalizeSearchValue(query)];
+        if (canonical) {
+          let src = null;
+          try {
+            const imageRes = await fetch(
+              resolveApiUrl(`/api/place-image?query=${encodeURIComponent(canonical.query)}&photoIndex=0&onlyGoogle=1`),
+              { signal: ctrl.signal }
+            );
+            if (imageRes.ok) {
+              const imageData = await imageRes.json();
+              src = imageData?.url || null;
+            }
+          } catch { }
+          setResults([{ ...canonical, src }]);
+          setEmpty(false);
+          setIsSearching(false);
+          return;
+        }
+
+        const googleRes = await fetch(
+          resolveApiUrl(`/api/place-image/search?query=${encodeURIComponent(query)}&limit=8`),
+          { signal: ctrl.signal }
+        );
+        if (googleRes.ok) {
+          const googleData = await googleRes.json();
+          const googleCards = Array.isArray(googleData?.results)
+            ? googleData.results
+              .map((card) => ({
+                title: sanitizeVisibleText(card.title, "Destination"),
+                location: sanitizeVisibleText(card.location || card.address, "Global"),
+                src: card.src || null,
+                query: card.query || `${card.title} ${card.location || ""}`.trim(),
+                source: card.source || "google_places",
+              }))
+              .filter((card) => card.title && card.location)
+            : [];
+
+          if (googleCards.length > 0) {
+            setResults(googleCards);
+            setEmpty(false);
+            setIsSearching(false);
+            return;
+          }
+        }
         // 1. Nominatim — real place validation
         const nomRes = await fetch(
           `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=6&addressdetails=1&accept-language=en`,
