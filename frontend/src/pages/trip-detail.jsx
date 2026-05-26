@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, startTransition } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useUser } from '@/hooks/use-auth';
-import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import AppInnerLayout from '@/components/AppInnerLayout';
 import { Calendar, Clock, Sun, CloudSun, Sunset, Moon, Lightbulb, AlertTriangle, Users, Compass, MapPin, ChevronDown, ChevronLeft, ChevronRight, Utensils, Gem, Camera, Bed, ExternalLink, Download, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { usePrayerTimes } from '@/hooks/usePrayerTimes';
@@ -814,10 +814,6 @@ export default function TripDetail() {
   const deleteMutation = useDeleteTrip();
   const { toast } = useToast();
   const isLightDetail = detailTheme === 'light';
-  const driftX = useMotionValue(0);
-  const driftY = useMotionValue(0);
-  const smoothDriftX = useSpring(driftX, { stiffness: 42, damping: 18, mass: 1.05 });
-  const smoothDriftY = useSpring(driftY, { stiffness: 42, damping: 18, mass: 1.05 });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -932,76 +928,20 @@ export default function TripDetail() {
   const AI_GEMS = res.ai_suggestions?.hidden_gems || [];
   const AI_TIPS = res.ai_suggestions?.tips || [];
 
-  const handleBackdropPointerMove = (event) => {
-    if (typeof window === 'undefined') return;
-    const xRatio = (event.clientX / window.innerWidth) - 0.5;
-    const yRatio = (event.clientY / window.innerHeight) - 0.5;
-    driftX.set(xRatio * 26);
-    driftY.set(yRatio * 18);
-  };
-
-  const handleBackdropPointerLeave = () => {
-    driftX.set(0);
-    driftY.set(0);
-  };
-
   return (
     <AppInnerLayout>
       <div
         className={`trip-detail-shell ${isLightDetail ? 'detail-light bg-[#eef4fb]' : 'detail-dark'} relative w-full min-h-screen pb-10 overflow-hidden transition-[background-color,color] duration-500`}
-        onMouseMove={handleBackdropPointerMove}
-        onMouseLeave={handleBackdropPointerLeave}
       >
-        <div className="fixed inset-0 -z-10 overflow-hidden">
-          {backgroundSlides.length > 0 ? (
-            backgroundSlides.map((src, index) => (
-              <motion.div
-                key={src}
-                className="absolute inset-0"
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: index === 0 ? 0.56 : 0.28,
-                  scale: [1.04, 1.11, 1.04],
-                  x: index === 0 ? [0, -18, 0] : [0, 16, 0],
-                  y: index === 0 ? [0, 12, 0] : [0, -14, 0],
-                }}
-                transition={{ duration: index === 0 ? 24 : 28, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${src})` }} />
-              </motion.div>
-            ))
-          ) : (
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_34%),linear-gradient(180deg,#0b1728_0%,#07111d_100%)]" />
-          )}
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+          <DashboardSlideshow customImages={backgroundSlides.length ? backgroundSlides : null} />
           <div className={`absolute inset-0 transition-all duration-500 ${isLightDetail
-            ? 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.06),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.05),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(244,248,252,0.64)_42%,rgba(238,244,250,0.96)_100%)]'
-            : 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.2),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.16),transparent_22%),linear-gradient(180deg,rgba(6,11,20,0.14)_0%,rgba(6,11,20,0.58)_45%,rgba(6,11,20,0.9)_100%)]'}`} />
-          <motion.div
-            className={`absolute -top-24 left-[8%] h-[300px] w-[300px] rounded-full blur-[90px] ${isLightDetail ? 'bg-[#38BDF8]/5' : 'bg-[#38BDF8]/10'}`}
-            animate={{ x: [0, 44, 0], y: [0, 18, 0], scale: [1, 1.1, 1] }}
-            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className={`absolute top-[18%] right-[10%] h-[240px] w-[240px] rounded-full blur-[82px] ${isLightDetail ? 'bg-[#D4AF37]/5' : 'bg-[#D4AF37]/10'}`}
-            animate={{ x: [0, -32, 0], y: [0, 24, 0], scale: [1, 1.08, 1] }}
-            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          />
-        </div>
-
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-          <motion.div
-            className="trip-cinematic-backdrop relative h-full w-full overflow-hidden"
-            style={{ x: smoothDriftX, y: smoothDriftY }}
-          >
-            <DashboardSlideshow customImages={backgroundSlides.length ? backgroundSlides : null} />
-            <div className={`absolute inset-0 ${isLightDetail
-              ? 'bg-[linear-gradient(180deg,rgba(248,251,255,0.2)_0%,rgba(241,246,251,0.3)_12%,rgba(236,243,249,0.5)_34%,rgba(234,241,247,0.68)_58%,rgba(231,239,246,0.9)_100%)]'
-              : 'bg-[linear-gradient(180deg,rgba(5,11,19,0.16)_0%,rgba(5,11,19,0.18)_10%,rgba(5,11,19,0.32)_26%,rgba(5,11,19,0.58)_52%,rgba(5,11,19,0.88)_100%)]'}`} />
-            <div className="absolute inset-x-0 top-0 h-[34%] bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,0.16),transparent_56%)]" />
-            <div className={`absolute -left-[8%] top-[12%] h-[320px] w-[40%] rounded-full blur-[96px] ${isLightDetail ? 'bg-[#38BDF8]/14' : 'bg-[#38BDF8]/12'}`} />
-            <div className={`absolute right-[0%] top-[6%] h-[280px] w-[30%] rounded-full blur-[88px] ${isLightDetail ? 'bg-[#D4AF37]/14' : 'bg-[#D4AF37]/12'}`} />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,11,19,0.12),transparent_10%,transparent_90%,rgba(5,11,19,0.12))]" />
-          </motion.div>
+            ? 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.08),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.07),transparent_22%),linear-gradient(180deg,rgba(248,251,255,0.18)_0%,rgba(241,246,251,0.38)_18%,rgba(236,243,249,0.6)_42%,rgba(234,241,247,0.82)_68%,rgba(231,239,246,0.94)_100%)]'
+            : 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.18),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.14),transparent_22%),linear-gradient(180deg,rgba(5,11,19,0.36)_0%,rgba(5,11,19,0.48)_18%,rgba(5,11,19,0.62)_42%,rgba(5,11,19,0.82)_68%,rgba(5,11,19,0.94)_100%)]'}`} />
+          <div className={`absolute inset-x-0 top-0 h-[34%] ${isLightDetail ? 'bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,0.18),transparent_56%)]' : 'bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,0.08),transparent_56%)]'}`} />
+          <div className={`absolute -left-[8%] top-[12%] h-[320px] w-[40%] rounded-full blur-[96px] ${isLightDetail ? 'bg-[#38BDF8]/10' : 'bg-[#38BDF8]/12'}`} />
+          <div className={`absolute right-[0%] top-[6%] h-[280px] w-[30%] rounded-full blur-[88px] ${isLightDetail ? 'bg-[#D4AF37]/10' : 'bg-[#D4AF37]/12'}`} />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,11,19,0.12),transparent_10%,transparent_90%,rgba(5,11,19,0.12))]" />
         </div>
 
         <div className="relative z-10 mx-auto w-full max-w-[1320px] px-[clamp(12px,1.6vw,24px)] pt-[clamp(78px,7vh,100px)]">
@@ -1285,10 +1225,6 @@ export default function TripDetail() {
         .trip-detail-shell .trip-detail-copy,
         .trip-detail-shell .trip-detail-copy * {
           transition: color 300ms ease, opacity 240ms ease, border-color 300ms ease, background-color 300ms ease;
-        }
-        .trip-cinematic-backdrop {
-          mask-image: linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.98) 28%, rgba(0,0,0,0.9) 58%, rgba(0,0,0,0.48) 82%, transparent 100%);
-          -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.98) 28%, rgba(0,0,0,0.9) 58%, rgba(0,0,0,0.48) 82%, transparent 100%);
         }
         .trip-detail-shell.detail-light {
           background:
