@@ -31,6 +31,57 @@ const PLAN_SLOT_COLORS = {
   nightActivity: '#7C3AED',
 };
 
+const STYLE_MEDIA_INTENTS = {
+  luxury: ['luxury experience', 'fine dining', 'private tour', 'premium hotel'],
+  history: ['historic landmark', 'heritage monument', 'ancient architecture', 'museum'],
+  adventure: ['outdoor adventure', 'hiking trail', 'adrenaline activity', 'nature activity'],
+  scenery: ['scenic viewpoint', 'panoramic landscape', 'nature photography', 'sunset view'],
+  urban: ['city skyline', 'downtown street', 'modern shopping', 'urban landmark'],
+  wellness: ['wellness retreat', 'spa garden', 'serene resort', 'meditation space'],
+  'halal friendly': ['halal food', 'family friendly', 'prayer room nearby', 'mosque nearby'],
+  coastal: ['waterfront', 'beach view', 'seaside promenade', 'coastal sunset'],
+  cultural: ['cultural heritage', 'local market', 'traditional architecture', 'temple heritage'],
+  nature: ['nature landscape', 'garden', 'forest trail', 'lake view'],
+  relaxation: ['peaceful retreat', 'spa', 'quiet garden', 'resort']
+};
+
+const SLOT_MEDIA_INTENTS = {
+  morning: ['morning exterior', 'golden hour'],
+  morningActivity: ['morning activity', 'daylight'],
+  afternoon: ['daytime', 'lunch area'],
+  afternoonActivity: ['daytime activity', 'local experience'],
+  evening: ['sunset', 'evening atmosphere'],
+  eveningActivity: ['sunset activity', 'nightfall'],
+  night: ['night lights', 'dinner'],
+  nightActivity: ['night experience', 'evening lights']
+};
+
+const normalizeMediaTerm = (value) => String(value || '').replace(/[^\w\s,-]/g, ' ').replace(/\s+/g, ' ').trim();
+const buildPreferenceMediaQueries = ({ place = '', destination = '', travelStyle = '', preferences = [], slotKey = '' }) => {
+  const preferenceList = Array.isArray(preferences)
+    ? preferences
+    : String(preferences || '').split(',').map((item) => item.trim()).filter(Boolean);
+  const intentTerms = [
+    ...[travelStyle, ...preferenceList]
+      .map((item) => String(item || '').toLowerCase().trim())
+      .flatMap((key) => STYLE_MEDIA_INTENTS[key] || []),
+    ...(SLOT_MEDIA_INTENTS[slotKey] || []),
+  ].map(normalizeMediaTerm).filter(Boolean);
+  const base = normalizeMediaTerm(`${place} ${destination}`);
+  const seen = new Set();
+  return [
+    ...intentTerms.slice(0, 3).map((term) => `${base} ${term}`),
+    `${base} Google Maps`,
+    `${base} place photo`,
+    base,
+  ].map(normalizeMediaTerm).filter((query) => {
+    const key = query.toLowerCase();
+    if (!query || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 function PlannerDetailTimeline({ slots, slotCfg, isLight = false }) {
   if (!slots?.length) return null;
   return (
@@ -102,18 +153,13 @@ function PlannerDetailTimeline({ slots, slotCfg, isLight = false }) {
   );
 }
 
-function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slotColor, slotTime, cost, destination, cardIndex, currency, onClick, isSelected, details, isLight = false }) {
+function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slotColor, slotTime, cost, destination, cardIndex, currency, travelStyle = '', preferences = [], onClick, isSelected, details, isLight = false }) {
   const [imgSrc, setImgSrc] = useState('');
   const [expanded, setExpanded] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const displayPlace = pickBestActivityPlace({ place, title: details?.title, location: details?.location, name: details?.name }, destination, slotKey, cardIndex);
   const query = extractLocationQuery(displayPlace, destination);
-  const galleryQueries = [
-    query,
-    `${displayPlace} ${destination} Google Maps`,
-    `${displayPlace}, ${destination}`,
-    `${displayPlace} ${destination} place photo`,
-  ].filter(Boolean);
+  const galleryQueries = buildPreferenceMediaQueries({ place: displayPlace, destination, travelStyle, preferences, slotKey });
   const accentColor = PLAN_SLOT_COLORS[slotKey] || slotColor || '#D4AF37';
   const fallbackContent = generatePlaceCardFallbackContent(displayPlace, activity, destination, slotKey);
   const { schedule, ideas } = buildActivityDisplayContent(details, fallbackContent);
@@ -121,11 +167,11 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
 
   useEffect(() => {
     let alive = true;
-    _fetchActivityImage(query, cardIndex).then((url) => {
+    _fetchActivityImage(galleryQueries.length ? galleryQueries : query, cardIndex).then((url) => {
       if (alive && url) setImgSrc(url);
     });
     return () => { alive = false; };
-  }, [query, cardIndex]);
+  }, [query, galleryQueries.join('|'), cardIndex]);
 
   return (
     <div
@@ -311,29 +357,32 @@ const buildTripFallbackImageUrl = (query, index = 0) => {
   return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&q=82&w=900&h=620`;
 };
 
-const _fetchActivityImage = async (query, globalIndex) => {
-  const cacheKey = query + '__gi' + (globalIndex || 0);
+const _fetchActivityImage = async (queryInput, globalIndex) => {
+  const queries = Array.isArray(queryInput) ? queryInput.filter(Boolean) : [queryInput].filter(Boolean);
+  const cacheKey = queries.join('||') + '__gi' + (globalIndex || 0);
   if (_imgCache[cacheKey]) return _imgCache[cacheKey];
 
   const apiBase = getApiBaseUrl();
 
-  for (const onlyGoogle of [1, 0]) {
-    try {
-      const r = await fetch(
-        `${apiBase}/api/place-image?query=${encodeURIComponent(query)}&photoIndex=${globalIndex || 0}${onlyGoogle ? "&onlyGoogle=1" : ""}`,
-        { signal: AbortSignal.timeout(onlyGoogle ? 8000 : 9000) }
-      );
-      if (r.ok) {
-        const d = await r.json();
-        if (d?.url) {
-          _imgCache[cacheKey] = d.url;
-          return d.url;
+  for (const query of queries) {
+    for (const onlyGoogle of [1, 0]) {
+      try {
+        const r = await fetch(
+          `${apiBase}/api/place-image?query=${encodeURIComponent(query)}&photoIndex=${globalIndex || 0}${onlyGoogle ? "&onlyGoogle=1" : ""}`,
+          { signal: AbortSignal.timeout(onlyGoogle ? 8000 : 9000) }
+        );
+        if (r.ok) {
+          const d = await r.json();
+          if (d?.url) {
+            _imgCache[cacheKey] = d.url;
+            return d.url;
+          }
         }
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
   }
 
-  const fallback = buildTripFallbackImageUrl(query, globalIndex);
+  const fallback = buildTripFallbackImageUrl(queries[0], globalIndex);
   _imgCache[cacheKey] = fallback;
   return fallback;
 };
@@ -955,6 +1004,15 @@ export default function TripDetail() {
   const res = reconcileItineraryBudget(rawRes, trip.costBreakdown || {});
   const ov = res?.trip_overview || {};
   const effectiveTravelStyle = trip.travelStyle || trip.preferences?.travelStyle || ov.travel_style || res?.travelStyle || "Balanced";
+  const effectivePreferences = Array.isArray(trip.preferences)
+    ? trip.preferences
+    : Array.isArray(trip.preferences?.selectedPreferences)
+      ? trip.preferences.selectedPreferences
+      : Array.isArray(trip.preferences?.preferences)
+        ? trip.preferences.preferences
+        : Array.isArray(res?.preferences)
+          ? res.preferences
+          : [];
   const DEST = trip.destination || '';
   const DEST_SHORT = DEST.split(',')[0].trim();
   const tripCurrency = trip.currency || trip.preferences?.currency || 'USD';
@@ -1201,6 +1259,8 @@ export default function TripDetail() {
                             destination={DEST_SHORT}
                             cardIndex={activeDayIdx * 8 + cardIdx}
                             currency={tripCurrency}
+                            travelStyle={effectiveTravelStyle}
+                            preferences={effectivePreferences}
                             isSelected={isSelected}
                             isLight={isLightDetail}
                             onClick={() => setPlanFocusAct(isSelected ? null : { ...act, sk })}

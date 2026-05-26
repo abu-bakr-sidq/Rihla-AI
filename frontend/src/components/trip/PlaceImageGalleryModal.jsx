@@ -65,32 +65,31 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden px-4 py-4 sm:px-6" onClick={(event) => event.stopPropagation()}>
-      <button aria-label="Close gallery" className="absolute inset-0 bg-[#020711]/92 backdrop-blur-2xl" onClick={onClose} />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(56,189,248,0.18),transparent_30%),radial-gradient(circle_at_82%_78%,rgba(212,175,55,0.14),transparent_34%)]" />
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-[#020711] px-0 py-0 sm:px-6 sm:py-5" onClick={(event) => event.stopPropagation()}>
+      <button aria-label="Close gallery" className="absolute inset-0 bg-[#020711]" onClick={onClose} />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(56,189,248,0.14),transparent_30%),radial-gradient(circle_at_82%_78%,rgba(212,175,55,0.12),transparent_34%)]" />
       <div
         className={cn(
-          "relative z-10 flex h-[calc(100vh-32px)] w-full max-w-[1120px] flex-col overflow-hidden rounded-[30px] border shadow-[0_30px_90px_rgba(0,0,0,0.68)]",
-          isLight ? "border-white/85 bg-white" : "border-white/16 bg-[#07101f]"
+          "relative z-10 flex h-screen w-screen max-w-none flex-col overflow-hidden rounded-none border-0 bg-[#07101f] shadow-[0_30px_90px_rgba(0,0,0,0.68)] sm:h-[calc(100vh-40px)] sm:max-w-[1180px] sm:rounded-[30px] sm:border sm:border-white/16"
         )}
       >
-        <div className={cn("flex shrink-0 items-center justify-between gap-4 border-b px-5 py-4 sm:px-6", isLight ? "border-slate-200 bg-white" : "border-white/10 bg-[#07101f]")}>
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#07101f] px-5 py-4 sm:px-6">
           <div className="min-w-0">
             <p className="text-[9px] font-black uppercase tracking-[0.34em]" style={{ color: accent }}>Google Places Image Board</p>
-            <h3 className={cn("mt-1 truncate text-xl font-black leading-tight", isLight ? "text-slate-950" : "text-white")}>{title}</h3>
-            <p className={cn("mt-1 text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-600" : "text-white/72")}>{countLabel}</p>
+            <h3 className="mt-1 truncate text-xl font-black leading-tight text-white">{title}</h3>
+            <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/72">{countLabel}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <a
               href={videoUrl}
               target="_blank"
               rel="noreferrer"
-              className={cn("hidden items-center gap-2 rounded-full border px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors sm:inline-flex", isLight ? "border-amber-300/80 bg-amber-50 text-amber-800 hover:text-amber-950" : "border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#F8E7A0] hover:border-[#D4AF37]/60")}
+              className="hidden items-center gap-2 rounded-full border border-[#D4AF37]/35 bg-[#D4AF37]/10 px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#F8E7A0] transition-colors hover:border-[#D4AF37]/60 sm:inline-flex"
             >
               <PlayCircle size={13} />
               Watch Video
             </a>
-            <button onClick={onClose} className={cn("inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-colors", isLight ? "border-slate-300 bg-white text-slate-700 hover:text-slate-950" : "border-white/22 bg-white/5 text-white/82 hover:border-white/40 hover:text-white")}>
+            <button onClick={onClose} className="inline-flex items-center gap-2 rounded-full border border-white/22 bg-white/5 px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/82 transition-colors hover:border-white/40 hover:text-white">
               <X size={13} />
               Close
             </button>
@@ -98,12 +97,9 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
         </div>
 
         <div
-          className={cn(
-            "min-h-0 flex-1 overflow-x-hidden overflow-y-scroll overscroll-contain p-5 sm:p-6",
-            isLight ? "bg-slate-50" : "bg-[#07101f]"
-          )}
+          className="min-h-0 flex-1 overflow-x-hidden overflow-y-scroll overscroll-contain bg-[#07101f] p-5 sm:p-6"
           style={{
-            maxHeight: "calc(100vh - 126px)",
+            height: "calc(100vh - 112px)",
             WebkitOverflowScrolling: "touch",
             scrollbarGutter: "stable",
             touchAction: "pan-y",
@@ -112,15 +108,22 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
           onTouchMove={lockScrollToBoard}
         >
           {loading && (
-            <div className={cn("flex h-64 items-center justify-center rounded-[24px] border text-[10px] font-black uppercase tracking-[0.26em]", isLight ? "border-slate-200 bg-slate-50 text-slate-500" : "border-white/8 bg-white/[0.03] text-white/45")}>
-              Loading exact Google place photos...
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 9 }).map((_, index) => (
+                <div key={index} className="relative h-[230px] overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.04] sm:h-[244px]">
+                  <div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,rgba(255,255,255,0.04),rgba(255,255,255,0.12),rgba(255,255,255,0.04))]" />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                    <p className="text-[9px] font-black uppercase tracking-[0.22em] text-white/55">Scanning view {index + 1}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
           {!loading && !images.length && (
-            <div className={cn("flex h-64 flex-col items-center justify-center rounded-[24px] border px-8 text-center", isLight ? "border-slate-200 bg-slate-50" : "border-white/8 bg-white/[0.03]")}>
-              <p className={cn("text-sm font-black", isLight ? "text-slate-900" : "text-white")}>No verified Google photo set available yet.</p>
-              <p className={cn("mt-2 max-w-md text-xs leading-relaxed", isLight ? "text-slate-600" : "text-white/50")}>Rihla is avoiding random fallback images here, so this board only shows photos returned by Google Places for the exact planned stop.</p>
+            <div className="flex h-64 flex-col items-center justify-center rounded-[24px] border border-white/8 bg-white/[0.03] px-8 text-center">
+              <p className="text-sm font-black text-white">No verified Google photo set available yet.</p>
+              <p className="mt-2 max-w-md text-xs leading-relaxed text-white/50">Rihla is avoiding random fallback images here, so this board only shows photos returned by Google Places for the exact planned stop.</p>
             </div>
           )}
 
