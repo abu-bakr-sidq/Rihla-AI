@@ -923,7 +923,20 @@ export default function TripDetail() {
   const tripDatesLabel = trip.startDate && trip.endDate
     ? `${new Date(trip.startDate).toLocaleDateString('en-US')} - ${new Date(trip.endDate).toLocaleDateString('en-US')}`
     : ov.dates || 'Dates TBD';
-  const backgroundSlides = [...new Set([focusImage, heroImage].filter(Boolean))].slice(0, 2);
+  const activeDayBackdropImages = activeDay?.slots?.map(({ act }, index) =>
+    buildTripFallbackImageUrl(`${act.place || DEST_SHORT} ${DEST_SHORT}`, activeDayIdx * 11 + index + 1)
+  ) || [];
+  const destinationBackdropImages = [0, 1, 2].map((index) =>
+    buildTripFallbackImageUrl(`${DEST_SHORT} travel landmark scenic`, index)
+  );
+  const backgroundSlides = [
+    ...new Set([
+      focusImage,
+      heroImage,
+      ...activeDayBackdropImages,
+      ...destinationBackdropImages,
+    ].filter(Boolean))
+  ].slice(0, 8);
 
   const AI_GEMS = res.ai_suggestions?.hidden_gems || [];
   const AI_TIPS = res.ai_suggestions?.tips || [];

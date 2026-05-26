@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 
 const IMAGES = [
   // Nature & Landscapes
@@ -34,7 +34,11 @@ const KB_CSS = `
 let cssInjected = false;
 
 export default function DashboardSlideshow({ customImages = null }) {
-  const imagesSource = customImages && customImages.length > 0 ? customImages : IMAGES;
+  const imagesSource = useMemo(
+    () => (customImages && customImages.length > 0 ? customImages : IMAGES),
+    [customImages]
+  );
+  const imageKey = imagesSource.join("|");
   const [readyImages, setReadyImages] = useState([imagesSource[0]]); // first image shown immediately
   const [current, setCurrent]         = useState(0);
   const timerRef                      = useRef(null);
@@ -48,6 +52,11 @@ export default function DashboardSlideshow({ customImages = null }) {
       cssInjected = true;
     }
   }, []);
+
+  useEffect(() => {
+    setReadyImages([imagesSource[0]]);
+    setCurrent(0);
+  }, [imageKey]);
 
   // Stream images in one-by-one after initial render
   useEffect(() => {
@@ -69,7 +78,7 @@ export default function DashboardSlideshow({ customImages = null }) {
 
     const t = setTimeout(() => loadNext(0), 800);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [imagesSource]);
+  }, [imageKey]);
 
   // Auto-advance
   useEffect(() => {

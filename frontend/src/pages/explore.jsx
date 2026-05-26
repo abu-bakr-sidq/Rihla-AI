@@ -78,6 +78,15 @@ const DESTINATIONS = [
   { id: 24, name: "London", country: "UK", score: 94, tags: ["History", "Culture"], region: "Europe", theme: "210 45% 22%", photo: "1533929736458-ca588d08c8be" }, // Big Ben/Tower Bridge verified
 ];
 
+const POPULAR = DESTINATIONS.map((dest) => ({
+  title: dest.name,
+  location: dest.country,
+  src: dest.photo.startsWith("http")
+    ? dest.photo
+    : `https://images.unsplash.com/photo-${dest.photo}?auto=format&fit=crop&q=82&w=720`,
+  query: `${dest.name} ${dest.country}`,
+}));
+
 const REGIONS = ["All", "Asia", "Europe", "Middle East", "Americas", "Africa"];
 
 const EXPLORE_IMAGES = [
