@@ -50,24 +50,42 @@ function PlannerDetailTimeline({ slots, slotCfg, isLight = false }) {
       <div className="w-full pb-2 px-2 sm:px-6">
         <div className="relative flex items-start justify-between w-full pb-4 pt-3">
           <div
-            className={`absolute top-[31px] left-[5%] right-[5%] h-[3px] rounded-full z-0 ${isLight ? 'shadow-[0_0_15px_rgba(212,175,55,0.12)]' : 'shadow-[0_0_15px_rgba(255,255,255,0.1)]'}`}
-            style={{ background: isLight ? 'linear-gradient(90deg, rgba(212,175,55,0.02) 0%, rgba(212,175,55,0.28) 50%, rgba(56,189,248,0.08) 100%)' : 'linear-gradient(90deg, rgba(255,255,255,0.01) 0%, rgba(212,175,55,0.15) 50%, rgba(255,255,255,0.01) 100%)' }}
+            className="absolute top-[31px] left-[5%] right-[5%] h-[3px] rounded-full z-0"
+            style={{
+              background: isLight
+                ? 'linear-gradient(90deg, rgba(148,163,184,0.08) 0%, rgba(212,175,55,0.42) 48%, rgba(56,189,248,0.18) 100%)'
+                : 'linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(212,175,55,0.26) 48%, rgba(56,189,248,0.12) 100%)',
+              boxShadow: isLight ? '0 0 18px rgba(212,175,55,0.16)' : '0 0 18px rgba(212,175,55,0.12)'
+            }}
           />
           {slots.map(({ sk, act }) => {
             const cfg = slotCfg[sk];
             const color = PLAN_SLOT_COLORS[sk] || '#D4AF37';
             const Icon = cfg.Icon;
             return (
-              <div key={sk} className="flex flex-col items-center flex-1 min-w-0 px-1 relative z-10">
+              <div key={sk} className="flex flex-col items-center flex-1 min-w-0 px-1 relative z-10 group">
                 <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full mb-3 overflow-hidden border-2 transition-all duration-500 ${isLight ? 'shadow-[0_10px_28px_rgba(148,163,184,0.18)]' : 'shadow-[0_4px_15px_rgba(0,0,0,0.5)]'}`}
-                  style={{ background: isLight ? 'radial-gradient(circle at center, rgba(255,255,255,1) 0%, rgba(226,232,240,1) 100%)' : 'radial-gradient(circle at center, rgba(16,23,38,1) 0%, rgba(10,15,24,1) 100%)', borderColor: `${color}88` }}
+                  className="relative flex items-center justify-center w-11 h-11 rounded-[18px] mb-3 overflow-hidden border transition-all duration-500 group-hover:-translate-y-0.5 group-hover:scale-110"
+                  style={{
+                    background: isLight
+                      ? `linear-gradient(145deg, rgba(255,255,255,0.98), rgba(248,250,252,0.82)), radial-gradient(circle at 30% 20%, ${color}30 0%, transparent 55%)`
+                      : `linear-gradient(145deg, rgba(12,18,30,0.98), rgba(3,7,13,0.96)), radial-gradient(circle at 30% 20%, ${color}24 0%, transparent 58%)`,
+                    borderColor: isLight ? `${color}70` : `${color}7a`,
+                    boxShadow: isLight
+                      ? `0 14px 30px rgba(15,23,42,0.13), 0 0 0 5px ${color}12, inset 0 1px 0 rgba(255,255,255,0.95)`
+                      : `0 12px 28px rgba(0,0,0,0.52), 0 0 0 5px ${color}10, 0 0 22px ${color}20, inset 0 1px 0 rgba(255,255,255,0.12)`
+                  }}
                 >
-                  <Icon size={16} style={{ color }} strokeWidth={2} />
+                  <div className="absolute inset-[5px] rounded-[14px] border border-white/25 opacity-70" />
+                  <div className="absolute -right-4 -top-5 w-10 h-10 rounded-full blur-xl opacity-70" style={{ background: color }} />
+                  <Icon size={17} style={{ color, filter: `drop-shadow(0 0 8px ${color}55)` }} strokeWidth={2.35} />
                 </div>
                 <span
-                  className={`text-[11px] font-black tracking-[0.05em] py-0.5 px-2 rounded-md mb-1.5 shadow-sm transition-all duration-500 ${isLight ? 'bg-white/85 border border-slate-300/70' : 'bg-black/40 border border-white/5'}`}
-                  style={{ color }}
+                  className={`text-[11px] font-black tracking-[0.05em] py-1 px-2.5 rounded-lg mb-1.5 border backdrop-blur-md transition-all duration-500 ${isLight ? 'bg-white/92 border-slate-200/90' : 'bg-black/45 border-white/10'}`}
+                  style={{
+                    color,
+                    boxShadow: isLight ? '0 7px 16px rgba(15,23,42,0.08)' : `0 8px 18px rgba(0,0,0,0.28), 0 0 14px ${color}10`
+                  }}
                 >
                   {cfg.time.replace(' AM', '').replace(' PM', '')}
                 </span>
@@ -469,7 +487,13 @@ function DayTimeline({ slots, slotCfg }) {
 
       <div className="relative flex items-stretch overflow-x-auto no-scrollbar px-4 pb-6 pt-3">
         {/* Continuous background line connecting all nodes */}
-        <div className="absolute top-[25px] left-8 right-8 h-[2px] rounded-full z-0" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.02) 100%)' }} />
+        <div
+          className="absolute top-[25px] left-8 right-8 h-[3px] rounded-full z-0"
+          style={{
+            background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(212,175,55,0.24) 48%, rgba(56,189,248,0.12) 100%)',
+            boxShadow: '0 0 18px rgba(212,175,55,0.12)'
+          }}
+        />
 
         {slots.map(({ sk, act }, i) => {
           const cfg = slotCfg[sk];
@@ -485,12 +509,26 @@ function DayTimeline({ slots, slotCfg }) {
               }}
             >
               <div
-                className="flex items-center justify-center w-8 h-8 rounded-full mb-2 transition-transform duration-300 group-hover:scale-110 shadow-lg"
-                style={{ background: '#0A0F18', border: `1.5px solid ${color}` }}
+                className="relative flex items-center justify-center w-10 h-10 rounded-[16px] mb-2 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:scale-110 overflow-hidden border"
+                style={{
+                  background: `linear-gradient(145deg, rgba(12,18,30,0.98), rgba(3,7,13,0.96)), radial-gradient(circle at 30% 20%, ${color}24 0%, transparent 58%)`,
+                  borderColor: `${color}78`,
+                  boxShadow: `0 12px 28px rgba(0,0,0,0.48), 0 0 0 5px ${color}10, 0 0 20px ${color}1f, inset 0 1px 0 rgba(255,255,255,0.12)`
+                }}
               >
-                <Icon size={14} style={{ color }} />
+                <div className="absolute inset-[5px] rounded-[12px] border border-white/20 opacity-70" />
+                <div className="absolute -right-4 -top-5 w-10 h-10 rounded-full blur-xl opacity-70" style={{ background: color }} />
+                <Icon size={16} style={{ color, filter: `drop-shadow(0 0 8px ${color}55)` }} strokeWidth={2.35} />
               </div>
-              <span className="text-[10px] font-black tracking-wide" style={{ color }}>{cfg.time.replace(' AM','').replace(' PM','')}</span>
+              <span
+                className="text-[10px] font-black tracking-wide py-1 px-2.5 rounded-lg bg-black/45 border border-white/10 backdrop-blur-md"
+                style={{
+                  color,
+                  boxShadow: `0 8px 18px rgba(0,0,0,0.28), 0 0 14px ${color}10`
+                }}
+              >
+                {cfg.time.replace(' AM','').replace(' PM','')}
+              </span>
               <div className="h-[36px] mt-1 flex items-start justify-center w-full">
                 <span className="text-[11px] font-semibold text-white/70 text-center leading-[1.3] line-clamp-2 px-1">
                   {act.place}
@@ -1063,10 +1101,16 @@ export default function TripDetail() {
               </div>
             </div>
 
-          <div className="flex items-center gap-1 mb-2 w-full">
+          <div
+            className={`flex items-center gap-1 mb-2 w-full rounded-[22px] border px-2 py-2 shadow-[0_18px_48px_rgba(0,0,0,0.24)] backdrop-blur-2xl ${
+              isLightDetail
+                ? 'border-white/70 bg-white/74'
+                : 'border-white/12 bg-black/42'
+            }`}
+          >
             <div
               id="trip-day-pills-carousel"
-              className="flex-1 flex items-center gap-3 overflow-x-auto pb-2 px-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              className="flex-1 flex items-center gap-3 overflow-x-auto px-2 py-1 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
               style={{ maskImage: 'linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)' }}
             >
               {daysData.map((d, i) => {
@@ -1077,15 +1121,15 @@ export default function TripDetail() {
                     onClick={() => { setSelectedDay(d.day); setPlanFocusAct(null); }}
                     className="trip-detail-pill flex items-center gap-2 px-4 py-2.5 rounded-full transition-all duration-500 flex-shrink-0 font-black text-[10px] sm:text-[11px] uppercase tracking-widest"
                     style={{
-                      background: isActive ? '#D4AF37' : (isLightDetail ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.06)'),
-                      color: isActive ? '#000' : (isLightDetail ? 'rgba(15,23,42,0.65)' : 'rgba(255,255,255,0.52)'),
-                      boxShadow: isActive ? '0 8px 24px rgba(212,175,55,0.28)' : 'none',
-                      border: isActive ? 'none' : (isLightDetail ? '1px solid rgba(148,163,184,0.22)' : '1px solid rgba(255,255,255,0.08)'),
+                      background: isActive ? '#D4AF37' : (isLightDetail ? 'rgba(255,255,255,0.96)' : 'rgba(10,18,30,0.86)'),
+                      color: isActive ? '#000' : (isLightDetail ? 'rgba(15,23,42,0.86)' : 'rgba(255,255,255,0.82)'),
+                      boxShadow: isActive ? '0 8px 24px rgba(212,175,55,0.34)' : (isLightDetail ? '0 8px 24px rgba(15,23,42,0.1)' : '0 8px 22px rgba(0,0,0,0.22)'),
+                      border: isActive ? '1px solid rgba(212,175,55,0.98)' : (isLightDetail ? '1px solid rgba(148,163,184,0.32)' : '1px solid rgba(255,255,255,0.16)'),
                     }}
                   >
                     <Calendar size={12} strokeWidth={2.5} />
                     Day {d.day}
-                    {d.date && <span className="font-mono opacity-60 hidden sm:inline">{d.date.split(' ').slice(0, 2).join(' ').replace(',', '')}</span>}
+                    {d.date && <span className="font-mono opacity-80 hidden sm:inline">{d.date.split(' ').slice(0, 2).join(' ').replace(',', '')}</span>}
                   </button>
                 );
               })}

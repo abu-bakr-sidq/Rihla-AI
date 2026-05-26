@@ -17,6 +17,23 @@ function getAuthHeaders() {
   return headers;
 }
 
+function isAbortError(error) {
+  return error?.name === "AbortError" || error?.name === "TimeoutError";
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: options.signal || controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function readJsonOrThrow(res, fallbackMessage) {
   const contentType = res.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) {
@@ -37,19 +54,28 @@ export function useUser(options = {}) {
   return useQuery({
     queryKey: [api.auth.me.path],
     queryFn: async () => {
-      const res = await fetch(resolveApiUrl(api.auth.me.path), {
-        headers: getAuthHeaders(),
-        credentials: "include"
-      });
-      if (res.status === 401) {
-        localStorage.removeItem("auth_token");
-        return null;
+      try {
+        const res = await fetchWithTimeout(resolveApiUrl(api.auth.me.path), {
+          headers: getAuthHeaders(),
+          credentials: "include"
+        });
+        if (res.status === 401) {
+          localStorage.removeItem("auth_token");
+          return null;
+        }
+        if (!res.ok) throw new Error("Failed to fetch user");
+        const raw = await readJsonOrThrow(res, "Login failed");
+        return parseWithLogging(api.auth.me.responses[200], raw, "auth.me");
+      } catch (error) {
+        if (isAbortError(error)) {
+          console.warn("[auth.me] Timed out while checking session.");
+          return null;
+        }
+        throw error;
       }
-      if (!res.ok) throw new Error("Failed to fetch user");
-      const raw = await readJsonOrThrow(res, "Login failed");
-      return parseWithLogging(api.auth.me.responses[200], raw, "auth.me");
     },
     retry: false,
+    retryOnMount: false,
     enabled: enabled && (allowAnonymousCheck || hasToken),
   });
 }

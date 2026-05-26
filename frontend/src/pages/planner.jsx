@@ -2307,7 +2307,15 @@ function PlannerDayTimeline({ slots, slotCfg, isLight = false }) {
           id="timeline-static"
           className="relative flex items-start justify-between w-full pb-4 pt-3"
         >
-          <div className="absolute top-[31px] left-[5%] right-[5%] h-[3px] rounded-full z-0 shadow-[0_0_15px_rgba(255,255,255,0.1)]" style={{ background: isLight ? 'linear-gradient(90deg, rgba(148,163,184,0.04) 0%, rgba(212,175,55,0.22) 50%, rgba(148,163,184,0.04) 100%)' : 'linear-gradient(90deg, rgba(255,255,255,0.01) 0%, rgba(212,175,55,0.15) 50%, rgba(255,255,255,0.01) 100%)' }} />
+          <div
+            className="absolute top-[31px] left-[5%] right-[5%] h-[3px] rounded-full z-0"
+            style={{
+              background: isLight
+                ? 'linear-gradient(90deg, rgba(148,163,184,0.08) 0%, rgba(212,175,55,0.42) 48%, rgba(56,189,248,0.18) 100%)'
+                : 'linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(212,175,55,0.26) 48%, rgba(56,189,248,0.12) 100%)',
+              boxShadow: isLight ? '0 0 18px rgba(212,175,55,0.16)' : '0 0 18px rgba(212,175,55,0.12)'
+            }}
+          />
 
           {slots.map(({ sk, act }, i) => {
             const cfg = slotCfg[sk];
@@ -2323,14 +2331,30 @@ function PlannerDayTimeline({ slots, slotCfg, isLight = false }) {
                 }}
               >
                 <div
-                  className="flex items-center justify-center w-10 h-10 rounded-full mb-3 transition-transform duration-500 overflow-hidden group-hover:scale-110 shadow-[0_4px_15px_rgba(0,0,0,0.5)] border-2"
-                  style={{ background: isLight ? 'radial-gradient(circle at center, rgba(255,255,255,1) 0%, rgba(241,245,249,1) 100%)' : 'radial-gradient(circle at center, rgba(16,23,38,1) 0%, rgba(10,15,24,1) 100%)', borderColor: `${color}88` }}
+                  className="relative flex items-center justify-center w-11 h-11 rounded-[18px] mb-3 transition-all duration-500 overflow-hidden group-hover:-translate-y-0.5 group-hover:scale-110 border"
+                  style={{
+                    background: isLight
+                      ? `linear-gradient(145deg, rgba(255,255,255,0.98), rgba(248,250,252,0.82)), radial-gradient(circle at 30% 20%, ${color}30 0%, transparent 55%)`
+                      : `linear-gradient(145deg, rgba(12,18,30,0.98), rgba(3,7,13,0.96)), radial-gradient(circle at 30% 20%, ${color}24 0%, transparent 58%)`,
+                    borderColor: isLight ? `${color}70` : `${color}7a`,
+                    boxShadow: isLight
+                      ? `0 14px 30px rgba(15,23,42,0.13), 0 0 0 5px ${color}12, inset 0 1px 0 rgba(255,255,255,0.95)`
+                      : `0 12px 28px rgba(0,0,0,0.52), 0 0 0 5px ${color}10, 0 0 22px ${color}20, inset 0 1px 0 rgba(255,255,255,0.12)`
+                  }}
                 >
-                  {/* Glow ring */}
-                  <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ boxShadow: `inset 0 0 10px ${color}40` }} />
-                  <Icon size={16} style={{ color }} strokeWidth={2} />
+                  <div className="absolute inset-[5px] rounded-[14px] border border-white/25 opacity-70" />
+                  <div className="absolute -right-4 -top-5 w-10 h-10 rounded-full blur-xl opacity-70" style={{ background: color }} />
+                  <Icon size={17} style={{ color, filter: `drop-shadow(0 0 8px ${color}55)` }} strokeWidth={2.35} />
                 </div>
-                <span className={cn("text-[11px] font-black tracking-[0.05em] py-0.5 px-2 rounded-md mb-1.5 shadow-sm border", isLight ? "bg-white/90 border-slate-200/80" : "bg-black/40 border-white/5")} style={{ color }}>{cfg.time.replace(' AM', '').replace(' PM', '')}</span>
+                <span
+                  className={cn("text-[11px] font-black tracking-[0.05em] py-1 px-2.5 rounded-lg mb-1.5 border backdrop-blur-md", isLight ? "bg-white/92 border-slate-200/90" : "bg-black/45 border-white/10")}
+                  style={{
+                    color,
+                    boxShadow: isLight ? '0 7px 16px rgba(15,23,42,0.08)' : `0 8px 18px rgba(0,0,0,0.28), 0 0 14px ${color}10`
+                  }}
+                >
+                  {cfg.time.replace(' AM', '').replace(' PM', '')}
+                </span>
                 <div className="flex items-start justify-center w-full px-1 mt-1">
                   <span className={cn("text-[9px] sm:text-[10px] font-bold transition-colors text-center leading-tight", isLight ? "text-slate-500 group-hover:text-slate-900" : "text-white/60 group-hover:text-white")}>
                     {act.place}
@@ -4330,7 +4354,14 @@ export default function Planner() {
                     </div>
 
                     {/* ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ DAY NAVIGATION PILLS ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ */}
-                    <div className="flex items-center gap-1 mb-6 group/pill-carousel w-full">
+                    <div
+                      className={cn(
+                        "flex items-center gap-1 mb-6 group/pill-carousel w-full rounded-[22px] border px-2 py-2 shadow-[0_18px_48px_rgba(0,0,0,0.24)] backdrop-blur-2xl",
+                        isLightPlannerResult
+                          ? "border-white/70 bg-white/74"
+                          : "border-white/12 bg-black/42"
+                      )}
+                    >
                       <button
                         onClick={(e) => { e.preventDefault(); document.getElementById('day-pills-carousel')?.scrollBy({ left: -200, behavior: 'smooth' }) }}
                         className={cn(
@@ -4345,7 +4376,7 @@ export default function Planner() {
 
                       <div
                         id="day-pills-carousel"
-                        className="flex-1 flex items-center gap-3 overflow-x-auto pb-2 px-5 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                        className="flex-1 flex items-center gap-3 overflow-x-auto px-5 py-1 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                         style={{ maskImage: 'linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)' }}
                       >
                         {daysData.map((d, i) => {
@@ -4363,10 +4394,10 @@ export default function Planner() {
                               }}
                               className="flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200 flex-shrink-0 font-black text-[10px] sm:text-[11px] uppercase tracking-widest"
                               style={{
-                                background: isActive ? '#D4AF37' : isLocked ? (isLightPlannerResult ? 'rgba(248,250,252,0.98)' : 'rgba(255,255,255,0.03)') : (isLightPlannerResult ? 'rgba(255,255,255,0.98)' : 'rgba(255,255,255,0.06)'),
-                                color: isActive ? '#000' : isLocked ? (isLightPlannerResult ? 'rgba(100,116,139,0.72)' : 'rgba(255,255,255,0.2)') : (isLightPlannerResult ? 'rgba(15,23,42,0.82)' : 'rgba(255,255,255,0.45)'),
-                                boxShadow: isActive ? '0 4px 15px rgba(212,175,55,0.3)' : isLightPlannerResult ? '0 10px 28px rgba(148,163,184,0.12)' : 'none',
-                                border: isActive ? 'none' : isLocked ? (isLightPlannerResult ? '1px dashed rgba(148,163,184,0.48)' : '1px dashed rgba(255,255,255,0.1)') : (isLightPlannerResult ? '1px solid rgba(148,163,184,0.34)' : '1px solid rgba(255,255,255,0.08)'),
+                                background: isActive ? '#D4AF37' : isLocked ? (isLightPlannerResult ? 'rgba(248,250,252,0.96)' : 'rgba(10,18,30,0.64)') : (isLightPlannerResult ? 'rgba(255,255,255,0.96)' : 'rgba(10,18,30,0.86)'),
+                                color: isActive ? '#000' : isLocked ? (isLightPlannerResult ? 'rgba(100,116,139,0.82)' : 'rgba(255,255,255,0.44)') : (isLightPlannerResult ? 'rgba(15,23,42,0.86)' : 'rgba(255,255,255,0.82)'),
+                                boxShadow: isActive ? '0 8px 24px rgba(212,175,55,0.34)' : isLightPlannerResult ? '0 8px 24px rgba(15,23,42,0.1)' : '0 8px 22px rgba(0,0,0,0.22)',
+                                border: isActive ? '1px solid rgba(212,175,55,0.98)' : isLocked ? (isLightPlannerResult ? '1px dashed rgba(148,163,184,0.5)' : '1px dashed rgba(255,255,255,0.16)') : (isLightPlannerResult ? '1px solid rgba(148,163,184,0.32)' : '1px solid rgba(255,255,255,0.16)'),
                               }}
                             >
                               {isLocked ? (
@@ -4375,7 +4406,7 @@ export default function Planner() {
                                 <Calendar size={12} strokeWidth={2.5} />
                               )}
                               Day {d.day}
-                              {d.date && <span className="font-mono opacity-60 hidden sm:inline">{d.date.split(' ').slice(0, 2).join(' ').replace(',', '')}</span>}
+                              {d.date && <span className="font-mono opacity-80 hidden sm:inline">{d.date.split(' ').slice(0, 2).join(' ').replace(',', '')}</span>}
                             </button>
                           );
                         })}
