@@ -144,11 +144,15 @@ export function usePlaceImage(query, options = {}) {
 // ─────────────────────────────────────────────────────────────────────────────
 export function usePlaceImageGallery(query, options = {}) {
   const { photoIndex = 0, maxResults = 8, onlyGoogle = true } = options;
+  const queryKey = (Array.isArray(query) ? query : [query])
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .join("||");
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const queries = Array.isArray(query) ? query.filter(Boolean) : [query].filter(Boolean);
+    const queries = queryKey.split("||").filter(Boolean);
     const normalized = queries.map((item) => String(item || "").trim()).filter(Boolean);
     if (!normalized.length) {
       setImages([]);
@@ -190,7 +194,7 @@ export function usePlaceImageGallery(query, options = {}) {
     });
 
     return () => { alive = false; };
-  }, [query, photoIndex, maxResults, onlyGoogle]);
+  }, [queryKey, photoIndex, maxResults, onlyGoogle]);
 
   return { images, loading };
 }

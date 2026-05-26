@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PlaceImage, usePlaceImage, usePlaceImageGallery } from "@/hooks/use-place-image";
+import { GalleryPhotoBadge } from "@/components/trip/PlaceImageGalleryModal";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { sanitizeTextList, sanitizeVisibleText } from "@/lib/display-text";
 
@@ -605,20 +606,22 @@ function buildPlannedImageQueries(place = "", destination = "", intent = "touris
 function PlaceGalleryModal({ open, onClose, title, queries, accent = "#D4AF37", isLight = false }) {
   const { images, loading } = usePlaceImageGallery(queries, { maxResults: 9, onlyGoogle: true });
   if (!open) return null;
+  const countLabel = loading ? "Scanning Google Places" : `${images.length || 0} verified images`;
 
   return (
     <div className="fixed inset-0 z-[95] flex items-center justify-center px-4 py-6">
       <button aria-label="Close gallery" className="absolute inset-0 bg-black/72 backdrop-blur-md" onClick={onClose} />
-      <div className={cn("relative z-10 w-full max-w-5xl overflow-hidden rounded-[30px] border shadow-[0_30px_90px_rgba(0,0,0,0.55)]", isLight ? "border-white/80 bg-white/95" : "border-white/12 bg-[#08111f]/95")}>
-        <div className={cn("flex items-center justify-between gap-4 border-b px-5 py-4", isLight ? "border-slate-200" : "border-white/10")}>
+      <div className={cn("relative z-10 flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[30px] border shadow-[0_30px_90px_rgba(0,0,0,0.55)]", isLight ? "border-white/80 bg-white/95" : "border-white/12 bg-[#08111f]/95")}>
+        <div className={cn("flex shrink-0 items-center justify-between gap-4 border-b px-5 py-4", isLight ? "border-slate-200" : "border-white/10")}>
           <div>
             <p className="text-[9px] font-black uppercase tracking-[0.34em]" style={{ color: accent }}>Google Places Image Board</p>
             <h3 className={cn("mt-1 text-xl font-black leading-tight", isLight ? "text-slate-950" : "text-white")}>{title}</h3>
+            <p className={cn("mt-1 text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-500" : "text-white/42")}>{countLabel}</p>
           </div>
           <button onClick={onClose} className={cn("rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "border-slate-300 text-slate-700" : "border-white/12 text-white/70")}>Close</button>
         </div>
 
-        <div className="max-h-[72vh] overflow-auto p-5">
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">
           {loading && (
             <div className={cn("flex h-64 items-center justify-center rounded-[24px] border text-[10px] font-black uppercase tracking-[0.26em]", isLight ? "border-slate-200 bg-slate-50 text-slate-500" : "border-white/8 bg-white/[0.03] text-white/45")}>
               Loading exact Google place photos...
@@ -712,6 +715,7 @@ export function TripHighlightsCard({ destination, totalDays, travelers, travelSt
               <button type="button" className="absolute inset-0 z-10 cursor-zoom-in" onClick={() => setGallery({ title: stops[index] || row.title, queries: row.imageQueries, accent: row.accent })} aria-label={`Open ${row.title} photo gallery`} />
               <PlaceImage queries={row.imageQueries} alt={row.title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" photoIndex={index} onlyGoogle placeholderLabel={stops[index] || dest} placeholderAccent={row.accent} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-black/24 to-transparent" />
+              <GalleryPhotoBadge queries={row.imageQueries} accent={row.accent} isLight={isLight} onClick={(event) => { event.stopPropagation(); setGallery({ title: stops[index] || row.title, queries: row.imageQueries, accent: row.accent }); }} />
               <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-white/14 bg-black/42 px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.18em] text-white backdrop-blur-md">
                 <row.icon size={12} style={{ color: row.accent }} />
                 {row.badge}
@@ -794,6 +798,7 @@ export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelSty
               <button type="button" className="absolute inset-0 z-10 cursor-zoom-in" onClick={() => setGallery({ title: group.title, queries: group.imageQueries, accent: group.color })} aria-label={`Open ${group.title} photo gallery`} />
               <PlaceImage queries={group.imageQueries} alt={group.title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" photoIndex={index} onlyGoogle placeholderLabel={group.title} placeholderAccent={group.color} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/16 to-transparent" />
+              <GalleryPhotoBadge queries={group.imageQueries} accent={group.color} isLight={isLight} onClick={(event) => { event.stopPropagation(); setGallery({ title: group.title, queries: group.imageQueries, accent: group.color }); }} />
             </div>
             <div className="min-w-0 flex-1 p-3">
               <div className="mb-1.5 flex items-center gap-2">

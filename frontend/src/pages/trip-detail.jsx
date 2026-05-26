@@ -14,6 +14,7 @@ import { AIExplorationDeck, CuratedInsightsCard, TripHighlightsCard, TripPrayerT
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import ThemeToggle from '@/components/ThemeToggle';
 import DashboardSlideshow from '@/components/ui/DashboardSlideshow';
+import { GalleryPhotoBadge, PlaceImageGalleryModal } from '@/components/trip/PlaceImageGalleryModal';
 
 function fmtCur(amount, currency = 'USD') {
   try { return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount); } catch { return '$' + amount; }
@@ -104,8 +105,15 @@ function PlannerDetailTimeline({ slots, slotCfg, isLight = false }) {
 function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slotColor, slotTime, cost, destination, cardIndex, currency, onClick, isSelected, details, isLight = false }) {
   const [imgSrc, setImgSrc] = useState('');
   const [expanded, setExpanded] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const displayPlace = pickBestActivityPlace({ place, title: details?.title, location: details?.location, name: details?.name }, destination, slotKey, cardIndex);
   const query = extractLocationQuery(displayPlace, destination);
+  const galleryQueries = [
+    query,
+    `${displayPlace} ${destination} Google Maps`,
+    `${displayPlace}, ${destination}`,
+    `${displayPlace} ${destination} place photo`,
+  ].filter(Boolean);
   const accentColor = PLAN_SLOT_COLORS[slotKey] || slotColor || '#D4AF37';
   const fallbackContent = generatePlaceCardFallbackContent(displayPlace, activity, destination, slotKey);
   const { schedule, ideas } = buildActivityDisplayContent(details, fallbackContent);
@@ -125,13 +133,17 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
       style={{ background: isLight ? 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(241,245,249,0.98) 100%)' : '#0E1520', border: isSelected ? `1.5px solid ${accentColor}55` : (isLight ? '1px solid rgba(148,163,184,0.18)' : '1px solid rgba(255,255,255,0.07)') }}
       onClick={onClick}
     >
-      <div className="relative w-full h-[190px] overflow-hidden shrink-0 bg-[#0F1623]">
+      <div
+        className="relative w-full h-[190px] overflow-hidden shrink-0 bg-[#0F1623]"
+        onClick={(event) => { event.stopPropagation(); setGalleryOpen(true); }}
+      >
         {imgSrc ? (
           <img src={imgSrc} onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt={displayPlace} />
         ) : null}
         <div className={`absolute inset-0 transition-opacity duration-300 ${isLight ? 'opacity-100' : 'opacity-0'}`} style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 26%, rgba(255,255,255,0) 45%)' }} />
         <div className={`absolute top-0 inset-x-0 h-24 ${isLight ? 'bg-gradient-to-b from-[rgba(8,15,27,0.22)] via-[rgba(8,15,27,0.08)] to-transparent' : 'bg-gradient-to-b from-[#0E1520]/90 to-transparent'}`} />
         <div className={`absolute bottom-0 inset-x-0 h-32 ${isLight ? 'bg-gradient-to-t from-[rgba(8,15,27,0.72)] via-[rgba(8,15,27,0.26)] to-transparent' : 'bg-gradient-to-t from-[#0E1520] via-[#0E1520]/60 to-transparent'}`} />
+        <GalleryPhotoBadge queries={galleryQueries} accent={accentColor} isLight={isLight} onClick={(event) => { event.stopPropagation(); setGalleryOpen(true); }} />
         <div className="absolute top-3 left-3 backdrop-blur-xl px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg transition-[background-color,border-color,color] duration-300" style={{ background: isLight ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.4)', border: isLight ? '1px solid rgba(226,232,240,0.9)' : `1px solid ${accentColor}40` }}>
           {SlotIcon ? <SlotIcon size={12} strokeWidth={2.5} style={{ color: accentColor }} /> : null}
           <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: accentColor }}>{slotLabel}</span>
@@ -221,6 +233,14 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
           ) : null}
         </div>
       </div>
+      <PlaceImageGalleryModal
+        open={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        title={displayPlace}
+        queries={galleryQueries}
+        accent={accentColor}
+        isLight={isLight}
+      />
     </div>
   );
 }
