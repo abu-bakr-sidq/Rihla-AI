@@ -495,11 +495,18 @@ h4 {
 
   .mobile-trip-card {
     min-width: 0;
-    width: min(100%, 35rem);
+    width: min(100%, calc(100vw - 1.7rem), 35rem) !important;
+    max-width: calc(100vw - 1.7rem);
     margin-left: auto;
     margin-right: auto;
+    justify-self: center;
     border-radius: 1.45rem !important;
     transform: none !important;
+  }
+
+  .trip-detail-shell .grid.grid-cols-1,
+  .planner-result-shell .grid.grid-cols-1 {
+    justify-items: center;
   }
 
   .mobile-trip-card > div:first-child {
