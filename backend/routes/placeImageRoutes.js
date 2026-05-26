@@ -3,6 +3,7 @@ import {
   buildGooglePlacePhotoApiUrl,
   buildGooglePlacePhotoProxyUrl,
   getGooglePlaceImageUrl,
+  getGooglePlaceImageUrls,
   hasGooglePlacesKey,
 } from "../services/placeImageService.js";
 
@@ -64,12 +65,34 @@ async function getWikimediaImage(words) {
 }
 
 router.get("/", async (req, res) => {
-  const { query, onlyGoogle, photoIndex: rawPhotoIndex } = req.query;
+  const { query, onlyGoogle, photoIndex: rawPhotoIndex, maxResults: rawMaxResults } = req.query;
   if (!query) return res.json({ url: null, source: "no_query" });
 
   const strictGoogle = onlyGoogle === "1" || onlyGoogle === "true";
   const photoIndex = Math.max(0, parseInt(rawPhotoIndex, 10) || 0);
+  const maxResults = Math.max(0, Math.min(12, parseInt(rawMaxResults, 10) || 0));
   const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+  if (maxResults > 1) {
+    const googleImages = await getGooglePlaceImageUrls(String(query).trim(), {
+      startIndex: photoIndex,
+      maxResults,
+      maxwidth: 1100,
+      baseUrl,
+    });
+
+    if (googleImages.length) {
+      return res.json({
+        url: googleImages[0]?.url || null,
+        images: googleImages,
+        source: "google_places",
+      });
+    }
+
+    if (strictGoogle) {
+      return res.json({ url: null, images: [], source: "google_required" });
+    }
+  }
 
   const googleResult = await getGooglePlaceImageUrl(String(query).trim(), {
     photoIndex,

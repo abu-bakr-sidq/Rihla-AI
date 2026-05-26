@@ -927,13 +927,14 @@ export default function TripDetail() {
       startDate: trip.startDate,
       endDate: trip.endDate,
       travelers: trip.travelers,
-      travelStyle: trip.travelStyle,
+      travelStyle: trip.travelStyle || trip.preferences?.travelStyle || trip.itinerary?.trip_overview?.travel_style,
       currency: trip.currency || trip.preferences?.currency || 'USD',
       costBreakdown: trip.costBreakdown || {},
     })
     : trip.itinerary;
   const res = reconcileItineraryBudget(rawRes, trip.costBreakdown || {});
   const ov = res?.trip_overview || {};
+  const effectiveTravelStyle = trip.travelStyle || trip.preferences?.travelStyle || ov.travel_style || res?.travelStyle || "Balanced";
   const DEST = trip.destination || '';
   const DEST_SHORT = DEST.split(',')[0].trim();
   const tripCurrency = trip.currency || trip.preferences?.currency || 'USD';
@@ -1021,7 +1022,7 @@ export default function TripDetail() {
                   <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{ov.total_days || daysData.length} days</span>
                   <span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} />
                   <span className={`text-[12px] font-mono ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{trip.travelers || 1} traveller{(trip.travelers || 1) > 1 ? 's' : ''}</span>
-                  {trip.travelStyle && <><span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} /><span className={`text-[12px] font-mono capitalize ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{trip.travelStyle}</span></>}
+                  {effectiveTravelStyle && <><span className={`w-1 h-1 rounded-full ${isLightDetail ? 'bg-slate-300' : 'bg-white/20'}`} /><span className={`text-[12px] font-mono capitalize ${isLightDetail ? 'text-slate-600' : 'text-white/62'}`}>{effectiveTravelStyle}</span></>}
                 </div>
               </div>
               <div className="trip-detail-hero-center flex flex-col sm:flex-row items-stretch justify-center gap-3">
@@ -1200,7 +1201,7 @@ export default function TripDetail() {
               <AIExplorationDeck
                 destination={DEST_SHORT}
                 aiSuggestions={res.ai_suggestions}
-                travelStyle={trip.travelStyle}
+                travelStyle={effectiveTravelStyle}
                 dayTheme={activeDay?.theme}
                 isLight={isLightDetail}
               />
@@ -1215,7 +1216,7 @@ export default function TripDetail() {
                 fmtCur={fmtCur}
                 totalDays={ov.total_days || daysData.length}
                 travelers={trip.travelers || 1}
-                travelStyle={trip.travelStyle || "Balanced"}
+                travelStyle={effectiveTravelStyle}
                 totalBudget={TOTAL_BUDGET}
                 slotCfg={planFocusAct ? (SLOT_CFG[planFocusAct.sk] || SLOT_CFG.morning) : null}
                 isLight={isLightDetail}
@@ -1239,7 +1240,7 @@ export default function TripDetail() {
                 destination={DEST_SHORT}
                 totalDays={ov.total_days || daysData.length}
                 travelers={trip.travelers || 1}
-                travelStyle={trip.travelStyle || "Balanced"}
+                travelStyle={effectiveTravelStyle}
                 activeDay={activeDay}
                 isLight={isLightDetail}
               />
@@ -1247,7 +1248,7 @@ export default function TripDetail() {
               <CuratedInsightsCard
                 aiSuggestions={res.ai_suggestions}
                 destination={DEST_SHORT}
-                travelStyle={trip.travelStyle || "Balanced"}
+                travelStyle={effectiveTravelStyle}
                 activeDay={activeDay}
                 isLight={isLightDetail}
               />

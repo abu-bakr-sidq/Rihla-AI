@@ -3306,6 +3306,14 @@ export default function Planner() {
         : (plannerPerfectItinerary?.total_budget || fallback.total_budget || plannerBudgetSummary.costBreakdown);
       finalCostInfo = mergePlannerBudgetBreakdown(rawCostInfo, plannerBudgetSummary.costBreakdown, formData.budget, formData.currency);
       finalItin = reconcileItineraryBudget(finalItin, finalCostInfo || lockedPlannerBudget);
+      finalItin = {
+        ...finalItin,
+        travelStyle: formData.travelStyle,
+        trip_overview: {
+          ...(finalItin?.trip_overview || {}),
+          travel_style: formData.travelStyle,
+        },
+      };
       finalCostInfo = mergePlannerBudgetBreakdown(finalItin?.total_budget || finalCostInfo, plannerBudgetSummary.costBreakdown, formData.budget, formData.currency);
       tripId = result?.id || result?._id || null;
 
@@ -3318,6 +3326,14 @@ export default function Planner() {
       finalItin = buildItinerary({ ...formData, budgetCategory });
       finalCostInfo = mergePlannerBudgetBreakdown(finalItin.total_budget, plannerBudgetSummary.costBreakdown, formData.budget, formData.currency);
       finalItin = reconcileItineraryBudget(finalItin, finalCostInfo);
+      finalItin = {
+        ...finalItin,
+        travelStyle: formData.travelStyle,
+        trip_overview: {
+          ...(finalItin?.trip_overview || {}),
+          travel_style: formData.travelStyle,
+        },
+      };
       finalCostInfo = mergePlannerBudgetBreakdown(finalItin?.total_budget || finalCostInfo, plannerBudgetSummary.costBreakdown, formData.budget, formData.currency);
       setGeneratedResult(finalItin);
       setActiveDay(0);

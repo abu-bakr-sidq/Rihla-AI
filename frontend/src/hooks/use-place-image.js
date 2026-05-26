@@ -142,6 +142,59 @@ export function usePlaceImage(query, options = {}) {
 // Component: PlaceImage — renders an <img> with Google Places src
 // Written with createElement to avoid requiring JSX in a .js file
 // ─────────────────────────────────────────────────────────────────────────────
+export function usePlaceImageGallery(query, options = {}) {
+  const { photoIndex = 0, maxResults = 8, onlyGoogle = true } = options;
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const queries = Array.isArray(query) ? query.filter(Boolean) : [query].filter(Boolean);
+    const normalized = queries.map((item) => String(item || "").trim()).filter(Boolean);
+    if (!normalized.length) {
+      setImages([]);
+      setLoading(false);
+      return;
+    }
+
+    let alive = true;
+    setLoading(true);
+
+    (async () => {
+      for (const currentQuery of normalized) {
+        try {
+          const params = new URLSearchParams({
+            query: currentQuery,
+            photoIndex: String(photoIndex || 0),
+            maxResults: String(Math.max(2, Math.min(12, Number(maxResults) || 8))),
+          });
+          if (onlyGoogle) params.set("onlyGoogle", "1");
+
+          const res = await fetch(resolveApiUrl(`/api/place-image?${params.toString()}`), {
+            signal: AbortSignal.timeout(9000),
+          });
+          if (!res.ok) continue;
+          const data = await res.json();
+          const nextImages = Array.isArray(data?.images) ? data.images.filter((item) => item?.url) : [];
+          if (nextImages.length) {
+            if (alive) setImages(nextImages);
+            return;
+          }
+        } catch (_) {
+          // Try the next exact place query.
+        }
+      }
+
+      if (alive) setImages([]);
+    })().finally(() => {
+      if (alive) setLoading(false);
+    });
+
+    return () => { alive = false; };
+  }, [query, photoIndex, maxResults, onlyGoogle]);
+
+  return { images, loading };
+}
+
 export function PlaceImage({ query, queries, alt, className, fallbackSrc, style, photoIndex = 0, onlyGoogle = false, placeholderLabel = "Rihla image", placeholderAccent = "#D4AF37" }) {
   const lookup = Array.isArray(queries) && queries.length ? queries : query;
   const { src, loading } = usePlaceImage(lookup, { photoIndex, onlyGoogle });

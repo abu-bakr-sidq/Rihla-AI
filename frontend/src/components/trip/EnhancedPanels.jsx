@@ -18,7 +18,7 @@ import {
   Utensils,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PlaceImage, usePlaceImage } from "@/hooks/use-place-image";
+import { PlaceImage, usePlaceImage, usePlaceImageGallery } from "@/hooks/use-place-image";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { sanitizeTextList, sanitizeVisibleText } from "@/lib/display-text";
 
@@ -602,8 +602,57 @@ function buildPlannedImageQueries(place = "", destination = "", intent = "touris
   ].filter(Boolean);
 }
 
+function PlaceGalleryModal({ open, onClose, title, queries, accent = "#D4AF37", isLight = false }) {
+  const { images, loading } = usePlaceImageGallery(queries, { maxResults: 9, onlyGoogle: true });
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[95] flex items-center justify-center px-4 py-6">
+      <button aria-label="Close gallery" className="absolute inset-0 bg-black/72 backdrop-blur-md" onClick={onClose} />
+      <div className={cn("relative z-10 w-full max-w-5xl overflow-hidden rounded-[30px] border shadow-[0_30px_90px_rgba(0,0,0,0.55)]", isLight ? "border-white/80 bg-white/95" : "border-white/12 bg-[#08111f]/95")}>
+        <div className={cn("flex items-center justify-between gap-4 border-b px-5 py-4", isLight ? "border-slate-200" : "border-white/10")}>
+          <div>
+            <p className="text-[9px] font-black uppercase tracking-[0.34em]" style={{ color: accent }}>Google Places Image Board</p>
+            <h3 className={cn("mt-1 text-xl font-black leading-tight", isLight ? "text-slate-950" : "text-white")}>{title}</h3>
+          </div>
+          <button onClick={onClose} className={cn("rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "border-slate-300 text-slate-700" : "border-white/12 text-white/70")}>Close</button>
+        </div>
+
+        <div className="max-h-[72vh] overflow-auto p-5">
+          {loading && (
+            <div className={cn("flex h-64 items-center justify-center rounded-[24px] border text-[10px] font-black uppercase tracking-[0.26em]", isLight ? "border-slate-200 bg-slate-50 text-slate-500" : "border-white/8 bg-white/[0.03] text-white/45")}>
+              Loading exact Google place photos...
+            </div>
+          )}
+
+          {!loading && !images.length && (
+            <div className={cn("flex h-64 flex-col items-center justify-center rounded-[24px] border px-8 text-center", isLight ? "border-slate-200 bg-slate-50" : "border-white/8 bg-white/[0.03]")}>
+              <p className={cn("text-sm font-black", isLight ? "text-slate-900" : "text-white")}>No verified Google photo set available yet.</p>
+              <p className={cn("mt-2 max-w-md text-xs leading-relaxed", isLight ? "text-slate-600" : "text-white/50")}>Rihla is avoiding random fallback images here, so this panel only shows photos returned by Google Places for the exact planned stop.</p>
+            </div>
+          )}
+
+          {!!images.length && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {images.map((image, index) => (
+                <a key={`${image.url}-${index}`} href={image.url} target="_blank" rel="noreferrer" className="group relative h-56 overflow-hidden rounded-[22px] border border-white/10 bg-black">
+                  <img src={image.url} alt={`${title} ${index + 1}`} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                    <p className="text-[9px] font-black uppercase tracking-[0.22em] text-white/78">View {index + 1}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TripHighlightsCard({ destination, totalDays, travelers, travelStyle, activeDay, isLight = false }) {
   const dest = normalizeDestination(destination);
+  const [gallery, setGallery] = useState(null);
   const style = sanitizeVisibleText(travelStyle || "Balanced");
   const days = Math.max(1, Number(totalDays) || 1);
   const travellerCount = Math.max(1, Number(travelers) || 1);
@@ -660,15 +709,8 @@ export function TripHighlightsCard({ destination, totalDays, travelers, travelSt
         {rows.map((row, index) => (
           <div key={row.title} className={cn("group overflow-hidden rounded-[22px] border", isLight ? "border-slate-200 bg-white/82" : "border-white/[0.06] bg-white/[0.035]")}>
             <div className="relative h-24 overflow-hidden">
-              <PlaceImage
-                queries={row.imageQueries}
-                alt={row.title}
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                photoIndex={index}
-                onlyGoogle
-                placeholderLabel={stops[index] || dest}
-                placeholderAccent={row.accent}
-              />
+              <button type="button" className="absolute inset-0 z-10 cursor-zoom-in" onClick={() => setGallery({ title: stops[index] || row.title, queries: row.imageQueries, accent: row.accent })} aria-label={`Open ${row.title} photo gallery`} />
+              <PlaceImage queries={row.imageQueries} alt={row.title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" photoIndex={index} onlyGoogle placeholderLabel={stops[index] || dest} placeholderAccent={row.accent} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-black/24 to-transparent" />
               <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-white/14 bg-black/42 px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.18em] text-white backdrop-blur-md">
                 <row.icon size={12} style={{ color: row.accent }} />
@@ -682,12 +724,14 @@ export function TripHighlightsCard({ destination, totalDays, travelers, travelSt
           </div>
         ))}
       </div>
+      <PlaceGalleryModal open={!!gallery} onClose={() => setGallery(null)} title={gallery?.title || dest} queries={gallery?.queries || []} accent={gallery?.accent || "#D4AF37"} isLight={isLight} />
     </div>
   );
 }
 
 export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelStyle, activeDay, isLight = false }) {
   const dest = normalizeDestination(destination);
+  const [gallery, setGallery] = useState(null);
   const style = sanitizeVisibleText(travelStyle || "balanced");
   const gems = sanitizeTextList(aiSuggestions.hidden_gems || []).slice(0, 2);
   const photos = sanitizeTextList(aiSuggestions.photo_spots || []).slice(0, 2);
@@ -747,15 +791,8 @@ export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelSty
         {groups.map((group, index) => (
           <div key={group.key} className={cn("group flex min-h-[104px] overflow-hidden rounded-[22px] border", isLight ? "bg-white/82 border-slate-200 shadow-[0_10px_24px_rgba(148,163,184,0.12)]" : "bg-white/[0.035] border-white/[0.055]")}>
             <div className="relative w-[104px] shrink-0 overflow-hidden">
-              <PlaceImage
-                queries={group.imageQueries}
-                alt={group.title}
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                photoIndex={index}
-                onlyGoogle
-                placeholderLabel={group.title}
-                placeholderAccent={group.color}
-              />
+              <button type="button" className="absolute inset-0 z-10 cursor-zoom-in" onClick={() => setGallery({ title: group.title, queries: group.imageQueries, accent: group.color })} aria-label={`Open ${group.title} photo gallery`} />
+              <PlaceImage queries={group.imageQueries} alt={group.title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" photoIndex={index} onlyGoogle placeholderLabel={group.title} placeholderAccent={group.color} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/16 to-transparent" />
             </div>
             <div className="min-w-0 flex-1 p-3">
@@ -769,6 +806,7 @@ export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelSty
           </div>
         ))}
       </div>
+      <PlaceGalleryModal open={!!gallery} onClose={() => setGallery(null)} title={gallery?.title || dest} queries={gallery?.queries || []} accent={gallery?.accent || "#38BDF8"} isLight={isLight} />
     </div>
   );
 }
