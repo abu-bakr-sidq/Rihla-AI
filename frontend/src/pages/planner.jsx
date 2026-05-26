@@ -4216,7 +4216,7 @@ export default function Planner() {
                     <div className={cn(
                       "absolute inset-0 transition-colors duration-500",
                       isLightPlannerResult
-                        ? "bg-[linear-gradient(180deg,rgba(238,243,248,0.5)_0%,rgba(238,243,248,0.7)_34%,rgba(238,243,248,0.94)_100%)]"
+                        ? "bg-[linear-gradient(180deg,rgba(238,243,248,0.24)_0%,rgba(238,243,248,0.42)_34%,rgba(238,243,248,0.82)_100%)]"
                         : "bg-[linear-gradient(180deg,rgba(5,11,19,0.48)_0%,rgba(5,11,19,0.66)_34%,rgba(5,11,19,0.94)_100%)]"
                     )} />
                   </div>
@@ -4230,7 +4230,7 @@ export default function Planner() {
                       )}
                       style={{
                         background: isLightPlannerResult
-                          ? 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(241,245,249,0.92) 100%)'
+                          ? 'linear-gradient(180deg, rgba(255,255,255,0.58) 0%, rgba(241,245,249,0.68) 100%)'
                           : 'linear-gradient(180deg, rgba(7,15,28,0.96) 0%, rgba(6,12,24,0.94) 100%)'
                       }}
                     >
@@ -4248,13 +4248,13 @@ export default function Planner() {
                               <div className="grid h-full w-full grid-cols-1 md:grid-cols-3 gap-2 opacity-95">
                                 {headerImages.slice(0, 3).map((src, idx) => (
                                   <div key={`${src}-${idx}`} className={cn("relative h-full min-h-[180px] md:min-h-[220px] overflow-hidden", idx > 0 && "hidden md:block")}>
-                                    <img src={src} alt={`${DEST_SHORT} itinerary visual ${idx + 1}`} className="absolute inset-0 h-full w-full object-cover" />
+                                    <img src={src} alt={`${DEST_SHORT} itinerary visual ${idx + 1}`} className="absolute inset-0 h-full w-full object-cover" style={{ filter: isLightPlannerResult ? 'saturate(1.1) contrast(1.05)' : undefined }} />
                                   </div>
                                 ))}
                               </div>
                             </motion.div>
                           </AnimatePresence>
-                          <div className={cn("absolute inset-0", isLightPlannerResult ? "bg-[linear-gradient(120deg,rgba(255,255,255,0.94)_8%,rgba(255,255,255,0.76)_36%,rgba(255,255,255,0.52)_100%)]" : "bg-[linear-gradient(120deg,rgba(5,12,23,0.94)_8%,rgba(5,12,23,0.76)_36%,rgba(5,12,23,0.52)_100%)]")} />
+                          <div className={cn("absolute inset-0", isLightPlannerResult ? "bg-[linear-gradient(120deg,rgba(255,255,255,0.62)_8%,rgba(255,255,255,0.38)_36%,rgba(255,255,255,0.16)_100%)]" : "bg-[linear-gradient(120deg,rgba(5,12,23,0.94)_8%,rgba(5,12,23,0.76)_36%,rgba(5,12,23,0.52)_100%)]")} />
                           <div className={cn("absolute inset-0", isLightPlannerResult ? "bg-[radial-gradient(circle_at_top_right,rgba(212,175,55,0.16),transparent_30%)]" : "bg-[radial-gradient(circle_at_top_right,rgba(212,175,55,0.12),transparent_30%)]")} />
                         </div>
                       )}

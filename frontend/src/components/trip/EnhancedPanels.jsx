@@ -511,6 +511,7 @@ export function TripPreviewCard({ destination, imageUrl, selectedItem, currency,
             src={displayImage}
             alt={selectedItem?.place || dest}
             className="w-full h-full object-cover"
+            style={{ filter: isLight ? "saturate(1.12) contrast(1.06)" : undefined }}
             onError={(e) => {
               if (src && displayImage !== src) {
                 setActiveImage(src);
@@ -522,7 +523,7 @@ export function TripPreviewCard({ destination, imageUrl, selectedItem, currency,
         ) : (
           <div className={cn("absolute inset-0", isLight ? "bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.14),transparent_58%),linear-gradient(180deg,#dcebf8_0%,#bdd0e2_100%)]" : "bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_58%),linear-gradient(180deg,#142033_0%,#0b1321_100%)]")} />
         )}
-        <div className={cn("absolute inset-0", isLight ? "bg-[linear-gradient(to_top,rgba(248,250,252,0.84)_0%,rgba(248,250,252,0.18)_48%,transparent_100%)]" : "bg-[linear-gradient(to_top,rgba(7,12,20,0.96)_0%,rgba(7,12,20,0.42)_48%,transparent_100%)]")} />
+        <div className={cn("absolute inset-0", isLight ? "bg-[linear-gradient(to_top,rgba(248,250,252,0.58)_0%,rgba(248,250,252,0.1)_48%,transparent_100%)]" : "bg-[linear-gradient(to_top,rgba(7,12,20,0.96)_0%,rgba(7,12,20,0.42)_48%,transparent_100%)]")} />
         <div className="absolute left-5 right-5 bottom-4">
           {selectedItem ? (
             <>

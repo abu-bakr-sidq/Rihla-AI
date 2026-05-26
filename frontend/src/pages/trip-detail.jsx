@@ -987,9 +987,9 @@ export default function TripDetail() {
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
           <DashboardSlideshow customImages={backgroundSlides.length ? backgroundSlides : null} />
           <div className={`absolute inset-0 transition-all duration-500 ${isLightDetail
-            ? 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.08),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.07),transparent_22%),linear-gradient(180deg,rgba(248,251,255,0.18)_0%,rgba(241,246,251,0.38)_18%,rgba(236,243,249,0.6)_42%,rgba(234,241,247,0.82)_68%,rgba(231,239,246,0.94)_100%)]'
+            ? 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.05),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.05),transparent_22%),linear-gradient(180deg,rgba(248,251,255,0.06)_0%,rgba(241,246,251,0.16)_18%,rgba(236,243,249,0.3)_42%,rgba(234,241,247,0.58)_68%,rgba(231,239,246,0.82)_100%)]'
             : 'bg-[radial-gradient(circle_at_14%_20%,rgba(56,189,248,0.18),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(212,175,55,0.14),transparent_22%),linear-gradient(180deg,rgba(5,11,19,0.36)_0%,rgba(5,11,19,0.48)_18%,rgba(5,11,19,0.62)_42%,rgba(5,11,19,0.82)_68%,rgba(5,11,19,0.94)_100%)]'}`} />
-          <div className={`absolute inset-x-0 top-0 h-[34%] ${isLightDetail ? 'bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,0.18),transparent_56%)]' : 'bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,0.08),transparent_56%)]'}`} />
+          <div className={`absolute inset-x-0 top-0 h-[34%] ${isLightDetail ? 'bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,0.08),transparent_56%)]' : 'bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,0.08),transparent_56%)]'}`} />
           <div className={`absolute -left-[8%] top-[12%] h-[320px] w-[40%] rounded-full blur-[96px] ${isLightDetail ? 'bg-[#38BDF8]/10' : 'bg-[#38BDF8]/12'}`} />
           <div className={`absolute right-[0%] top-[6%] h-[280px] w-[30%] rounded-full blur-[88px] ${isLightDetail ? 'bg-[#D4AF37]/10' : 'bg-[#D4AF37]/12'}`} />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,11,19,0.12),transparent_10%,transparent_90%,rgba(5,11,19,0.12))]" />
@@ -1000,10 +1000,10 @@ export default function TripDetail() {
             className="trip-glass-panel mb-4 rounded-[28px] border px-4 py-4 md:px-5 md:py-5 shadow-[0_28px_90px_rgba(0,0,0,0.18)]"
             style={{
               background: isLightDetail
-                ? 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(244,248,252,0.96) 100%)'
+                ? 'linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(244,248,252,0.84) 100%)'
                 : 'linear-gradient(180deg, rgba(8,18,31,0.62) 0%, rgba(8,16,28,0.82) 100%)',
               borderColor: isLightDetail ? 'rgba(148,163,184,0.2)' : 'rgba(255,255,255,0.08)',
-              backdropFilter: 'blur(22px)'
+              backdropFilter: isLightDetail ? 'blur(14px) saturate(1.12)' : 'blur(22px)'
             }}
           >
             <div className="trip-detail-hero-grid mb-6 items-center gap-4 xl:gap-6">
