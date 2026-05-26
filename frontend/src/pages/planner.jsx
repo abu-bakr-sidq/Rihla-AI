@@ -4037,15 +4037,30 @@ export default function Planner() {
             })()}
 
             {step === 6 && (
-              <motion.div style={{ animation: 'cf-in 0.8s ease-out' }} className="flex flex-col items-center justify-center min-h-[40vh] space-y-12">
+              <motion.div style={{ animation: 'cf-in 0.8s ease-out' }} className="flex flex-col items-center justify-center min-h-[46vh]">
                 <style>{`@keyframes cf-in { from{opacity:0; filter:blur(20px)} to{opacity:1; filter:blur(0px)} } @keyframes cf-out { from{opacity:1; filter:blur(0px)} to{opacity:0; filter:blur(20px)} }`}</style>
-                <SpiralAnimation />
-                <div className="text-center space-y-3">
-                  <h3 className="text-white font-display font-bold text-2xl md:text-3xl tracking-wide uppercase">{LOAD_STEPS[loadStep] || "Finalizing Itinerary..."}</h3>
-                  <div className="w-64 h-1 bg-white/5 rounded-full overflow-hidden mx-auto mt-8">
-                    <motion.div className="h-full bg-gradient-to-r from-[#D4AF37] via-white/20 to-[#D4AF37]" initial={{ width: 0 }} animate={{ width: `${loadPct}%` }} />
+                <div className="relative w-full max-w-[620px] overflow-hidden rounded-[34px] border border-white/16 bg-[linear-gradient(145deg,rgba(3,8,16,0.86),rgba(8,16,28,0.78))] px-6 py-9 text-center shadow-[0_34px_110px_rgba(0,0,0,0.62)] backdrop-blur-2xl">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.16),transparent_34%),linear-gradient(180deg,rgba(0,0,0,0.12),rgba(0,0,0,0.36))]" />
+                  <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/70 to-transparent" />
+                  <div className="relative z-10">
+                    <SpiralAnimation />
+                    <div className="mt-8 space-y-3">
+                      <p className="text-[9px] font-black uppercase tracking-[0.52em] text-[#D4AF37] drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">Rihla AI is architecting your neural nodes</p>
+                      <h3 className="font-display text-2xl md:text-4xl font-black tracking-tight text-white uppercase drop-shadow-[0_4px_22px_rgba(0,0,0,0.95)]">
+                        {LOAD_STEPS[loadStep] || "Finalizing Itinerary..."}
+                      </h3>
+                      <div className="mx-auto mt-8 h-2 w-full max-w-[340px] overflow-hidden rounded-full border border-white/12 bg-black/48 shadow-[inset_0_1px_8px_rgba(0,0,0,0.65)]">
+                        <motion.div
+                          className="h-full rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F8E7A0] to-[#D4AF37] shadow-[0_0_22px_rgba(212,175,55,0.55)]"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${loadPct}%` }}
+                        />
+                      </div>
+                      <p className="mt-4 text-[10px] font-black tracking-[0.36em] text-[#F8E7A0] uppercase drop-shadow-[0_3px_14px_rgba(0,0,0,0.9)]">
+                        Processing Node: {loadPct}% complete
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-[10px] font-bold tracking-[0.4em] text-[#D4AF37] uppercase animate-pulse mt-4">Processing Node: {loadPct}% complete</p>
                 </div>
               </motion.div>
             )}
