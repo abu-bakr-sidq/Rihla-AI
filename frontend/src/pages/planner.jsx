@@ -2397,7 +2397,7 @@ function PlannerDayTimeline({ slots, slotCfg, isLight = false }) {
   return (
     <div
       className={cn(
-        "mb-6 rounded-2xl overflow-hidden relative transition-colors duration-500",
+        "mobile-day-timeline mb-6 rounded-2xl overflow-hidden relative transition-colors duration-500",
         isLight
           ? "shadow-[0_18px_40px_rgba(148,163,184,0.16)]"
           : "shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
@@ -2513,7 +2513,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
   return (
     <div
       id={`planner-activity-${slotKey}`}
-      className={`flex flex-col rounded-[20px] group transition-all duration-500 overflow-hidden cursor-pointer ${isSelected ? 'shadow-[0_0_0_2px_rgba(212,175,55,0.35),0_12px_40px_rgba(0,0,0,0.22)]' : (isLight ? 'shadow-[0_12px_32px_rgba(148,163,184,0.18)] hover:shadow-[0_18px_40px_rgba(148,163,184,0.24)]' : 'shadow-[0_4px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)]')} hover:-translate-y-1`}
+      className={`mobile-trip-card flex flex-col rounded-[20px] group transition-all duration-500 overflow-hidden cursor-pointer ${isSelected ? 'shadow-[0_0_0_2px_rgba(212,175,55,0.35),0_12px_40px_rgba(0,0,0,0.22)]' : (isLight ? 'shadow-[0_12px_32px_rgba(148,163,184,0.18)] hover:shadow-[0_18px_40px_rgba(148,163,184,0.24)]' : 'shadow-[0_4px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)]')} hover:-translate-y-1`}
       style={{
         background: isLight ? 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,250,252,0.98) 100%)' : '#0E1520',
         border: isSelected ? `1.5px solid ${accentColor}55` : (isLight ? '1px solid rgba(148,163,184,0.18)' : '1px solid rgba(255,255,255,0.07)'),
@@ -4536,7 +4536,7 @@ export default function Planner() {
 
                           return (
                             <div className="flex flex-col items-center xl:items-end gap-2.5 w-full xl:w-auto">
-                              <div className="flex flex-wrap items-center justify-center xl:justify-end gap-2">
+                              <div className="mobile-action-row flex flex-wrap items-center justify-center xl:justify-end gap-2">
                               <button
                                 onClick={async () => {
                                   if (exportingPreview || downloadingPdf) return;

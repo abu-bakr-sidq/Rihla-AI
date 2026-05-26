@@ -355,6 +355,221 @@ h4 {
   }
 }
 
+/* Mobile-first polish layer.
+   Desktop stays untouched: every rule below activates only on phone widths. */
+@media (max-width: 640px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .inner-app-root main {
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  .trip-detail-shell,
+  .planner-result-shell,
+  .admin-root {
+    overflow-x: clip;
+    padding-bottom: max(5.5rem, env(safe-area-inset-bottom));
+  }
+
+  .trip-detail-shell > .relative.z-10.mx-auto,
+  .planner-result-shell > .relative.z-10.mx-auto {
+    padding-left: 0.85rem !important;
+    padding-right: 0.85rem !important;
+    padding-top: 5.8rem !important;
+  }
+
+  .trip-detail-shell .trip-glass-panel,
+  .planner-result-shell .relative.z-10 > .rounded-\[28px\],
+  .planner-result-shell .relative.z-10 > .rounded-\[34px\] {
+    border-radius: 1.55rem !important;
+  }
+
+  .trip-detail-hero-grid,
+  .planner-result-hero-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.85rem !important;
+  }
+
+  .trip-detail-copy,
+  .planner-result-shell .planner-result-hero-grid > div:first-child {
+    min-width: 0;
+  }
+
+  .trip-detail-copy h1,
+  .planner-result-shell .planner-result-hero-grid h1 {
+    font-size: clamp(2.25rem, 15vw, 4.15rem) !important;
+    line-height: 0.86 !important;
+    letter-spacing: -0.07em !important;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  .trip-detail-copy p:first-child,
+  .planner-result-shell .planner-result-hero-grid p:first-child {
+    letter-spacing: 0.36em !important;
+    line-height: 1.55 !important;
+  }
+
+  .trip-detail-hero-center,
+  .planner-result-hero-center {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 0.65rem !important;
+  }
+
+  .trip-theme-surface,
+  .planner-result-hero-center > div {
+    width: 100%;
+    min-width: 0;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  .trip-theme-surface p:last-child,
+  .planner-result-hero-center p:last-child {
+    font-size: clamp(1.35rem, 7.8vw, 2.05rem) !important;
+    white-space: nowrap;
+  }
+
+  .mobile-action-row {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    width: 100%;
+    gap: 0.65rem !important;
+  }
+
+  .mobile-action-row > button,
+  .mobile-action-row > a {
+    justify-content: center;
+    width: 100%;
+    min-height: 3.35rem;
+    border-radius: 1rem !important;
+  }
+
+  .trip-detail-pill {
+    min-height: 3.25rem;
+    padding-inline: 1rem !important;
+    letter-spacing: 0.12em !important;
+  }
+
+  .mobile-day-timeline {
+    border-radius: 1.35rem !important;
+  }
+
+  .mobile-day-timeline > div:last-child {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-left: 0;
+    padding-right: 0;
+    scrollbar-width: none;
+  }
+
+  .mobile-day-timeline > div:last-child::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-day-timeline > div:last-child > div {
+    min-width: 44rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .mobile-day-timeline span {
+    text-wrap: balance;
+  }
+
+  .mobile-trip-card {
+    min-width: 0;
+    border-radius: 1.45rem !important;
+    transform: none !important;
+  }
+
+  .mobile-trip-card > div:first-child {
+    height: clamp(13.5rem, 58vw, 18rem) !important;
+  }
+
+  .mobile-trip-card > div:nth-child(2) {
+    padding: 1.15rem !important;
+  }
+
+  .mobile-trip-card h3 {
+    font-size: 1.28rem !important;
+    line-height: 1.08 !important;
+    letter-spacing: -0.035em !important;
+  }
+
+  .mobile-trip-card p {
+    font-size: 0.95rem;
+  }
+
+  .mobile-trip-card a,
+  .mobile-trip-card button {
+    min-height: 2.25rem;
+  }
+
+  .mobile-trip-card .absolute.bottom-3.left-3 {
+    max-width: calc(100% - 6.25rem);
+  }
+
+  .mobile-trip-card .absolute.bottom-3.left-3 button,
+  .mobile-trip-card .absolute.bottom-3.left-3 a {
+    padding-inline: 0.7rem !important;
+  }
+
+  .trip-detail-shell .flex.flex-col.xl\:flex-row,
+  .planner-result-shell .flex.flex-col.xl\:flex-row {
+    gap: 1rem !important;
+  }
+
+  .trip-detail-shell .w-full.xl\:w-\[300px\],
+  .planner-result-shell .w-full.md\:w-\[320px\] {
+    position: static !important;
+    width: 100% !important;
+  }
+
+  .planner-result-shell .mt-8,
+  .planner-result-shell .md\:mt-10 {
+    margin-top: 1.25rem !important;
+  }
+
+  .planner-result-shell .fixed.left-0.right-0.bottom-0 {
+    padding-left: 0.85rem !important;
+    padding-right: 0.85rem !important;
+    padding-bottom: max(0.85rem, env(safe-area-inset-bottom)) !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .trip-detail-hero-center,
+  .planner-result-hero-center {
+    grid-template-columns: 1fr;
+  }
+
+  .trip-detail-copy h1,
+  .planner-result-shell .planner-result-hero-grid h1 {
+    font-size: clamp(2rem, 14vw, 3.45rem) !important;
+  }
+
+  .mobile-day-timeline > div:last-child > div {
+    min-width: 40rem;
+  }
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 4px;
