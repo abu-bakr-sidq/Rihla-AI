@@ -591,6 +591,17 @@ function compactInsight(text = "", fallback = "") {
   return clean.split(/\s+/).slice(0, 16).join(" ").replace(/[,.!?;:]*$/, "");
 }
 
+function buildPlannedImageQueries(place = "", destination = "", intent = "tourist attraction") {
+  const cleanPlace = sanitizeVisibleText(place);
+  const cleanDest = normalizeDestination(destination);
+  return [
+    `${cleanPlace} ${cleanDest} ${intent}`,
+    `${cleanPlace}, ${cleanDest}`,
+    `${cleanPlace} ${cleanDest} Google Maps`,
+    `${cleanPlace} ${cleanDest} place photo`,
+  ].filter(Boolean);
+}
+
 export function TripHighlightsCard({ destination, totalDays, travelers, travelStyle, activeDay, isLight = false }) {
   const dest = normalizeDestination(destination);
   const style = sanitizeVisibleText(travelStyle || "Balanced");
@@ -615,7 +626,7 @@ export function TripHighlightsCard({ destination, totalDays, travelers, travelSt
       text: `Lead with ${stops[0]} while energy and light are clean.`,
       icon: Sun,
       accent: "#D4AF37",
-      imageQuery: `${stops[0]} ${dest}`,
+      imageQueries: buildPlannedImageQueries(stops[0], dest, `${style} morning attraction`),
       badge: "08:00",
     },
     {
@@ -623,7 +634,7 @@ export function TripHighlightsCard({ destination, totalDays, travelers, travelSt
       text: `${travellerCount} traveller route: one anchor, one flexible stop, one recovery pocket.`,
       icon: Users,
       accent: "#34D399",
-      imageQuery: `${stops[1]} ${dest}`,
+      imageQueries: buildPlannedImageQueries(stops[1], dest, `${style} stop`),
       badge: `${days}D`,
     },
     {
@@ -631,7 +642,7 @@ export function TripHighlightsCard({ destination, totalDays, travelers, travelSt
       text: compactInsight(`This ${cadence} plan prioritizes ${styleDirective}.`),
       icon: Compass,
       accent: "#818CF8",
-      imageQuery: `${stops[2]} ${dest}`,
+      imageQueries: buildPlannedImageQueries(stops[2], dest, `${style} itinerary`),
       badge: "AI",
     },
   ];
@@ -646,14 +657,17 @@ export function TripHighlightsCard({ destination, totalDays, travelers, travelSt
         <span className={cn("rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.22em]", isLight ? "bg-[#D4AF37]/15 text-slate-700" : "bg-[#D4AF37]/12 text-[#F8E7A0]")}>Concierge Logic</span>
       </div>
       <div className="space-y-3">
-        {rows.map((row) => (
+        {rows.map((row, index) => (
           <div key={row.title} className={cn("group overflow-hidden rounded-[22px] border", isLight ? "border-slate-200 bg-white/82" : "border-white/[0.06] bg-white/[0.035]")}>
             <div className="relative h-24 overflow-hidden">
               <PlaceImage
-                queries={[row.imageQuery, `${dest} travel`, `${dest} landmark`]}
+                queries={row.imageQueries}
                 alt={row.title}
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                photoIndex={rows.indexOf(row)}
+                photoIndex={index}
+                onlyGoogle
+                placeholderLabel={stops[index] || dest}
+                placeholderAccent={row.accent}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-black/24 to-transparent" />
               <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-white/14 bg-black/42 px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.18em] text-white backdrop-blur-md">
@@ -688,7 +702,7 @@ export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelSty
       color: "#D4AF37",
       Icon: Compass,
       title: stops[0],
-      imageQuery: `${stops[0]} ${dest}`,
+      imageQueries: buildPlannedImageQueries(stops[0], dest, "hidden gem"),
       text: compactInsight(gems[0], `Check the quieter lane near ${stops[0]} before crowds arrive.`),
     },
     {
@@ -696,8 +710,8 @@ export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelSty
       label: "Photo Spots",
       color: "#818CF8",
       Icon: Camera,
-      title: photos[0] || stops[1],
-      imageQuery: `${photos[0] || stops[1]} ${dest}`,
+      title: stops[1],
+      imageQueries: buildPlannedImageQueries(stops[1], dest, "photo spot"),
       text: compactInsight(photos[1], `Use side angles at ${photos[0] || stops[1]} for a cleaner frame.`),
     },
     {
@@ -705,8 +719,8 @@ export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelSty
       label: "Local Tips",
       color: "#34D399",
       Icon: Lightbulb,
-      title: "Local Move",
-      imageQuery: `${stops[2]} ${dest} local street`,
+      title: stops[2],
+      imageQueries: buildPlannedImageQueries(stops[2], dest, "local street"),
       text: compactInsight(tips[0], `For a ${style} trip, keep one open pocket for a real local find.`),
     },
     {
@@ -714,8 +728,8 @@ export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelSty
       label: "Avoid",
       color: "#F87171",
       Icon: Sunset,
-      title: "Skip Friction",
-      imageQuery: `${stops[3]} ${dest}`,
+      title: stops[3],
+      imageQueries: buildPlannedImageQueries(stops[3], dest, "travel stop"),
       text: compactInsight(avoid[0], `Do not chain distant stops without a cafe or rest buffer.`),
     },
   ];
@@ -730,14 +744,17 @@ export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelSty
         <span className={cn("rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.22em]", isLight ? "bg-sky-100 text-sky-900" : "bg-sky-400/10 text-sky-200")}>Field Notes</span>
       </div>
       <div className="grid grid-cols-1 gap-3">
-        {groups.map((group) => (
+        {groups.map((group, index) => (
           <div key={group.key} className={cn("group flex min-h-[104px] overflow-hidden rounded-[22px] border", isLight ? "bg-white/82 border-slate-200 shadow-[0_10px_24px_rgba(148,163,184,0.12)]" : "bg-white/[0.035] border-white/[0.055]")}>
             <div className="relative w-[104px] shrink-0 overflow-hidden">
               <PlaceImage
-                queries={[group.imageQuery, `${dest} travel`, `${dest} landmark`]}
+                queries={group.imageQueries}
                 alt={group.title}
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                photoIndex={groups.indexOf(group)}
+                photoIndex={index}
+                onlyGoogle
+                placeholderLabel={group.title}
+                placeholderAccent={group.color}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/16 to-transparent" />
             </div>

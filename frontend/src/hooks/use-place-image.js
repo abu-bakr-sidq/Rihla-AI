@@ -142,7 +142,7 @@ export function usePlaceImage(query, options = {}) {
 // Component: PlaceImage — renders an <img> with Google Places src
 // Written with createElement to avoid requiring JSX in a .js file
 // ─────────────────────────────────────────────────────────────────────────────
-export function PlaceImage({ query, queries, alt, className, fallbackSrc, style, photoIndex = 0, onlyGoogle = false }) {
+export function PlaceImage({ query, queries, alt, className, fallbackSrc, style, photoIndex = 0, onlyGoogle = false, placeholderLabel = "Rihla image", placeholderAccent = "#D4AF37" }) {
   const lookup = Array.isArray(queries) && queries.length ? queries : query;
   const { src, loading } = usePlaceImage(lookup, { photoIndex, onlyGoogle });
   const fallbackChain = onlyGoogle ? [] : [fallbackSrc, ...buildUnsplashFallback(lookup, photoIndex)].filter(Boolean);
@@ -159,11 +159,14 @@ export function PlaceImage({ query, queries, alt, className, fallbackSrc, style,
   if (loading && !displaySrc) {
     // Spinner while loading
     return createElement("div", {
+      className: cls,
       style: {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg,rgba(212,175,55,0.05) 0%,rgba(15,22,35,0.8) 100%)",
+        flexDirection: "column",
+        gap: 8,
+        background: `radial-gradient(circle at 50% 35%, ${placeholderAccent}22, transparent 34%), linear-gradient(135deg,rgba(8,14,24,0.96) 0%,rgba(15,22,35,0.88) 100%)`,
         width: "100%",
         height: "100%",
         ...style,
@@ -171,14 +174,25 @@ export function PlaceImage({ query, queries, alt, className, fallbackSrc, style,
     },
       createElement("div", {
         style: {
-          width: 28,
-          height: 28,
+          width: 26,
+          height: 26,
           borderRadius: "50%",
-          border: "2px solid rgba(212,175,55,0.2)",
-          borderTopColor: "#D4AF37",
+          border: `2px solid ${placeholderAccent}30`,
+          borderTopColor: placeholderAccent,
           animation: "spin 0.9s linear infinite",
         },
-      })
+      }),
+      createElement("span", {
+        style: {
+          color: "rgba(255,255,255,0.72)",
+          fontSize: 8,
+          fontWeight: 900,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          padding: "0 14px",
+          textAlign: "center",
+        },
+      }, "Locking place image")
     );
   }
 
@@ -186,10 +200,22 @@ export function PlaceImage({ query, queries, alt, className, fallbackSrc, style,
     return createElement("div", {
       className: cls,
       style: {
-        background: "linear-gradient(135deg, rgba(15,23,42,0.92) 0%, rgba(30,41,59,0.86) 48%, rgba(14,165,233,0.24) 100%)",
+        display: "flex",
+        alignItems: "end",
+        background: `radial-gradient(circle at 20% 10%, ${placeholderAccent}24, transparent 30%), linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(30,41,59,0.9) 48%, rgba(14,165,233,0.18) 100%)`,
         ...style,
       },
-    });
+    }, createElement("span", {
+      style: {
+        color: "rgba(255,255,255,0.78)",
+        fontSize: 9,
+        fontWeight: 900,
+        letterSpacing: "0.2em",
+        textTransform: "uppercase",
+        padding: 14,
+        textShadow: "0 2px 12px rgba(0,0,0,0.85)",
+      },
+    }, placeholderLabel));
   }
 
   return createElement("img", {
