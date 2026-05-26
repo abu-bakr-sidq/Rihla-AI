@@ -135,6 +135,25 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
 
           {!!images.length && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <a
+                href={videoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="group relative h-[230px] overflow-hidden rounded-[22px] border border-[#D4AF37]/28 bg-[radial-gradient(circle_at_30%_20%,rgba(212,175,55,0.2),transparent_40%),linear-gradient(135deg,#0b1423,#050912)] shadow-[0_16px_42px_rgba(0,0,0,0.34)] sm:h-[244px]"
+              >
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_30%,rgba(125,211,252,0.12),transparent_34%)]" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#D4AF37]/34 bg-[#D4AF37]/10 shadow-[0_0_46px_rgba(212,175,55,0.16)] transition-transform group-hover:scale-110">
+                    <PlayCircle size={30} className="text-[#F8E7A0]" />
+                  </div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">Exact Video Walkthrough</p>
+                  <p className="mt-2 text-lg font-black leading-tight text-white">Watch this place in motion</p>
+                  <p className="mt-2 text-[11px] font-semibold leading-relaxed text-white/62">Opens YouTube search for this exact planned stop.</p>
+                </div>
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-white/78">Video</p>
+                </div>
+              </a>
               {images.map((image, index) => (
                 <a key={`${image.url}-${index}`} href={image.url} target="_blank" rel="noreferrer" className="group relative h-[230px] overflow-hidden rounded-[22px] border border-white/10 bg-black shadow-[0_16px_42px_rgba(0,0,0,0.32)] sm:h-[244px]">
                   <img src={image.url} alt={`${title} ${index + 1}`} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -143,21 +162,6 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
                   </div>
                 </a>
               ))}
-              <a
-                href={videoUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="group relative h-[230px] overflow-hidden rounded-[22px] border border-[#D4AF37]/24 bg-[radial-gradient(circle_at_30%_20%,rgba(212,175,55,0.16),transparent_38%),linear-gradient(135deg,#0b1423,#050912)] shadow-[0_16px_42px_rgba(0,0,0,0.34)] sm:h-[244px]"
-              >
-                <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center">
-                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 shadow-[0_0_42px_rgba(212,175,55,0.12)] transition-transform group-hover:scale-110">
-                    <PlayCircle size={26} className="text-[#F8E7A0]" />
-                  </div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">Exact Video Search</p>
-                  <p className="mt-2 text-lg font-black leading-tight text-white">Open real walkthroughs</p>
-                  <p className="mt-2 text-[11px] font-semibold leading-relaxed text-white/62">No unrelated in-app video. This opens YouTube for this exact stop.</p>
-                </div>
-              </a>
             </div>
           )}
         </div>

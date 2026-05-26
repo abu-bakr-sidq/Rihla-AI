@@ -30,15 +30,28 @@ function parseDisplayCost(value) {
   return parts.length > 1 ? Math.round(parts.reduce((sum, part) => sum + part, 0) / parts.length) : parts[0];
 }
 
-function resolveStopDisplayCost(value, { dayTotal = 0, slotCount = 8, travelStyle = '' } = {}) {
+const STOP_COST_SLOT_WEIGHT = {
+  morning: 0.82,
+  morningActivity: 0.96,
+  afternoon: 1.04,
+  afternoonActivity: 1.18,
+  evening: 1.31,
+  eveningActivity: 1.43,
+  night: 1.24,
+  nightActivity: 1.52,
+};
+
+function resolveStopDisplayCost(value, { dayTotal = 0, slotCount = 8, travelStyle = '', slotKey = '', cardIndex = 0 } = {}) {
   const raw = parseDisplayCost(value);
   const total = parseDisplayCost(dayTotal);
   if (!total) return Math.max(0, Math.round(raw));
   const style = String(travelStyle || '').toLowerCase();
   const styleFactor = style.includes('luxury') ? 1.12 : style.includes('premium') ? 0.98 : style.includes('budget') ? 0.62 : 0.82;
-  const floor = Math.max(1, Math.round((total / Math.max(1, slotCount || 8)) * styleFactor));
+  const slotFactor = STOP_COST_SLOT_WEIGHT[slotKey] || (0.9 + ((Number(cardIndex) || 0) % 5) * 0.11);
+  const distinctNudge = 1 + (((Number(cardIndex) || 0) % 4) - 1.5) * 0.035;
+  const floor = Math.max(1, Math.round((total / Math.max(1, slotCount || 8)) * styleFactor * slotFactor * distinctNudge));
   if (!raw || raw < floor * 0.45) return floor;
-  return Math.round(raw);
+  return Math.max(1, Math.round(raw * slotFactor * distinctNudge));
 }
 
 const PLAN_SLOT_COLORS = {
@@ -1269,6 +1282,8 @@ export default function TripDetail() {
                           dayTotal: activeDay.budget?.total || TOTAL_BUDGET / Math.max(1, daysData.length || 1),
                           slotCount: activeDay.slots.length,
                           travelStyle: effectiveTravelStyle,
+                          slotKey: sk,
+                          cardIndex: activeDayIdx * 8 + cardIdx,
                         });
                         return (
                           <PlannerDetailCard
