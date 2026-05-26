@@ -524,7 +524,7 @@ export function TripPreviewCard({ destination, imageUrl, selectedItem, currency,
           <div className={cn("absolute inset-0", isLight ? "bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.14),transparent_58%),linear-gradient(180deg,#dcebf8_0%,#bdd0e2_100%)]" : "bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.18),transparent_58%),linear-gradient(180deg,#142033_0%,#0b1321_100%)]")} />
         )}
         <div className={cn("absolute inset-0", isLight ? "bg-[linear-gradient(to_top,rgba(248,250,252,0.58)_0%,rgba(248,250,252,0.1)_48%,transparent_100%)]" : "bg-[linear-gradient(to_top,rgba(7,12,20,0.96)_0%,rgba(7,12,20,0.42)_48%,transparent_100%)]")} />
-        <div className="absolute left-5 right-5 bottom-4">
+        <div className={cn("absolute left-5 right-5 bottom-4 rounded-2xl px-3 py-2 backdrop-blur-md", isLight ? "bg-white/72 shadow-[0_10px_24px_rgba(15,23,42,0.12)]" : "bg-black/10")}>
           {selectedItem ? (
             <>
               <p className="text-[9px] font-black uppercase tracking-[0.36em] text-[#D4AF37] mb-1">Selected Stop</p>
@@ -533,7 +533,7 @@ export function TripPreviewCard({ destination, imageUrl, selectedItem, currency,
             </>
           ) : (
             <>
-              <p className="text-[9px] font-black uppercase tracking-[0.36em] text-[#D4AF37] mb-1">Your Destination</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.36em] text-[#B88900] mb-1 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">Your Destination</p>
               <h3 className={cn("text-[24px] font-black uppercase leading-tight", isLight ? "text-slate-950" : "text-white")}>{dest}</h3>
             </>
           )}

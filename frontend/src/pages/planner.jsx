@@ -2480,11 +2480,11 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
       {/* ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ Content body ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ */}
       <div className="p-5 flex flex-col gap-0 flex-1">
         <h3 className={cn("text-[17px] font-black leading-tight mb-2 tracking-wide transition-colors", isLight ? "text-slate-950 group-hover:text-sky-600" : "text-white group-hover:text-[#38BDF8]")}>{place}</h3>
-        <p className={cn("text-[12px] leading-relaxed mb-4 line-clamp-3 font-medium", isLight ? "text-slate-700" : "text-white/55")}>{activity}</p>
+        <p className={cn("text-[12px] leading-relaxed mb-4 line-clamp-3 font-semibold", isLight ? "text-slate-800" : "text-white/55")}>{activity}</p>
 
         {/* Cultural context */}
         {cultural_context && (
-          <p className={cn("text-[11px] leading-relaxed italic border-l-2 pl-3 mb-4", isLight ? "text-sky-800 border-sky-300/70" : "text-[#38BDF8]/75 border-[#38BDF8]/20")}>
+          <p className={cn("text-[11px] leading-relaxed italic border-l-2 pl-3 mb-4 font-semibold", isLight ? "text-sky-950 border-sky-400/80" : "text-[#38BDF8]/75 border-[#38BDF8]/20")}>
             {cultural_context}
           </p>
         )}
@@ -2493,7 +2493,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1.5 h-3.5 rounded-full" style={{ background: accentColor }} />
-            <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-700" : "text-white/40")}>Time Plan</span>
+            <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-900" : "text-white/40")}>Time Plan</span>
           </div>
           <div className="space-y-2 pl-1">
             {schedule.map((step, i) => (
@@ -2502,7 +2502,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
                   <div className="absolute inset-0 rounded-full blur-[2px]" style={{ background: accentColor, opacity: 0.6 }} />
                   <div className="relative w-1.5 h-1.5 rounded-full z-10" style={{ background: accentColor }} />
                 </div>
-                <p className={cn("text-[11.5px] leading-relaxed font-semibold", isLight ? "text-slate-700" : "text-white/60")}>{step}</p>
+                <p className={cn("text-[11.5px] leading-relaxed font-semibold", isLight ? "text-slate-800" : "text-white/60")}>{step}</p>
               </div>
             ))}
           </div>
@@ -2512,7 +2512,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
         <div className={cn("mb-4 pt-4 border-t", isLight ? "border-slate-200/80" : "border-white/[0.04]")}>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1.5 h-3.5 rounded-full bg-[#38BDF8]" />
-            <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-700" : "text-white/40")}>Street Finds</span>
+            <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-900" : "text-white/40")}>Street Finds</span>
           </div>
           <div className="flex flex-wrap gap-2 pl-1">
             {streetFinds.map((s, i) => (
@@ -2520,11 +2520,12 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${s} ${place} ${destination}`.trim())}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[10px] px-2.5 py-1 rounded-[6px] font-bold tracking-wide hover:scale-[1.02] transition-transform"
+                className="text-[10px] px-2.5 py-1 rounded-[7px] font-black tracking-wide hover:scale-[1.02] transition-transform"
                 style={{
-                  background: isLight ? 'rgba(2,132,199,0.1)' : 'rgba(56,189,248,0.06)',
-                  border: isLight ? '1px solid rgba(2,132,199,0.28)' : '1px solid rgba(56,189,248,0.2)',
-                  color: isLight ? '#075985' : '#7DD3FC',
+                  background: isLight ? 'rgba(3,105,161,0.16)' : 'rgba(56,189,248,0.06)',
+                  border: isLight ? '1px solid rgba(3,105,161,0.42)' : '1px solid rgba(56,189,248,0.2)',
+                  color: isLight ? '#0C4A6E' : '#7DD3FC',
+                  boxShadow: isLight ? '0 6px 14px rgba(3,105,161,0.08)' : 'none',
                 }}
               >
                 {s}
@@ -2537,7 +2538,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
         <div className={cn("pt-4 border-t mt-auto flex flex-col h-[252px]", isLight ? "border-slate-200/80" : "border-white/[0.04]")}>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1.5 h-3.5 rounded-full bg-[#10B981]" />
-            <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-700" : "text-white/40")}>Explore Options</span>
+            <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", isLight ? "text-slate-900" : "text-white/40")}>Explore Options</span>
           </div>
           <div
             className={expanded ? "space-y-2.5 pl-1 h-[176px] overflow-y-auto overscroll-contain pr-2" : "space-y-2.5 pl-1 h-[176px] overflow-hidden"}
@@ -2548,9 +2549,9 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
             } : undefined}
           >
             {ideas.slice(0, expanded ? ideas.length : 2).map((idea, i) => (
-              <div key={i} className={cn("flex gap-2.5 items-start p-2.5 rounded-xl border", isLight ? "bg-slate-50 border-slate-200/80" : "bg-white/[0.02] border-white/[0.02]")}>
+              <div key={i} className={cn("flex gap-2.5 items-start p-2.5 rounded-xl border", isLight ? "bg-white border-slate-300/90 shadow-[0_8px_18px_rgba(15,23,42,0.05)]" : "bg-white/[0.02] border-white/[0.02]")}>
                 <span className="text-[12px] shrink-0 font-bold" style={{ color: '#10B981' }}>-</span>
-                <p className={cn("text-[11.5px] leading-relaxed italic font-medium", isLight ? "text-slate-700" : "text-white/60")}>{idea}</p>
+                <p className={cn("text-[11.5px] leading-relaxed italic font-semibold", isLight ? "text-slate-800" : "text-white/60")}>{idea}</p>
               </div>
             ))}
           </div>
@@ -2577,7 +2578,7 @@ function PlanCard({ place, activity, slotKey, slotLabel, slotIcon: SlotIcon, slo
         {transport && (
           <div className="flex items-start gap-2 mt-2">
             <span className={cn("text-[9px] font-black uppercase tracking-widest shrink-0 mt-0.5", isLight ? "text-slate-400" : "text-white/25")}>How to get there</span>
-            <span className={cn("text-[11px] leading-relaxed", isLight ? "text-slate-700" : "text-white/40")}>{transport}</span>
+            <span className={cn("text-[11px] leading-relaxed", isLight ? "text-slate-800" : "text-white/40")}>{transport}</span>
           </div>
         )}
       </div>
@@ -4041,26 +4042,26 @@ export default function Planner() {
             })()}
 
             {step === 6 && (
-              <motion.div style={{ animation: 'cf-in 0.8s ease-out' }} className="flex flex-col items-center justify-center min-h-[46vh]">
+              <motion.div style={{ animation: 'cf-in 0.8s ease-out' }} className="flex flex-col items-center justify-center min-h-[42vh]">
                 <style>{`@keyframes cf-in { from{opacity:0; filter:blur(20px)} to{opacity:1; filter:blur(0px)} } @keyframes cf-out { from{opacity:1; filter:blur(0px)} to{opacity:0; filter:blur(20px)} }`}</style>
-                <div className="relative w-full max-w-[620px] overflow-hidden rounded-[34px] border border-white/16 bg-[linear-gradient(145deg,rgba(3,8,16,0.86),rgba(8,16,28,0.78))] px-6 py-9 text-center shadow-[0_34px_110px_rgba(0,0,0,0.62)] backdrop-blur-2xl">
+                <div className="relative w-full max-w-[430px] overflow-hidden rounded-[24px] border border-white/14 bg-[linear-gradient(145deg,rgba(3,8,16,0.82),rgba(8,16,28,0.74))] px-5 py-6 text-center shadow-[0_24px_70px_rgba(0,0,0,0.5)] backdrop-blur-xl">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.16),transparent_34%),linear-gradient(180deg,rgba(0,0,0,0.12),rgba(0,0,0,0.36))]" />
                   <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/70 to-transparent" />
                   <div className="relative z-10">
-                    <SpiralAnimation />
-                    <div className="mt-8 space-y-3">
-                      <p className="text-[9px] font-black uppercase tracking-[0.52em] text-[#D4AF37] drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">Rihla AI is architecting your neural nodes</p>
-                      <h3 className="font-display text-2xl md:text-4xl font-black tracking-tight text-white uppercase drop-shadow-[0_4px_22px_rgba(0,0,0,0.95)]">
+                    <SpiralAnimation text="" className="gap-0 scale-[0.62] -my-12" />
+                    <div className="mt-3 space-y-2">
+                      <p className="text-[8px] font-black uppercase tracking-[0.34em] text-[#D4AF37] drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">Rihla AI is architecting your route</p>
+                      <h3 className="font-display text-xl md:text-2xl font-black tracking-tight text-white uppercase drop-shadow-[0_4px_18px_rgba(0,0,0,0.9)]">
                         {LOAD_STEPS[loadStep] || "Finalizing Itinerary..."}
                       </h3>
-                      <div className="mx-auto mt-8 h-2 w-full max-w-[340px] overflow-hidden rounded-full border border-white/12 bg-black/48 shadow-[inset_0_1px_8px_rgba(0,0,0,0.65)]">
+                      <div className="mx-auto mt-5 h-1.5 w-full max-w-[280px] overflow-hidden rounded-full border border-white/12 bg-black/48 shadow-[inset_0_1px_8px_rgba(0,0,0,0.65)]">
                         <motion.div
                           className="h-full rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F8E7A0] to-[#D4AF37] shadow-[0_0_22px_rgba(212,175,55,0.55)]"
                           initial={{ width: 0 }}
                           animate={{ width: `${loadPct}%` }}
                         />
                       </div>
-                      <p className="mt-4 text-[10px] font-black tracking-[0.36em] text-[#F8E7A0] uppercase drop-shadow-[0_3px_14px_rgba(0,0,0,0.9)]">
+                      <p className="mt-3 text-[9px] font-black tracking-[0.22em] text-[#F8E7A0] uppercase drop-shadow-[0_3px_12px_rgba(0,0,0,0.85)]">
                         Processing Node: {loadPct}% complete
                       </p>
                     </div>
@@ -4291,8 +4292,8 @@ export default function Planner() {
                           </div>
                         </div>
                         <div className="planner-result-hero-center flex flex-col sm:flex-row items-stretch justify-center gap-3">
-                            <div className={cn("rounded-[18px] border px-3 py-2.5 backdrop-blur-xl shadow-[0_14px_34px_rgba(15,23,42,0.14)]", isLightPlannerResult ? "border-slate-200/80 bg-white/78" : "border-white/8 bg-[rgba(7,17,29,0.62)]")}>
-                              <p className={cn("mb-1.5 text-[9px] font-black uppercase tracking-[0.32em] text-center", isLightPlannerResult ? "text-slate-500" : "text-white/34")}>Theme</p>
+                            <div className={cn("rounded-[18px] border px-3 py-2.5 backdrop-blur-xl shadow-[0_14px_34px_rgba(15,23,42,0.14)]", isLightPlannerResult ? "border-white/90 bg-white/92 shadow-[0_14px_34px_rgba(15,23,42,0.18)]" : "border-white/8 bg-[rgba(7,17,29,0.62)]")}>
+                              <p className={cn("mb-1.5 text-[9px] font-black uppercase tracking-[0.32em] text-center", isLightPlannerResult ? "text-slate-700" : "text-white/34")}>Theme</p>
                               <div className="flex justify-center">
                                 <ThemeToggle
                                   compact={true}
@@ -4302,9 +4303,9 @@ export default function Planner() {
                                 />
                               </div>
                             </div>
-                            <div className={cn("rounded-[20px] border px-4 py-3 text-center backdrop-blur-xl", isLightPlannerResult ? "border-slate-200/90 bg-white/82" : "border-white/70 bg-[rgba(8,15,28,0.55)]")}>
-                              <p className={cn("text-[9px] uppercase tracking-widest mb-1", isLightPlannerResult ? "text-slate-500" : "text-white/28")}>Total Budget</p>
-                              <p className="text-[clamp(1.75rem,3vw,2.7rem)] font-display font-black text-[#D4AF37] tracking-tight leading-none">{fmtCur(res.total_budget?.total || 0, formData.currency)}</p>
+                            <div className={cn("rounded-[20px] border px-4 py-3 text-center backdrop-blur-xl", isLightPlannerResult ? "border-white/90 bg-white/92 shadow-[0_14px_34px_rgba(15,23,42,0.18)]" : "border-white/70 bg-[rgba(8,15,28,0.55)]")}>
+                              <p className={cn("text-[9px] uppercase tracking-widest mb-1 font-black", isLightPlannerResult ? "text-slate-700" : "text-white/28")}>Total Budget</p>
+                              <p className="text-[clamp(1.65rem,2.8vw,2.45rem)] font-display font-black text-[#D4AF37] tracking-tight leading-none drop-shadow-[0_1px_0_rgba(255,255,255,0.55)]">{fmtCur(res.total_budget?.total || 0, formData.currency)}</p>
                             </div>
                           </div>
                         {/* ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ PDF Export Button ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ */}
@@ -4461,13 +4462,20 @@ export default function Planner() {
                               transition={{ duration: 0.28, ease: 'easeOut' }}
                             >
                               {/* Day title row */}
-                              <div className="flex items-center gap-3 mb-5">
+                              <div
+                                className={cn(
+                                  "flex items-center gap-3 mb-5 rounded-2xl border px-3 py-2.5 backdrop-blur-xl",
+                                  isLightPlannerResult
+                                    ? "bg-white/88 border-white/80 shadow-[0_14px_32px_rgba(15,23,42,0.12)]"
+                                    : "bg-black/18 border-white/8"
+                                )}
+                              >
                                 <div className="w-9 h-9 rounded-xl bg-[#D4AF37] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#D4AF37]/30">
                                   <span className="text-sm font-black text-black">{activeDay.day}</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <h2 className={cn("text-[18px] font-display font-black uppercase tracking-wide", isLightPlannerResult ? "text-slate-950" : "text-white")}>{activeDay.theme}</h2>
-                                  <p className={cn("text-[10px] font-mono mt-0.5 font-semibold", isLightPlannerResult ? "text-slate-700" : "text-white/35")}>{activeDay.date}</p>
+                                  <p className={cn("text-[10px] font-mono mt-0.5 font-black", isLightPlannerResult ? "text-slate-800" : "text-white/35")}>{activeDay.date}</p>
                                 </div>
                                 <span
                                   className={cn(

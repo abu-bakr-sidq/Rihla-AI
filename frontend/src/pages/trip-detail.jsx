@@ -149,12 +149,12 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
 
       <div className="p-5 flex flex-col gap-0 flex-1">
         <h3 className={`text-[17px] font-black leading-tight mb-2 tracking-wide transition-colors ${isLight ? 'text-slate-900 group-hover:text-sky-600' : 'text-white group-hover:text-[#38BDF8]'}`}>{displayPlace}</h3>
-        <p className={`text-[12px] leading-relaxed mb-4 line-clamp-3 font-medium ${isLight ? 'text-slate-700' : 'text-white/55'}`}>{activity}</p>
+        <p className={`text-[12px] leading-relaxed mb-4 line-clamp-3 font-semibold ${isLight ? 'text-slate-800' : 'text-white/55'}`}>{activity}</p>
 
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1.5 h-3.5 rounded-full" style={{ background: accentColor }} />
-            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Time Plan</span>
+            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isLight ? 'text-slate-900' : 'text-white/40'}`}>Time Plan</span>
           </div>
           <div className="space-y-2 pl-1">
             {schedule.map((step, i) => (
@@ -163,7 +163,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
                   <div className="absolute inset-0 rounded-full blur-[2px]" style={{ background: accentColor, opacity: 0.6 }} />
                   <div className="relative w-1.5 h-1.5 rounded-full z-10" style={{ background: accentColor }} />
                 </div>
-                <p className={`text-[11.5px] leading-relaxed font-semibold ${isLight ? 'text-slate-700' : 'text-white/60'}`}>{step}</p>
+                <p className={`text-[11.5px] leading-relaxed font-semibold ${isLight ? 'text-slate-800' : 'text-white/60'}`}>{step}</p>
               </div>
             ))}
           </div>
@@ -172,7 +172,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
         <div className={`mb-4 pt-4 border-t ${isLight ? 'border-slate-300/45' : 'border-white/[0.04]'}`}>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1.5 h-3.5 rounded-full bg-[#38BDF8]" />
-            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Street Finds</span>
+            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isLight ? 'text-slate-900' : 'text-white/40'}`}>Street Finds</span>
           </div>
           <div className="flex flex-wrap gap-2 pl-1">
             {streetFinds.map((s, i) => (
@@ -180,11 +180,12 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.query)}`}
                 target="_blank"
                 rel="noreferrer"
-                className={`text-[10px] px-2.5 py-1 rounded-[6px] font-bold tracking-wide hover:scale-[1.02] transition-transform ${isLight ? 'hover:bg-sky-50' : ''}`}
+                className={`text-[10px] px-2.5 py-1 rounded-[7px] font-black tracking-wide hover:scale-[1.02] transition-transform ${isLight ? 'hover:bg-sky-100' : ''}`}
                 style={{
-                  background: isLight ? 'rgba(2,132,199,0.1)' : 'rgba(56,189,248,0.06)',
-                  border: isLight ? '1px solid rgba(2,132,199,0.28)' : '1px solid rgba(56,189,248,0.2)',
-                  color: isLight ? '#075985' : '#7DD3FC',
+                  background: isLight ? 'rgba(3,105,161,0.16)' : 'rgba(56,189,248,0.06)',
+                  border: isLight ? '1px solid rgba(3,105,161,0.42)' : '1px solid rgba(56,189,248,0.2)',
+                  color: isLight ? '#0C4A6E' : '#7DD3FC',
+                  boxShadow: isLight ? '0 6px 14px rgba(3,105,161,0.08)' : 'none',
                 }}
               >
                 {s.label}
@@ -196,7 +197,7 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
         <div className={`pt-4 border-t mt-auto flex flex-col h-[252px] ${isLight ? 'border-slate-300/45' : 'border-white/[0.04]'}`}>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1.5 h-3.5 rounded-full bg-[#10B981]" />
-            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Explore Options</span>
+            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isLight ? 'text-slate-900' : 'text-white/40'}`}>Explore Options</span>
           </div>
           <div
             className={expanded ? "space-y-2.5 pl-1 h-[176px] overflow-y-auto overscroll-contain pr-2" : "space-y-2.5 pl-1 h-[176px] overflow-hidden"}
@@ -207,9 +208,9 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
             } : undefined}
           >
             {ideas.slice(0, expanded ? ideas.length : 2).map((idea, i) => (
-              <div key={i} className={`flex gap-2.5 items-start p-2.5 rounded-xl border ${isLight ? 'bg-white/70 border-slate-300/45' : 'bg-white/[0.02] border-white/[0.02]'}`}>
+              <div key={i} className={`flex gap-2.5 items-start p-2.5 rounded-xl border ${isLight ? 'bg-white border-slate-300/90 shadow-[0_8px_18px_rgba(15,23,42,0.05)]' : 'bg-white/[0.02] border-white/[0.02]'}`}>
                 <span className="text-[12px] shrink-0 font-bold" style={{ color: '#10B981' }}>-</span>
-                <p className={`text-[11.5px] leading-relaxed italic font-medium ${isLight ? 'text-slate-700' : 'text-white/60'}`}>{idea}</p>
+                <p className={`text-[11.5px] leading-relaxed italic font-semibold ${isLight ? 'text-slate-800' : 'text-white/60'}`}>{idea}</p>
               </div>
             ))}
           </div>
@@ -1026,11 +1027,11 @@ export default function TripDetail() {
               <div className="trip-detail-hero-center flex flex-col sm:flex-row items-stretch justify-center gap-3">
                 <div className={`trip-theme-surface rounded-[18px] border px-3 py-2.5 shadow-[0_14px_34px_rgba(15,23,42,0.14)] backdrop-blur-xl ${
                   isLightDetail
-                    ? 'border-slate-300/70 bg-white/88'
+                    ? 'border-white/90 bg-white/92 shadow-[0_14px_34px_rgba(15,23,42,0.18)]'
                     : 'border-white/10 bg-[rgba(7,17,29,0.76)]'
                 }`}>
                   <p className={`mb-1.5 text-[9px] font-black uppercase tracking-[0.24em] text-center ${
-                    isLightDetail ? 'text-slate-500' : 'text-white/55'
+                    isLightDetail ? 'text-slate-700' : 'text-white/55'
                   }`}>
                     Theme
                   </p>
@@ -1043,9 +1044,9 @@ export default function TripDetail() {
                     />
                   </div>
                 </div>
-                <div className={`trip-theme-surface rounded-[20px] border px-4 py-3 text-center backdrop-blur-xl transition-colors duration-500 ${isLightDetail ? 'border-[#D4AF37]/24 bg-white/90' : 'border-[#D4AF37]/16 bg-black/18'}`}>
-                  <p className={`text-[9px] uppercase tracking-[0.26em] mb-1 ${isLightDetail ? 'text-slate-500' : 'text-white/45'}`}>Total Budget</p>
-                  <p className="text-[clamp(1.75rem,3vw,2.7rem)] font-black text-[#D4AF37] tracking-tight leading-none">{fmtCur(TOTAL_BUDGET, tripCurrency)}</p>
+                <div className={`trip-theme-surface rounded-[20px] border px-4 py-3 text-center backdrop-blur-xl transition-colors duration-500 ${isLightDetail ? 'border-white/90 bg-white/92 shadow-[0_14px_34px_rgba(15,23,42,0.18)]' : 'border-[#D4AF37]/16 bg-black/18'}`}>
+                  <p className={`text-[9px] uppercase tracking-[0.26em] mb-1 font-black ${isLightDetail ? 'text-slate-700' : 'text-white/45'}`}>Total Budget</p>
+                  <p className="text-[clamp(1.65rem,2.8vw,2.45rem)] font-black text-[#D4AF37] tracking-tight leading-none drop-shadow-[0_1px_0_rgba(255,255,255,0.55)]">{fmtCur(TOTAL_BUDGET, tripCurrency)}</p>
                 </div>
               </div>
               <div className="flex flex-col items-center xl:items-end gap-2.5 w-full xl:w-auto">

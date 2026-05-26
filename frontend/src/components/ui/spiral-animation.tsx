@@ -82,14 +82,16 @@ export const SpiralAnimation = ({
         <div className="absolute inset-0 m-auto w-12 h-12 bg-[#D4AF37]/20 rounded-full blur-2xl animate-pulse delay-75" />
       </div>
       
-      <div className="flex flex-col items-center gap-2">
-        <h3 className="text-xl font-black text-white tracking-widest uppercase animate-pulse">
-          {text}
-        </h3>
-        <p className="text-[10px] font-black text-[#D4AF37]/40 uppercase tracking-[0.4em]">
-          Rihla AI is architecting your neural nodes
-        </p>
-      </div>
+      {text ? (
+        <div className="flex flex-col items-center gap-2">
+          <h3 className="text-xl font-black text-white tracking-widest uppercase animate-pulse">
+            {text}
+          </h3>
+          <p className="text-[10px] font-black text-[#D4AF37]/40 uppercase tracking-[0.4em]">
+            Rihla AI is architecting your neural nodes
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 };
