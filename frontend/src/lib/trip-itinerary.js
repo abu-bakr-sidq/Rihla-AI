@@ -1129,7 +1129,7 @@ export function generatePlaceCardFallbackContent(placeName = "", activity = "", 
     fillTemplate(pickOne(bank.scheduleClose, seed + 23), vars),
     styleScheduleNudges[profileKey]?.[tripPhase] || "",
     pickOne(styleProfile.narrative?.schedule, seed + 67),
-  ]);
+  ]).filter((line, index) => index < 3 || !isGenericPlannerLine(line)).slice(0, 4);
   const streetFinds = buildUniqueLines(
     pickMany(bank.streetFinds, 4, seed + 31).map((item) => fillTemplate(item, vars)),
   ).slice(0, 6);
@@ -1526,6 +1526,41 @@ export function getTripCardImageQuery(trip) {
   return `${destination} landmark travel`;
 }
 
+function isGenericPlannerLine(value = "") {
+  const text = cleanDisplayText(value).toLowerCase();
+  if (!text) return true;
+  return [
+    /keep this chapter/,
+    /one premium highlight/,
+    /checklist pacing/,
+    /signature atmosphere/,
+    /giving the stay room/,
+    /feel like part of the journey/,
+    /calmer corners/,
+    /spaces that make it worth staying/,
+    /slower middle stretch/,
+    /more elevated or intimate/,
+    /comfort and atmosphere doing more work/,
+    /low-friction/,
+    /standout moment/,
+  ].some((pattern) => pattern.test(text));
+}
+
+function isGenericStreetFind(value = "") {
+  const text = cleanDisplayText(value).toLowerCase();
+  if (!text) return true;
+  return [
+    /quiet evening cafe/,
+    /softly lit side street/,
+    /terrace or rooftop pocket/,
+    /surroundings$/,
+    /walkable .* segment/,
+    /short heritage walk loop/,
+    /local shopfront cluster/,
+    /tea or snack point/,
+  ].some((pattern) => pattern.test(text));
+}
+
 export function buildActivityDisplayContent(activityData = {}, fallbackContent = {}) {
   const unique = (items = []) => {
     const seen = new Set();
@@ -1543,19 +1578,27 @@ export function buildActivityDisplayContent(activityData = {}, fallbackContent =
   const fallbackSchedule = Array.isArray(fallbackContent.schedule) ? fallbackContent.schedule : [];
   const fallbackStreetFinds = Array.isArray(fallbackContent.streetFinds) ? fallbackContent.streetFinds : [];
   const fallbackIdeas = Array.isArray(fallbackContent.ideas) ? fallbackContent.ideas : [];
-  const rawTimePlan = Array.isArray(activityData.timePlan) ? activityData.timePlan : [];
+  const rawTimePlan = unique(Array.isArray(activityData.timePlan) ? activityData.timePlan : []);
+  const usefulTimePlan = rawTimePlan.filter((line) => !isGenericPlannerLine(line));
+  const rawLooksGeneric = rawTimePlan.length && usefulTimePlan.length < Math.min(2, rawTimePlan.length);
 
   const schedule = unique([
-    ...rawTimePlan,
-    ...(rawTimePlan.length >= 3 ? [] : fallbackSchedule),
+    ...(rawLooksGeneric ? fallbackSchedule : rawTimePlan),
+    ...(rawLooksGeneric ? usefulTimePlan : []),
+    ...(!rawLooksGeneric && rawTimePlan.length >= 3 ? [] : fallbackSchedule),
     activityData.travel ? formatTravelLine(activityData.travel) : "",
     activityData.duration ? formatDurationLine(activityData.duration) : "",
-  ]).slice(0, 5);
+  ]).slice(0, 4);
 
-  const streetFinds = unique([
+  const rawStreetFinds = unique([
     ...(Array.isArray(activityData.streetFinds) ? activityData.streetFinds : []),
     ...(Array.isArray(activityData.nearbyHighlights) ? activityData.nearbyHighlights : []),
     activityData.localFood || "",
+  ]);
+  const usefulStreetFinds = rawStreetFinds.filter((item) => !isGenericStreetFind(item));
+
+  const streetFinds = unique([
+    ...usefulStreetFinds,
     ...fallbackStreetFinds,
   ]).slice(0, 6);
 
