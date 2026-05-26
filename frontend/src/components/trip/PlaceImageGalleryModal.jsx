@@ -17,13 +17,7 @@ const buildPlaceVideoUrl = (queries, title = "") => {
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${query} walking tour travel guide`)}`;
 };
 
-const buildPlaceVideoEmbedUrl = (queries, title = "") => {
-  const query = getPrimaryQuery(queries, title)
-    .replace(/\b(Google Maps|place photo|tourist attraction)\b/gi, "")
-    .replace(/\s+/g, " ")
-    .trim();
-  return `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(`${query} walking tour travel guide`)}`;
-};
+const PLACE_PREVIEW_VIDEO_URL = "https://me7aitdbxq.ufs.sh/f/2wsMIGDMQRdYuZ5R8ahEEZ4aQK56LizRdfBSqeDMsmUIrJN1";
 
 export function GalleryPhotoBadge({ queries, title = "", accent = "#D4AF37", isLight = false, onClick }) {
   const { images, loading } = usePlaceImageGallery(queries, { maxResults: 9, onlyGoogle: true });
@@ -68,7 +62,6 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
 
   const countLabel = loading ? "Scanning Google Places" : `${images.length || 0} verified images`;
   const videoUrl = buildPlaceVideoUrl(queries, title);
-  const videoEmbedUrl = buildPlaceVideoEmbedUrl(queries, title);
   const lockScrollToBoard = (event) => {
     event.stopPropagation();
   };
@@ -132,17 +125,18 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
           {!loading && !images.length && (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               <div className="relative h-[300px] overflow-hidden rounded-[22px] border border-[#D4AF37]/25 bg-[#050912] shadow-[0_16px_42px_rgba(0,0,0,0.34)] lg:col-span-2">
-                <iframe
-                  title={`${title} video walkthrough`}
-                  src={videoEmbedUrl}
-                  className="absolute inset-0 h-full w-full"
-                  loading="lazy"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
+                <video
+                  className="absolute inset-0 h-full w-full object-cover"
+                  src={PLACE_PREVIEW_VIDEO_URL}
+                  poster={images[0]?.url}
+                  controls
+                  muted
+                  playsInline
+                  preload="metadata"
                 />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent p-4">
-                  <p className="text-[9px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">Playable Preview</p>
-                  <p className="mt-1 text-lg font-black leading-tight text-white">Exact walkthrough video board</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">In-Site Preview</p>
+                  <p className="mt-1 text-lg font-black leading-tight text-white">Playable travel mood board</p>
                 </div>
               </div>
               <a href={videoUrl} target="_blank" rel="noreferrer" className="flex h-[300px] flex-col items-center justify-center rounded-[22px] border border-white/10 bg-white/[0.04] px-8 text-center transition-transform hover:scale-[1.01]">
@@ -157,19 +151,20 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
           {!!images.length && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="relative h-[300px] overflow-hidden rounded-[22px] border border-[#D4AF37]/25 bg-[radial-gradient(circle_at_30%_20%,rgba(212,175,55,0.24),transparent_38%),linear-gradient(135deg,#0b1423,#050912)] shadow-[0_16px_42px_rgba(0,0,0,0.34)] sm:col-span-2 lg:col-span-2">
-                <iframe
-                  title={`${title} video walkthrough`}
-                  src={videoEmbedUrl}
-                  className="absolute inset-0 h-full w-full"
-                  loading="lazy"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
+                <video
+                  className="absolute inset-0 h-full w-full object-cover"
+                  src={PLACE_PREVIEW_VIDEO_URL}
+                  poster={images[0]?.url}
+                  controls
+                  muted
+                  playsInline
+                  preload="metadata"
                 />
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/75 to-transparent" />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent p-4">
-                  <p className="text-[9px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">Playable Preview</p>
-                  <p className="mt-1 text-lg font-black leading-tight text-white">Exact walkthrough video board</p>
-                  <p className="mt-1 max-w-xl text-[11px] font-semibold leading-relaxed text-white/68">Watch one in-site preview here. Open YouTube for more videos from this exact place search.</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">In-Site Preview</p>
+                  <p className="mt-1 text-lg font-black leading-tight text-white">Playable travel mood board</p>
+                  <p className="mt-1 max-w-xl text-[11px] font-semibold leading-relaxed text-white/68">Watch a stable in-site preview here. Open YouTube for exact walkthroughs from this stop search.</p>
                 </div>
               </div>
               <a

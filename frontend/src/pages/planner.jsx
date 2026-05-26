@@ -3482,7 +3482,7 @@ export default function Planner() {
         <ScrollExpandMedia
           mediaType="video"
           mediaSrc="https://me7aitdbxq.ufs.sh/f/2wsMIGDMQRdYuZ5R8ahEEZ4aQK56LizRdfBSqeDMsmUIrJN1"
-          bgImageSrc="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2000"
+          bgImageSrc="https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=90&w=2400&auto=format&fit=crop"
           title="Plan Your Perfect Trip"
           date="World-Class AI"
           scrollToExpand="Scroll to Begin Experience"

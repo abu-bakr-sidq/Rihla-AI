@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PlaceImage, usePlaceImage, usePlaceImageGallery } from "@/hooks/use-place-image";
-import { GalleryPhotoBadge } from "@/components/trip/PlaceImageGalleryModal";
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 import { sanitizeTextList, sanitizeVisibleText } from "@/lib/display-text";
 
@@ -720,7 +719,6 @@ export function TripHighlightsCard({ destination, totalDays, travelers, travelSt
               <button type="button" className="absolute inset-0 z-10 cursor-zoom-in" onClick={() => setGallery({ title: stops[index] || row.title, queries: row.imageQueries, accent: row.accent })} aria-label={`Open ${row.title} photo gallery`} />
               <PlaceImage queries={row.imageQueries} alt={row.title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" photoIndex={index} onlyGoogle placeholderLabel={stops[index] || dest} placeholderAccent={row.accent} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-black/24 to-transparent" />
-              <GalleryPhotoBadge queries={row.imageQueries} title={stops[index] || row.title} accent={row.accent} isLight={isLight} onClick={(event) => { event.stopPropagation(); setGallery({ title: stops[index] || row.title, queries: row.imageQueries, accent: row.accent }); }} />
               <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-white/14 bg-black/42 px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.18em] text-white backdrop-blur-md">
                 <row.icon size={12} style={{ color: row.accent }} />
                 {row.badge}
@@ -803,7 +801,6 @@ export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelSty
               <button type="button" className="absolute inset-0 z-10 cursor-zoom-in" onClick={() => setGallery({ title: group.title, queries: group.imageQueries, accent: group.color })} aria-label={`Open ${group.title} photo gallery`} />
               <PlaceImage queries={group.imageQueries} alt={group.title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" photoIndex={index} onlyGoogle placeholderLabel={group.title} placeholderAccent={group.color} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/16 to-transparent" />
-              <GalleryPhotoBadge queries={group.imageQueries} title={group.title} accent={group.color} isLight={isLight} onClick={(event) => { event.stopPropagation(); setGallery({ title: group.title, queries: group.imageQueries, accent: group.color }); }} />
             </div>
             <div className="min-w-0 flex-1 p-3">
               <div className="mb-1.5 flex items-center gap-2">
