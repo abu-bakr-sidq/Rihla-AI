@@ -4042,16 +4042,17 @@ export default function Planner() {
             })()}
 
             {step === 6 && (
-              <motion.div style={{ animation: 'cf-in 0.8s ease-out' }} className="flex flex-col items-center justify-center min-h-[42vh]">
+              <motion.div style={{ animation: 'cf-in 0.8s ease-out' }} className="fixed inset-0 z-[80] flex items-center justify-center px-4">
                 <style>{`@keyframes cf-in { from{opacity:0; filter:blur(20px)} to{opacity:1; filter:blur(0px)} } @keyframes cf-out { from{opacity:1; filter:blur(0px)} to{opacity:0; filter:blur(20px)} }`}</style>
-                <div className="relative w-full max-w-[430px] overflow-hidden rounded-[24px] border border-white/14 bg-[linear-gradient(145deg,rgba(3,8,16,0.82),rgba(8,16,28,0.74))] px-5 py-6 text-center shadow-[0_24px_70px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+                <div className="absolute inset-0 bg-black/14 backdrop-blur-[1px]" />
+                <div className="relative w-full max-w-[420px] overflow-hidden rounded-[24px] border border-white/14 bg-[linear-gradient(145deg,rgba(3,8,16,0.84),rgba(8,16,28,0.76))] px-5 py-6 text-center shadow-[0_24px_70px_rgba(0,0,0,0.5)] backdrop-blur-xl">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.16),transparent_34%),linear-gradient(180deg,rgba(0,0,0,0.12),rgba(0,0,0,0.36))]" />
                   <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/70 to-transparent" />
                   <div className="relative z-10">
                     <SpiralAnimation text="" className="gap-0 scale-[0.62] -my-12" />
-                    <div className="mt-3 space-y-2">
+                    <div className="mt-2 space-y-2">
                       <p className="text-[8px] font-black uppercase tracking-[0.34em] text-[#D4AF37] drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">Rihla AI is architecting your route</p>
-                      <h3 className="font-display text-xl md:text-2xl font-black tracking-tight text-white uppercase drop-shadow-[0_4px_18px_rgba(0,0,0,0.9)]">
+                      <h3 className="font-display text-lg md:text-xl font-black tracking-tight text-white uppercase drop-shadow-[0_4px_18px_rgba(0,0,0,0.9)]">
                         {LOAD_STEPS[loadStep] || "Finalizing Itinerary..."}
                       </h3>
                       <div className="mx-auto mt-5 h-1.5 w-full max-w-[280px] overflow-hidden rounded-full border border-white/12 bg-black/48 shadow-[inset_0_1px_8px_rgba(0,0,0,0.65)]">
@@ -4061,7 +4062,7 @@ export default function Planner() {
                           animate={{ width: `${loadPct}%` }}
                         />
                       </div>
-                      <p className="mt-3 text-[9px] font-black tracking-[0.22em] text-[#F8E7A0] uppercase drop-shadow-[0_3px_12px_rgba(0,0,0,0.85)]">
+                      <p className="mt-3 text-[8px] font-black tracking-[0.2em] text-[#F8E7A0] uppercase drop-shadow-[0_3px_12px_rgba(0,0,0,0.85)]">
                         Processing Node: {loadPct}% complete
                       </p>
                     </div>
@@ -4279,9 +4280,14 @@ export default function Planner() {
                         </div>
                       )}
                       <div className="planner-result-hero-grid relative z-10 items-center gap-4 xl:gap-6">
-                        <div className="min-w-0 text-center md:text-left">
+                        <div className={cn(
+                          "min-w-0 text-center md:text-left rounded-[24px] px-4 py-3 backdrop-blur-md",
+                          isLightPlannerResult
+                            ? "border border-white/80 bg-white/72 shadow-[0_16px_38px_rgba(15,23,42,0.14)]"
+                            : "border border-white/5 bg-black/10"
+                        )}>
                           <p className="text-[9px] font-black text-[#D4AF37] uppercase tracking-[0.6em] mb-2">Rihla AI - Your Journey</p>
-                          <h1 className={cn("text-[clamp(1.85rem,7vw,3.6rem)] font-display font-black uppercase tracking-tight leading-[0.94] mb-4", isLightPlannerResult ? "text-slate-950" : "text-white")} style={{ letterSpacing: '-0.05em' }}>{DEST_SHORT}</h1>
+                          <h1 className={cn("text-[clamp(1.85rem,7vw,3.45rem)] font-display font-black uppercase tracking-tight leading-[0.94] mb-4", isLightPlannerResult ? "text-slate-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.8)]" : "text-white")} style={{ letterSpacing: '-0.05em' }}>{DEST_SHORT}</h1>
                           <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5">
                             <span className={cn("text-xs font-mono font-semibold", isLightPlannerResult ? "text-slate-800 drop-shadow-[0_1px_8px_rgba(255,255,255,0.75)]" : "text-white/45")}>{ov.dates}</span>
                             <span className={cn("w-0.5 h-0.5 rounded-full", isLightPlannerResult ? "bg-slate-300" : "bg-white/20")} />

@@ -570,45 +570,67 @@ export function TripPreviewCard({ destination, imageUrl, selectedItem, currency,
 export function TripHighlightsCard({ destination, totalDays, travelers, travelStyle, isLight = false }) {
   const dest = normalizeDestination(destination);
   const style = sanitizeVisibleText(travelStyle || "Balanced");
+  const days = Math.max(1, Number(totalDays) || 1);
+  const travellerCount = Math.max(1, Number(travelers) || 1);
+  const cadence = days >= 8 ? "slow-burn" : days >= 5 ? "balanced" : "compact";
+  const styleKey = style.toLowerCase();
+  const styleDirective = /luxury/.test(styleKey)
+    ? "premium dining, smoother transfers, and fewer but higher-impact anchors"
+    : /adventure/.test(styleKey)
+      ? "early movement, scenic edges, and controlled recovery breaks"
+      : /relax/.test(styleKey)
+        ? "low-friction pacing, soft starts, and generous pause windows"
+        : /culture|cultural/.test(styleKey)
+          ? "heritage anchors, museum timing, and slower neighbourhood texture"
+          : "headline anchors, local texture, and comfortable daily rhythm";
 
   const rows = [
     {
-      title: "Best Visit Window",
-      text: `Your ${dest} routing is paced to favour softer light, calmer movement windows, and more rewarding stop timing.`,
+      title: "Prime Movement Window",
+      text: `Start anchor stops before 10:30 AM, protect midday for indoor or cafe buffers, then reserve 4:30-6:30 PM for the strongest ${dest} atmosphere.`,
       icon: Sun,
       accent: "#D4AF37",
     },
     {
-      title: `${travelers || 1} Traveller${(travelers || 1) > 1 ? "s" : ""}`,
-      text: `The flow is tuned for ${travelers || 1} traveller${(travelers || 1) > 1 ? "s" : ""} across ${totalDays || 0} days without feeling rushed.`,
+      title: "Pacing Architecture",
+      text: `Across ${days} days, each day keeps one headline anchor, one flexible discovery slot, and one recovery pocket so the route feels designed, not packed.`,
       icon: Users,
       accent: "#34D399",
     },
     {
-      title: `${style} Flow`,
-      text: `Activities, food stops, and recovery moments are balanced around your ${style.toLowerCase()} travel style.`,
+      title: `${style} Intelligence`,
+      text: `The ${cadence} workflow prioritizes ${styleDirective}, with backtracking reduced wherever the day has a stronger natural sequence.`,
       icon: Compass,
       accent: "#818CF8",
     },
   ];
+  const chips = ["Golden-hour bias", "Low backtrack", `${travellerCount} traveller comfort`, `${cadence} cadence`];
 
   return (
     <div className={cn(
       "rounded-[28px] p-5 border transition-colors duration-300",
       isLight ? "border-slate-300/55 shadow-[0_18px_42px_rgba(148,163,184,0.14)]" : "border-white/10 shadow-[0_18px_50px_rgba(0,0,0,0.22)]"
     )} style={{ background: isLight ? "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(242,246,251,0.98) 100%)" : "linear-gradient(180deg,rgba(18,28,44,0.96) 0%,rgba(9,14,24,0.96) 100%)" }}>
-      <p className={cn("text-[9px] font-black uppercase tracking-[0.5em] mb-4", isLight ? "text-slate-400" : "text-white/28")}>Trip Highlights</p>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className={cn("text-[9px] font-black uppercase tracking-[0.46em]", isLight ? "text-slate-600" : "text-white/36")}>Trip Highlights</p>
+        <span className={cn("rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.22em]", isLight ? "bg-[#D4AF37]/15 text-slate-700" : "bg-[#D4AF37]/12 text-[#F8E7A0]")}>Concierge Logic</span>
+      </div>
       <div className="space-y-4">
         {rows.map((row) => (
-          <div key={row.title} className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5" style={{ background: isLight ? `${row.accent}16` : `${row.accent}14` }}>
+          <div key={row.title} className={cn("flex items-start gap-3 rounded-[20px] border p-3.5", isLight ? "border-slate-200 bg-white/78" : "border-white/[0.06] bg-white/[0.035]")}>
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]" style={{ background: isLight ? `${row.accent}1f` : `${row.accent}16` }}>
               <row.icon size={15} className="shrink-0" style={{ color: row.accent }} />
             </div>
             <div>
               <p className={cn("text-[13px] font-black", isLight ? "text-slate-900" : "text-white")}>{row.title}</p>
-              <p className={cn("text-[11px] mt-1 leading-relaxed", isLight ? "text-slate-600" : "text-white/45")}>{row.text}</p>
+              <p className={cn("text-[11px] mt-1 leading-relaxed", isLight ? "text-slate-700" : "text-white/56")}>{row.text}</p>
             </div>
           </div>
+        ))}
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {chips.map((chip) => (
+          <span key={chip} className={cn("rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em]", isLight ? "border-slate-200 bg-slate-50 text-slate-700" : "border-white/8 bg-white/[0.035] text-white/52")}>{chip}</span>
         ))}
       </div>
     </div>
@@ -629,28 +651,28 @@ export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelSty
       label: "Hidden Gems",
       color: "#D4AF37",
       Icon: Compass,
-      items: gems.length ? gems : [`Slow-walk the quieter lanes just beyond ${dest}'s main attraction.`, `Look for the most atmospheric corner of ${dest} after sunset.`],
+      items: gems.length ? gems : [`Look one street behind ${dest}'s headline stop for smaller shrines, tea rooms, craft counters, or residential lanes.`, `Best discovery window: after the first anchor stop, before lunch crowds flatten the atmosphere.`],
     },
     {
       key: "photos",
       label: "Photo Spots",
       color: "#818CF8",
       Icon: Camera,
-      items: photos.length ? photos : [`Frame ${dest} during the first golden hour window.`, `Use elevated viewpoints for cleaner skyline compositions.`],
+      items: photos.length ? photos : [`Shoot from edges, balconies, lakeside bends, or shoreline diagonals instead of the main entrance line.`, `Keep one clean wide frame plus one human-scale detail so the ${dest} story feels editorial, not random.`],
     },
     {
       key: "tips",
       label: "Local Tips",
       color: "#34D399",
       Icon: Lightbulb,
-      items: tips.length ? tips : [`Your ${style} pacing works best with one unplanned discovery stop each day.`, `Book headline stops early, then keep evenings flexible.`],
+      items: tips.length ? tips : [`Ask staff or vendors for the quieter parallel lane or family-run snack counter; those signals usually beat generic lists.`, `For a ${style} trip, keep one unscheduled pocket daily so real local discoveries can enter the route.`],
     },
     {
       key: "avoid",
       label: "Avoid",
       color: "#F87171",
       Icon: Sunset,
-      items: avoid.length ? avoid : [`Avoid compressing too many major stops into one midday block.`, `Skip generic tourist strips when a local quarter gives the better experience.`],
+      items: avoid.length ? avoid : [`Do not chain distant landmarks without a cafe or rest buffer; it makes the day feel expensive but not premium.`, `Avoid open-air midday walking when ${dest} has stronger indoor, shaded, or food-led alternatives.`],
     },
   ];
 
@@ -659,17 +681,25 @@ export function CuratedInsightsCard({ aiSuggestions = {}, destination, travelSty
       "rounded-[28px] p-5 border transition-colors duration-300",
       isLight ? "border-slate-300/55 shadow-[0_18px_42px_rgba(148,163,184,0.14)]" : "border-white/10 shadow-[0_18px_50px_rgba(0,0,0,0.22)]"
     )} style={{ background: isLight ? "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(242,246,251,0.98) 100%)" : "linear-gradient(180deg,rgba(18,28,44,0.96) 0%,rgba(9,14,24,0.96) 100%)" }}>
-      <p className={cn("text-[9px] font-black uppercase tracking-[0.5em] mb-4", isLight ? "text-slate-400" : "text-white/28")}>Curated Insights</p>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className={cn("text-[9px] font-black uppercase tracking-[0.46em]", isLight ? "text-slate-600" : "text-white/36")}>Curated Insights</p>
+        <span className={cn("rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.22em]", isLight ? "bg-sky-100 text-sky-900" : "bg-sky-400/10 text-sky-200")}>Field Notes</span>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {groups.map((group) => (
-          <div key={group.key} className={cn("rounded-[22px] p-4 min-h-[160px]", isLight ? "bg-slate-50 border border-slate-300/50" : "bg-white/[0.03] border border-white/[0.04]")}>
+          <div key={group.key} className={cn("rounded-[22px] p-4 min-h-[172px] border", isLight ? "bg-white/78 border-slate-200 shadow-[0_10px_24px_rgba(148,163,184,0.12)]" : "bg-white/[0.035] border-white/[0.055]")}>
             <div className="flex items-center gap-2 mb-3">
-              <group.Icon size={13} style={{ color: group.color }} />
+              <span className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: isLight ? `${group.color}1f` : `${group.color}16` }}>
+                <group.Icon size={13} style={{ color: group.color }} />
+              </span>
               <span className="text-[10px] font-black uppercase tracking-[0.32em]" style={{ color: group.color }}>{group.label}</span>
             </div>
             <ul className="space-y-2">
               {group.items.map((item, index) => (
-                <li key={`${group.key}-${index}`} className={cn("text-[11px] leading-relaxed", isLight ? "text-slate-600" : "text-white/60")}>{item}</li>
+                <li key={`${group.key}-${index}`} className={cn("flex gap-2 text-[11px] leading-relaxed", isLight ? "text-slate-700" : "text-white/62")}>
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: group.color }} />
+                  <span>{item}</span>
+                </li>
               ))}
             </ul>
           </div>
