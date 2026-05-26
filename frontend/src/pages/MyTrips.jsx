@@ -419,19 +419,19 @@ export default function MyTrips() {
         <DashboardSlideshow />
       </div>
       {/* Dark scrim so content is readable */}
-      <div className="fixed inset-0 z-0 pointer-events-none bg-black/50" />
+      <div className="fixed inset-0 z-0 pointer-events-none bg-black/68" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-10 py-8 md:py-10 page-enter">
 
         {/* HEADER */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-6">
           <div>
-            <p className="text-[9px] font-black uppercase tracking-[0.45em] text-[#D4AF37]/60 mb-2">Travel Passport</p>
-            <h1 className="font-black text-white leading-none uppercase tracking-tighter text-4xl md:text-5xl">
+            <p className="text-[9px] font-black uppercase tracking-[0.45em] text-[#D4AF37]/86 mb-2 drop-shadow-[0_2px_12px_rgba(0,0,0,0.78)]">Travel Passport</p>
+            <h1 className="font-black text-white leading-none uppercase tracking-tighter text-4xl md:text-5xl drop-shadow-[0_5px_26px_rgba(0,0,0,0.78)]">
               My <span style={{ color: "#D4AF37" }}>Trips</span>
             </h1>
             {!isLoading && trips.length > 0 && (
-              <p className="text-white/30 mt-2 text-xs font-medium">
+              <p className="text-white/72 mt-2 text-xs font-semibold drop-shadow-[0_2px_12px_rgba(0,0,0,0.78)]">
                 {trips.length} itinerar{trips.length !== 1 ? "ies" : "y"} saved
               </p>
             )}
@@ -483,8 +483,8 @@ export default function MyTrips() {
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/20" />
                 <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                   placeholder="Search trips…"
-                  className="w-full pl-9 pr-8 py-2.5 rounded-xl text-sm text-white placeholder:text-white/20 font-medium focus:outline-none"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }} />
+                  className="w-full pl-9 pr-8 py-2.5 rounded-xl text-sm text-white placeholder:text-white/58 font-medium focus:outline-none"
+                  style={{ background: "rgba(0,0,0,0.48)", border: "1px solid rgba(255,255,255,0.18)", backdropFilter: "blur(12px)" }} />
                 {search && (
                   <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/25 hover:text-white">
                     <X className="w-3.5 h-3.5" />
@@ -497,7 +497,7 @@ export default function MyTrips() {
                     className="px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.15em] transition-all"
                     style={filter === f
                       ? { background: "#D4AF37", color: "#000" }
-                      : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.35)", backdropFilter: "blur(8px)" }
+                      : { background: "rgba(0,0,0,0.48)", border: "1px solid rgba(255,255,255,0.16)", color: "rgba(255,255,255,0.74)", backdropFilter: "blur(8px)" }
                     }>
                     {f}
                   </button>

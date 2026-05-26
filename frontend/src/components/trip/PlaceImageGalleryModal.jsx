@@ -17,6 +17,14 @@ const buildPlaceVideoUrl = (queries, title = "") => {
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${query} walking tour travel guide`)}`;
 };
 
+const buildPlaceVideoEmbedUrl = (queries, title = "") => {
+  const query = getPrimaryQuery(queries, title)
+    .replace(/\b(Google Maps|place photo|tourist attraction)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(`${query} walking tour travel guide`)}`;
+};
+
 export function GalleryPhotoBadge({ queries, title = "", accent = "#D4AF37", isLight = false, onClick }) {
   const { images, loading } = usePlaceImageGallery(queries, { maxResults: 9, onlyGoogle: true });
   const count = images.length;
@@ -60,6 +68,7 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
 
   const countLabel = loading ? "Scanning Google Places" : `${images.length || 0} verified images`;
   const videoUrl = buildPlaceVideoUrl(queries, title);
+  const videoEmbedUrl = buildPlaceVideoEmbedUrl(queries, title);
   const lockScrollToBoard = (event) => {
     event.stopPropagation();
   };
@@ -121,31 +130,65 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
           )}
 
           {!loading && !images.length && (
-            <div className="flex h-64 flex-col items-center justify-center rounded-[24px] border border-white/8 bg-white/[0.03] px-8 text-center">
-              <p className="text-sm font-black text-white">No verified Google photo set available yet.</p>
-              <p className="mt-2 max-w-md text-xs leading-relaxed text-white/50">Rihla is avoiding random fallback images here, so this board only shows photos returned by Google Places for the exact planned stop.</p>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <div className="relative h-[300px] overflow-hidden rounded-[22px] border border-[#D4AF37]/25 bg-[#050912] shadow-[0_16px_42px_rgba(0,0,0,0.34)] lg:col-span-2">
+                <iframe
+                  title={`${title} video walkthrough`}
+                  src={videoEmbedUrl}
+                  className="absolute inset-0 h-full w-full"
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent p-4">
+                  <p className="text-[9px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">Playable Preview</p>
+                  <p className="mt-1 text-lg font-black leading-tight text-white">Exact walkthrough video board</p>
+                </div>
+              </div>
+              <a href={videoUrl} target="_blank" rel="noreferrer" className="flex h-[300px] flex-col items-center justify-center rounded-[22px] border border-white/10 bg-white/[0.04] px-8 text-center transition-transform hover:scale-[1.01]">
+                <PlayCircle size={34} className="mb-4 text-[#7DD3FC]" />
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#7DD3FC]">More Videos</p>
+                <p className="mt-2 text-lg font-black text-white">Open YouTube results</p>
+                <p className="mt-2 max-w-sm text-xs leading-relaxed text-white/56">No verified Google photo set is available yet, so Rihla keeps the photo board empty instead of showing a wrong place.</p>
+              </a>
             </div>
           )}
 
           {!!images.length && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="relative h-[300px] overflow-hidden rounded-[22px] border border-[#D4AF37]/25 bg-[radial-gradient(circle_at_30%_20%,rgba(212,175,55,0.24),transparent_38%),linear-gradient(135deg,#0b1423,#050912)] shadow-[0_16px_42px_rgba(0,0,0,0.34)] sm:col-span-2 lg:col-span-2">
+                <iframe
+                  title={`${title} video walkthrough`}
+                  src={videoEmbedUrl}
+                  className="absolute inset-0 h-full w-full"
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/75 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent p-4">
+                  <p className="text-[9px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">Playable Preview</p>
+                  <p className="mt-1 text-lg font-black leading-tight text-white">Exact walkthrough video board</p>
+                  <p className="mt-1 max-w-xl text-[11px] font-semibold leading-relaxed text-white/68">Watch one in-site preview here. Open YouTube for more videos from this exact place search.</p>
+                </div>
+              </div>
               <a
                 href={videoUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="group relative h-[230px] overflow-hidden rounded-[22px] border border-[#D4AF37]/25 bg-[radial-gradient(circle_at_30%_20%,rgba(212,175,55,0.24),transparent_38%),linear-gradient(135deg,#0b1423,#050912)] shadow-[0_16px_42px_rgba(0,0,0,0.34)] sm:h-[244px]"
+                className="group relative h-[230px] overflow-hidden rounded-[22px] border border-white/10 bg-[radial-gradient(circle_at_30%_20%,rgba(56,189,248,0.18),transparent_38%),linear-gradient(135deg,#0b1423,#050912)] shadow-[0_16px_42px_rgba(0,0,0,0.34)] sm:h-[244px]"
               >
-                <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.08),transparent_42%,rgba(212,175,55,0.10))]" />
+                <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.08),transparent_42%,rgba(56,189,248,0.10))]" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/12 shadow-[0_0_42px_rgba(212,175,55,0.22)] transition-transform group-hover:scale-110">
-                    <PlayCircle size={30} className="text-[#F8E7A0]" />
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-white/20 bg-white/8 shadow-[0_0_42px_rgba(56,189,248,0.16)] transition-transform group-hover:scale-110">
+                    <PlayCircle size={30} className="text-[#7DD3FC]" />
                   </div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#D4AF37]">Place Video</p>
-                  <p className="mt-2 text-lg font-black leading-tight text-white">Open exact video walkthrough</p>
-                  <p className="mt-2 text-[11px] font-semibold leading-relaxed text-white/56">Searches real travel videos for this planned stop.</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#7DD3FC]">More Videos</p>
+                  <p className="mt-2 text-lg font-black leading-tight text-white">Open more walkthroughs</p>
+                  <p className="mt-2 text-[11px] font-semibold leading-relaxed text-white/62">YouTube opens with this exact stop search.</p>
                 </div>
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-white/78">Watch Video</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-white/78">Open YouTube</p>
                 </div>
               </a>
               {images.map((image, index) => (

@@ -125,13 +125,14 @@ const DestinationCard = React.forwardRef(
                   <button
                     className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 hover:scale-[1.02] active:scale-95"
                     style={{
-                      background: `hsl(${themeColor} / 0.25)`,
+                      background: `linear-gradient(135deg, hsl(${themeColor} / 0.72), rgba(0,0,0,0.68))`,
                       backdropFilter: "blur(12px)",
-                      border: `1px solid hsl(${themeColor} / 0.35)`,
+                      border: `1px solid rgba(255,255,255,0.42)`,
                       color: "#fff",
+                      boxShadow: "0 10px 28px rgba(0,0,0,0.35)",
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = `hsl(${themeColor} / 0.5)`}
-                    onMouseLeave={e => e.currentTarget.style.background = `hsl(${themeColor} / 0.25)`}
+                    onMouseEnter={e => e.currentTarget.style.background = `linear-gradient(135deg, hsl(${themeColor} / 0.92), rgba(0,0,0,0.58))`}
+                    onMouseLeave={e => e.currentTarget.style.background = `linear-gradient(135deg, hsl(${themeColor} / 0.72), rgba(0,0,0,0.68))`}
                   >
                     <span>Explore Now</span>
                     <ArrowRight className="h-3.5 w-3.5 transform transition-transform duration-300 group-hover:translate-x-1" />
@@ -141,10 +142,11 @@ const DestinationCard = React.forwardRef(
                 <div
                   className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider"
                   style={{
-                    background: `hsl(${themeColor} / 0.25)`,
+                    background: `linear-gradient(135deg, hsl(${themeColor} / 0.72), rgba(0,0,0,0.68))`,
                     backdropFilter: "blur(12px)",
-                    border: `1px solid hsl(${themeColor} / 0.35)`,
+                    border: `1px solid rgba(255,255,255,0.42)`,
                     color: "#fff",
+                    boxShadow: "0 10px 28px rgba(0,0,0,0.35)",
                   }}
                 >
                   <span>Explore Now</span>

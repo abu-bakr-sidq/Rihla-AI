@@ -610,20 +610,20 @@ export default function TourPackages() {
       <div className="relative min-h-screen">
         <div className="fixed inset-0 z-0 pointer-events-none">
           <DashboardSlideshow customImages={BG} />
-          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.68)" }} />
+          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.74)" }} />
         </div>
 
         <div className="relative z-10 w-full px-3 sm:px-4 md:px-6 pt-16 md:pt-22 pb-16 md:pb-24 page-enter" style={{ maxWidth: 1500, margin: "0 auto" }}>
 
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" style={{ border: "1px solid rgba(212,175,55,0.3)", background: "rgba(212,175,55,0.05)" }}>
+            <div className="hidden">
               <Globe className="w-3 h-3 text-[#D4AF37]" />
               <span className="text-[9px] font-black uppercase tracking-[0.4em] text-[#D4AF37]">Premium Curation</span>
             </div>
-            <h1 className="text-3xl md:text-5xl font-display font-black tracking-tight mb-3 text-white uppercase">
+            <h1 className="text-3xl md:text-5xl font-display font-black tracking-tight mb-3 text-white uppercase drop-shadow-[0_5px_26px_rgba(0,0,0,0.78)]">
               Curated <span className="aurora-gradient-text">Packages</span>
             </h1>
-            <p className="text-xs text-white/45 max-w-lg mx-auto">
+            <p className="text-xs text-white/82 max-w-lg mx-auto font-semibold drop-shadow-[0_2px_14px_rgba(0,0,0,0.78)]">
               Sophisticated itineraries by Rihla AI — click <span className="text-[#D4AF37] font-semibold">Generate</span> to see a live AI preview.
             </p>
           </motion.div>

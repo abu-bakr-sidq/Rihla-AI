@@ -342,7 +342,7 @@ export default function Explore() {
       <div className="fixed inset-0 z-0 pointer-events-none">
         <DashboardSlideshow customImages={EXPLORE_IMAGES} />
         {/* Dark overlay for readability */}
-        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-black/72" />
       </div>
 
       {/* ── HERO — constrained height ─────────────────────────── */}
@@ -369,7 +369,7 @@ export default function Explore() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#D4AF37]/35 mb-6 md:mb-8"
+            className="hidden"
             style={{ backdropFilter: "blur(16px)", background: "rgba(212,175,55,0.08)" }}
           >
             <Globe className="w-3.5 h-3.5 text-[#D4AF37]" />
@@ -377,7 +377,7 @@ export default function Explore() {
           </motion.div>
 
           {/* Headline */}
-          <h1 className="font-black text-white leading-[0.9] uppercase mb-4"
+          <h1 className="font-black text-white leading-[0.9] uppercase mb-4 drop-shadow-[0_5px_26px_rgba(0,0,0,0.75)]"
             style={{ fontSize: "clamp(2.5rem,5vw,4rem)", letterSpacing: "-0.02em" }}>
             Explore{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-[#D4AF37] to-amber-500">
@@ -385,7 +385,7 @@ export default function Explore() {
             </span>
           </h1>
 
-          <p className="text-white/60 text-sm md:text-base font-semibold max-w-xl mx-auto mb-10 leading-relaxed">
+          <p className="text-white/86 text-sm md:text-base font-bold max-w-xl mx-auto mb-10 leading-relaxed drop-shadow-[0_3px_16px_rgba(0,0,0,0.72)]">
             Search any city, country, or landmark on Earth. Powered by real-time global intelligence.
           </p>
 
@@ -408,7 +408,7 @@ export default function Explore() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search cities, countries, or landmarks - Chennai, London, Petra..."
-                className="w-full bg-transparent py-5 pl-4 pr-4 text-white text-sm md:text-base placeholder:text-white/25 focus:outline-none font-medium"
+                className="w-full bg-transparent py-5 pl-4 pr-4 text-white text-sm md:text-base placeholder:text-white/55 focus:outline-none font-medium"
               />
               {search && (
                 <button onClick={() => { setSearch(""); inputRef.current?.focus(); }}
@@ -417,7 +417,7 @@ export default function Explore() {
                 </button>
               )}
             </div>
-            <p className="mt-3 text-white/20 text-[9px] font-black uppercase tracking-[0.35em] text-center">
+            <p className="mt-3 text-white/62 text-[9px] font-black uppercase tracking-[0.35em] text-center drop-shadow-[0_2px_12px_rgba(0,0,0,0.75)]">
               {isSearchMode ? "Searching trusted places..." : "Type at least 3 strong letters to discover real destinations"}
             </p>
           </div>
@@ -438,7 +438,7 @@ export default function Explore() {
                   className="px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border transition-all duration-300"
                   style={region === r
                     ? { background: "#D4AF37", color: "#000", borderColor: "#D4AF37", boxShadow: "0 0 22px rgba(212,175,55,0.5)" }
-                    : { background: "rgba(0,0,0,0.4)", backdropFilter: "blur(12px)", color: "rgba(255,255,255,0.45)", borderColor: "rgba(255,255,255,0.1)" }
+                    : { background: "rgba(0,0,0,0.62)", backdropFilter: "blur(12px)", color: "rgba(255,255,255,0.76)", borderColor: "rgba(255,255,255,0.18)" }
                   }
                 >{r}</motion.button>
               ))}
@@ -453,7 +453,7 @@ export default function Explore() {
               transition={{ delay: 1.2 }}
               className="mt-12 flex flex-col items-center gap-2"
             >
-              <span className="text-white/20 text-[9px] uppercase tracking-[0.5em] font-black">Browse Destinations</span>
+              <span className="text-white/72 text-[9px] uppercase tracking-[0.5em] font-black drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]">Browse Destinations</span>
               <motion.div animate={{ y: [0, 6, 0] }} transition={{ repeat: Infinity, duration: 2 }}
                 className="w-px h-8 bg-gradient-to-b from-[#D4AF37]/50 to-transparent" />
             </motion.div>
