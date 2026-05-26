@@ -30,6 +30,9 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
   if (!open || typeof document === "undefined") return null;
 
   const countLabel = loading ? "Scanning Google Places" : `${images.length || 0} verified images`;
+  const lockScrollToBoard = (event) => {
+    event.stopPropagation();
+  };
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden px-4 py-4 sm:px-6" onClick={(event) => event.stopPropagation()}>
@@ -53,7 +56,20 @@ export function PlaceImageGalleryModal({ open, onClose, title, queries, accent =
           </button>
         </div>
 
-        <div className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6", isLight ? "bg-slate-50" : "bg-[#07101f]")}>
+        <div
+          className={cn(
+            "min-h-0 flex-1 overflow-x-hidden overflow-y-scroll overscroll-contain p-5 sm:p-6",
+            isLight ? "bg-slate-50" : "bg-[#07101f]"
+          )}
+          style={{
+            maxHeight: "calc(100vh - 126px)",
+            WebkitOverflowScrolling: "touch",
+            scrollbarGutter: "stable",
+            touchAction: "pan-y",
+          }}
+          onWheel={lockScrollToBoard}
+          onTouchMove={lockScrollToBoard}
+        >
           {loading && (
             <div className={cn("flex h-64 items-center justify-center rounded-[24px] border text-[10px] font-black uppercase tracking-[0.26em]", isLight ? "border-slate-200 bg-slate-50 text-slate-500" : "border-white/8 bg-white/[0.03] text-white/45")}>
               Loading exact Google place photos...
