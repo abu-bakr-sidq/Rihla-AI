@@ -102,6 +102,41 @@ function resolveBudgetParts(costBreakdown = {}, total = 0) {
   };
 }
 
+function hasFreeEntrySignals(activity = {}) {
+  if (!activity || typeof activity !== "object") return false;
+  if (activity.isFreeEntry === true || activity.freeEntry === true) return true;
+  if (String(activity.entryType || "").toLowerCase() === "free") return true;
+  if (String(activity.pricing?.entryType || "").toLowerCase() === "free") return true;
+  if (parseCost(activity.cost) > 0) return false;
+
+  const rawSignals = [
+    activity.costLabel,
+    activity.priceLabel,
+    activity.priceText,
+    activity.entryLabel,
+    activity.description,
+    activity.title,
+    activity.place,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (/\bfree entry\b|\bentry free\b|\bno entry fee\b|\bfree admission\b/.test(rawSignals)) return true;
+  if (/\bpromenade\b|\bboardwalk\b|\bpublic beach\b|\bbeach walk\b|\bpark\b|\bgarden\b|\bphoto point\b|\bwaterfront walk\b|\bheritage lane\b|\bmarket walk\b|\bscenic walk\b/.test(rawSignals)) return true;
+  return false;
+}
+
+function markEntryPricing(activity = {}, payload = {}) {
+  const isFreeEntry = hasFreeEntrySignals(activity);
+  return {
+    ...payload,
+    isFreeEntry,
+    entryType: isFreeEntry ? "free" : (payload.entryType || activity.entryType || activity.pricing?.entryType || "paid"),
+    entryCost: isFreeEntry ? 0 : parseCost(payload.cost),
+  };
+}
+
 const DESTINATION_PLACE_LIBRARY = {
   chennai: {
     morning: ["Kapaleeshwarar Temple", "San Thome Basilica", "Marina Beach promenade", "Government Museum Chennai"],
@@ -1209,7 +1244,7 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
     nightActivity: "Wind down the day with a calmer final experience near",
   };
 
-  const createCompanionSlot = (activity = {}, basePlace = "", slotKey = "", cost = 0) => {
+    const createCompanionSlot = (activity = {}, basePlace = "", slotKey = "", cost = 0) => {
     const slotSeed =
       slotKeys.indexOf(slotKey) >= 0 ? slotKeys.indexOf(slotKey) : compactSlotKeys.indexOf(getSlotBucket(slotKey));
     const normalizedPlace = pickBestActivityPlace(
@@ -1226,7 +1261,7 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
       travelStyle,
     });
     const fallbackActivityLine = `${companionNarratives[slotKey] || "Continue exploring"} ${normalizedPlace}.`;
-    return {
+    return markEntryPricing(activity, {
       place: companionPlace,
       activity: fallbackActivityLine,
       title: companionPlace,
@@ -1247,7 +1282,7 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
       culturalInsight: activity.culturalInsight || "",
       lat: activity.lat,
       lng: activity.lng,
-    };
+    });
   };
 
   const normalizedDays = days.map((day, index) => {
@@ -1263,7 +1298,7 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
         dayNumber: index + 1,
         totalDays: days.length,
       });
-      return {
+      return markEntryPricing(activity, {
         place,
         activity: activity.description || activity.title || "",
         title: place,
@@ -1284,7 +1319,7 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
         culturalInsight: activity.culturalInsight || "",
         lat: activity.lat,
         lng: activity.lng,
-      };
+      });
     };
 
     if (activities.length > 0 && activities.length <= 4) {
@@ -1370,16 +1405,25 @@ export function normalizeLegacyArrayItinerary(days = [], options = {}) {
 
     normalizedDays.forEach((day, dayIndex) => {
       const activityBudget = dayActivities[dayIndex] || 0;
-      const slotWeights = slotKeysForBudget.map((slotKey) => Math.max(1, Number(day[slotKey]?.cost) || 0));
-      const slotWeightTotal = slotWeights.reduce((sum, weight) => sum + weight, 0) || slotKeysForBudget.length;
+      const payableSlots = slotKeysForBudget.filter((slotKey) => day[slotKey] && !day[slotKey]?.isFreeEntry);
+      const slotWeights = payableSlots.map((slotKey) => Math.max(1, Number(day[slotKey]?.cost) || 0));
+      const slotWeightTotal = slotWeights.reduce((sum, weight) => sum + weight, 0) || payableSlots.length;
       let usedSlotBudget = 0;
-      slotKeysForBudget.forEach((slotKey, slotIndex) => {
-        if (!day[slotKey]) return;
-        const value = slotIndex === slotKeysForBudget.length - 1
+      slotKeysForBudget.forEach((slotKey) => {
+        if (!day[slotKey] || day[slotKey]?.isFreeEntry) {
+          if (day[slotKey]?.isFreeEntry) {
+            day[slotKey].cost = 0;
+            day[slotKey].entryCost = 0;
+          }
+          return;
+        }
+        const payableIndex = payableSlots.indexOf(slotKey);
+        const value = payableIndex === payableSlots.length - 1
           ? Math.max(0, activityBudget - usedSlotBudget)
-          : Math.round((activityBudget * slotWeights[slotIndex]) / slotWeightTotal);
+          : Math.round((activityBudget * slotWeights[payableIndex]) / slotWeightTotal);
         usedSlotBudget += value;
         day[slotKey].cost = value;
+        day[slotKey].entryCost = value;
       });
       const total = (dayStay[dayIndex] || 0) + (dayFood[dayIndex] || 0) + (dayTransport[dayIndex] || 0) + activityBudget;
       day.budget = {
@@ -1460,7 +1504,8 @@ export function reconcileItineraryBudget(itinerary = {}, costBreakdown = {}) {
       [parts.stay, parts.food, parts.transport, parts.activities]
     );
     const existingSlots = BUDGET_SLOT_KEYS.filter((slotKey) => nextDay[slotKey]);
-    const slotWeights = existingSlots.map((slotKey) => {
+    const payableSlots = existingSlots.filter((slotKey) => !nextDay[slotKey]?.isFreeEntry && !hasFreeEntrySignals(nextDay[slotKey]));
+    const slotWeights = payableSlots.map((slotKey) => {
       const baseCost = Math.max(1, parseCost(nextDay[slotKey]?.cost));
       return baseCost * (BUDGET_SLOT_BIAS[slotKey] || 1);
     });
@@ -1471,10 +1516,24 @@ export function reconcileItineraryBudget(itinerary = {}, costBreakdown = {}) {
       { gapUnit: Math.max(6, Math.floor((dayActivities || 0) / 120)) }
     );
 
-    existingSlots.forEach((slotKey, slotIndex) => {
+    existingSlots.forEach((slotKey) => {
+      if (nextDay[slotKey]?.isFreeEntry || hasFreeEntrySignals(nextDay[slotKey])) {
+        nextDay[slotKey] = {
+          ...nextDay[slotKey],
+          isFreeEntry: true,
+          entryType: "free",
+          cost: 0,
+          entryCost: 0,
+        };
+        return;
+      }
+      const slotIndex = payableSlots.indexOf(slotKey);
       nextDay[slotKey] = {
         ...nextDay[slotKey],
+        isFreeEntry: false,
+        entryType: nextDay[slotKey]?.entryType || "paid",
         cost: slotCosts[slotIndex] || 0,
+        entryCost: slotCosts[slotIndex] || 0,
       };
     });
 

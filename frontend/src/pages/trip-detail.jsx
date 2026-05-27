@@ -20,6 +20,11 @@ function fmtCur(amount, currency = 'USD') {
   try { return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount); } catch { return '$' + amount; }
 }
 
+function formatEntryCost(amount, currency = 'USD', isFreeEntry = false) {
+  if (isFreeEntry || Number(amount || 0) <= 0) return 'Free Entry';
+  return fmtCur(amount, currency);
+}
+
 function parseDisplayCost(value) {
   if (value == null) return 0;
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -235,13 +240,17 @@ function PlannerDetailCard({ place, activity, slotKey, slotLabel, slotIcon: Slot
           className="absolute bottom-3 right-3 flex items-center gap-1.5 backdrop-blur-xl px-3 py-1.5 rounded-[10px] shadow-lg"
           style={{ background: 'rgba(10,15,24,0.84)', border: '1px solid rgba(212,175,55,0.42)', boxShadow: '0 10px 24px rgba(0,0,0,0.26)' }}
         >
-          <span className="text-[11px] font-black text-[#F8E08B] drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]">{cost ? fmtCur(cost, currency) : 'Free'}</span>
+          <span className="text-[11px] font-black text-[#F8E08B] drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]">{formatEntryCost(cost, currency, details?.isFreeEntry === true || details?.entryType === 'free')}</span>
         </div>
       </div>
 
       <div className="p-5 flex flex-col gap-0 flex-1">
         <h3 className={`text-[17px] font-black leading-tight mb-2 tracking-wide transition-colors ${isLight ? 'text-slate-900 group-hover:text-sky-600' : 'text-white group-hover:text-[#38BDF8]'}`}>{displayPlace}</h3>
         <p className={`text-[12px] leading-relaxed mb-4 line-clamp-3 font-semibold ${isLight ? 'text-slate-800' : 'text-white/55'}`}>{activity}</p>
+        <div className={`mb-4 inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] ${isLight ? 'border-slate-300 bg-slate-50 text-slate-700' : 'border-white/10 bg-white/[0.03] text-white/70'}`}>
+          <span className="inline-flex h-2 w-2 rounded-full" style={{ background: details?.isFreeEntry === true || details?.entryType === 'free' ? '#10B981' : accentColor }} />
+          {details?.isFreeEntry === true || details?.entryType === 'free' ? 'Free Entry Stop' : 'Planned Entry Cost'}
+        </div>
 
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
@@ -1051,6 +1060,10 @@ export default function TripDetail() {
   const DEST_SHORT = DEST.split(',')[0].trim();
   const tripCurrency = trip.currency || trip.preferences?.currency || 'USD';
   const TOTAL_BUDGET = res?.total_budget?.total || trip.costBreakdown?.total || 0;
+  const totalTripDays = ov.total_days || daysData.length || 1;
+  const avgPerDayBudget = totalTripDays > 0 ? Math.round(TOTAL_BUDGET / totalTripDays) : TOTAL_BUDGET;
+  const activeDayBudget = activeDay?.budget?.total || 0;
+  const remainingAfterActiveDay = Math.max(0, TOTAL_BUDGET - activeDayBudget);
 
   const SLOTS = ["morning", "morningActivity", "afternoon", "afternoonActivity", "evening", "eveningActivity", "night", "nightActivity"];
   const SLOT_CFG = {
@@ -1158,7 +1171,7 @@ export default function TripDetail() {
                   </div>
                 </div>
                 <div className={`trip-theme-surface rounded-[20px] border px-4 py-3 text-center backdrop-blur-xl transition-colors duration-500 ${isLightDetail ? 'border-white/90 bg-white/92 shadow-[0_14px_34px_rgba(15,23,42,0.18)]' : 'border-[#D4AF37]/16 bg-black/18'}`}>
-                  <p className={`text-[9px] uppercase tracking-[0.26em] mb-1 font-black ${isLightDetail ? 'text-slate-700' : 'text-white/45'}`}>Total Budget</p>
+                  <p className={`text-[9px] uppercase tracking-[0.26em] mb-1 font-black ${isLightDetail ? 'text-slate-800' : 'text-white/45'}`}>Total Budget</p>
                   <p className="text-[clamp(1.65rem,2.8vw,2.45rem)] font-black text-[#D4AF37] tracking-tight leading-none drop-shadow-[0_1px_0_rgba(255,255,255,0.55)]">{fmtCur(TOTAL_BUDGET, tripCurrency)}</p>
                 </div>
               </div>
@@ -1255,6 +1268,25 @@ export default function TripDetail() {
             </div>
           </div>
           </div>
+          <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {[
+              { label: 'Per Day Average', value: fmtCur(avgPerDayBudget, tripCurrency) },
+              { label: `Day ${activeDay?.day || 1} Budget`, value: fmtCur(activeDayBudget, tripCurrency) },
+              { label: 'Remaining Budget', value: fmtCur(remainingAfterActiveDay, tripCurrency) },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className={`rounded-[20px] border px-4 py-3 backdrop-blur-2xl transition-colors duration-500 ${
+                  isLightDetail
+                    ? 'border-white/85 bg-white/88 shadow-[0_18px_34px_rgba(15,23,42,0.10)]'
+                    : 'border-white/10 bg-black/30 shadow-[0_18px_34px_rgba(0,0,0,0.24)]'
+                }`}
+              >
+                <p className={`text-[10px] font-black uppercase tracking-[0.24em] ${isLightDetail ? 'text-slate-700' : 'text-white/45'}`}>{item.label}</p>
+                <p className={`mt-2 text-[20px] font-black tracking-tight ${isLightDetail ? 'text-slate-950' : 'text-white'}`}>{item.value}</p>
+              </div>
+            ))}
+          </div>
 
           <div className="flex flex-col xl:flex-row gap-4 xl:gap-5 items-start">
             <div className="flex-1 min-w-0">
@@ -1269,7 +1301,7 @@ export default function TripDetail() {
                         <h2 className={`text-[18px] font-black uppercase tracking-wide ${isLightDetail ? 'text-slate-950' : 'text-white'}`}>{activeDay.theme || "Daily Excursions"}</h2>
                         <p className={`text-[10px] font-mono mt-0.5 ${isLightDetail ? 'text-slate-500' : 'text-white/35'}`}>{activeDay.date}</p>
                       </div>
-                      <span className={`text-sm font-black flex-shrink-0 ${isLightDetail ? 'text-slate-600' : 'text-white/45'}`}>{fmtCur(activeDay.budget?.total || 0, tripCurrency)}</span>
+                      <span className={`text-sm font-black flex-shrink-0 ${isLightDetail ? 'text-slate-800' : 'text-white/45'}`}>{fmtCur(activeDay.budget?.total || 0, tripCurrency)}</span>
                     </div>
 
                     <PlannerDetailTimeline slots={activeDay.slots} slotCfg={SLOT_CFG} isLight={isLightDetail} />
@@ -1278,7 +1310,8 @@ export default function TripDetail() {
                       {activeDay.slots.map(({ sk, act }, cardIdx) => {
                         const cfg = SLOT_CFG[sk];
                         const isSelected = planFocusAct?.place === act.place && planFocusAct?.sk === sk;
-                        const displayCost = resolveStopDisplayCost(act.cost, {
+                        const isFreeEntry = act?.isFreeEntry === true || act?.entryType === 'free';
+                        const displayCost = isFreeEntry ? 0 : resolveStopDisplayCost(act.cost, {
                           dayTotal: activeDay.budget?.total || TOTAL_BUDGET / Math.max(1, daysData.length || 1),
                           slotCount: activeDay.slots.length,
                           travelStyle: effectiveTravelStyle,
@@ -1310,7 +1343,7 @@ export default function TripDetail() {
                       })}
                     </div>
 
-                    <div className={`flex flex-wrap gap-x-5 gap-y-1 rounded-2xl border px-4 py-3 text-[10px] font-mono backdrop-blur-2xl ${isLightDetail ? 'border-white/75 bg-white/80 text-slate-600 shadow-[0_14px_34px_rgba(15,23,42,0.10)]' : 'border-white/10 bg-black/36 text-white/62 shadow-[0_14px_40px_rgba(0,0,0,0.28)]'}`}>
+                    <div className={`flex flex-wrap gap-x-5 gap-y-1 rounded-2xl border px-4 py-3 text-[10px] font-mono backdrop-blur-2xl ${isLightDetail ? 'border-white/75 bg-white/88 text-slate-700 shadow-[0_14px_34px_rgba(15,23,42,0.10)]' : 'border-white/10 bg-black/36 text-white/62 shadow-[0_14px_40px_rgba(0,0,0,0.28)]'}`}>
                       {[{ l: 'Stay', v: activeDay.budget?.stay }, { l: 'Food', v: activeDay.budget?.food }, { l: 'Transport', v: activeDay.budget?.transport }, { l: 'Activities', v: activeDay.budget?.activities }].map(({ l, v }) => (
                         <span key={l}>{l} <span className={isLightDetail ? 'text-slate-950 font-black' : 'text-white font-black'}>{fmtCur(v || 0, tripCurrency)}</span></span>
                       ))}

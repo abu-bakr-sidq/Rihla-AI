@@ -1,6 +1,7 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { resolveApiUrl } from '@/lib/api-contract';
+import { normalizeLegacyArrayItinerary, reconcileItineraryBudget } from '@/lib/trip-itinerary';
 
 function fmtBudget(n, currency = 'USD') {
   try {
@@ -12,6 +13,11 @@ function fmtBudget(n, currency = 'USD') {
   } catch {
     return '$' + (n || 0);
   }
+}
+
+function formatCostLabel(value, currency = 'USD', isFreeEntry = false) {
+  if (isFreeEntry || Number(value || 0) <= 0) return 'Free Entry';
+  return fmtBudget(value, currency);
 }
 
 const SLOT_CFG = {
@@ -73,6 +79,7 @@ function normalizeDayPlans(dayData) {
       place: plan.place || 'Planned stop',
       description: plan.description || plan.activity || '',
       cost: plan.cost || 0,
+      isFreeEntry: plan.isFreeEntry === true || plan.entryType === 'free',
       locationLink: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(plan.place || ''),
     }));
   }
@@ -85,6 +92,7 @@ function normalizeDayPlans(dayData) {
       place: item.place,
       description: item.activity || item.description || '',
       cost: item.cost || 0,
+      isFreeEntry: item.isFreeEntry === true || item.entryType === 'free',
       locationLink: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(item.place || ''),
     };
   }).filter(Boolean);
@@ -117,7 +125,7 @@ function inferStopType(plan) {
   const raw = (plan.slotKey + ' ' + plan.place + ' ' + plan.description).toLowerCase();
   if (/beach|coast|sea|shore|marina/.test(raw)) return 'beach';
   if (/temple|church|mosque|basilica|fort|museum|gallery|palace|ashram|heritage|historic/.test(raw)) return 'heritage';
-  if (/food|cafe|restaurant|dining|lunch|breakfast|tiffin|biryani|market/.test(raw)) return 'food';
+  if (/food|cafe|restaurant|dining|lunch|breakfast|market/.test(raw)) return 'food';
   if (/park|garden|lake|view|viewpoint|peak|sunset|sunrise/.test(raw)) return 'scenic';
   return 'local';
 }
@@ -188,17 +196,27 @@ async function fetchPlaceImageUrl(place, destination, photoIndex = 0) {
   }
 }
 
+function buildImageProxyUrl(url) {
+  return resolveApiUrl('/api/place-image?imageUrl=' + encodeURIComponent(url));
+}
+
 async function toDataUrl(url) {
   try {
-    const res = await fetch(url, { credentials: 'omit', mode: 'cors' });
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    return await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
+    for (const candidate of [url, buildImageProxyUrl(url)]) {
+      try {
+        const res = await fetch(candidate, { credentials: 'omit', mode: 'cors' });
+        if (!res.ok) continue;
+        const blob = await res.blob();
+        const dataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(blob);
+        });
+        if (dataUrl) return dataUrl;
+      } catch {}
+    }
+    return null;
   } catch {
     return null;
   }
@@ -242,11 +260,21 @@ async function fetchPrayerTimes(destination) {
 
 async function buildPrintableTrip(trip, prayerTimesArg, hijriDateArg) {
   const destination = (trip.destination || 'Trip').split(',')[0].trim();
-  const days = Array.isArray(trip.itinerary)
-    ? trip.itinerary
-    : Array.isArray(trip.itinerary?.days)
-      ? trip.itinerary.days
-      : [];
+  const rawItinerary = Array.isArray(trip.itinerary)
+    ? normalizeLegacyArrayItinerary(trip.itinerary, {
+      destination: trip.destination,
+      startDate: trip.startDate,
+      endDate: trip.endDate,
+      travelers: trip.travelers,
+      travelStyle: trip.travelStyle,
+      currency: trip.currency || trip.costBreakdown?.currency || 'USD',
+      costBreakdown: trip.costBreakdown || {},
+    })
+    : trip.itinerary;
+  const reconciled = reconcileItineraryBudget(rawItinerary || {}, trip.costBreakdown || {});
+  const days = Array.isArray(reconciled?.days) ? reconciled.days : [];
+  const totalBudget = reconciled?.total_budget?.total || trip.costBreakdown?.total || 0;
+  const totalDays = days.length || trip.days || 1;
 
   const prayerBundle = prayerTimesArg
     ? { times: prayerTimesArg, hijriDate: hijriDateArg || '' }
@@ -255,28 +283,47 @@ async function buildPrintableTrip(trip, prayerTimesArg, hijriDateArg) {
   const coverImageUrl = await fetchPlaceImageUrl(destination, destination, 0);
   const coverImage = await buildPdfImageSource(coverImageUrl, destination, '#10203a');
   const printableDays = [];
+  let globalPhotoIndex = 0;
 
   for (const day of days) {
     const plans = normalizeDayPlans(day);
     const planCards = await Promise.all(
-      plans.map(async (plan, index) => ({
-        ...plan,
-        image: await buildPdfImageSource(
-          await fetchPlaceImageUrl(plan.place, destination, index),
-          plan.place,
-          index % 2 === 0 ? '#10203a' : '#1b2434',
-        ),
-        timeline: buildTimelineSteps(plan),
-      }))
+      plans.map(async (plan) => {
+        const sourceDaySlot = day?.[plan.slotKey] || {};
+        const photoIndex = globalPhotoIndex;
+        globalPhotoIndex += 1;
+        const imageQuery = [plan.place, sourceDaySlot?.imageQuery, sourceDaySlot?.title, sourceDaySlot?.activity]
+          .filter(Boolean)
+          .join(' ');
+        return {
+          ...plan,
+          isFreeEntry: plan.isFreeEntry || sourceDaySlot?.isFreeEntry === true || sourceDaySlot?.entryType === 'free',
+          image: await buildPdfImageSource(
+            await fetchPlaceImageUrl(imageQuery || plan.place, destination, photoIndex),
+            plan.place,
+            photoIndex % 2 === 0 ? '#10203a' : '#1b2434',
+          ),
+          timeline: buildTimelineSteps(plan),
+        };
+      })
     );
     printableDays.push({
       ...day,
+      budget: day?.budget || {},
       plans: planCards,
       dayAtGlance: buildDayAtGlance(planCards),
     });
   }
 
-  return { destination, coverImage, printableDays, prayerBundle };
+  return {
+    destination,
+    coverImage,
+    printableDays,
+    prayerBundle,
+    totalBudget,
+    totalDays,
+    budgetParts: reconciled?.total_budget || trip.costBreakdown || {},
+  };
 }
 
 function renderPrayerSection(prayerBundle) {
@@ -338,7 +385,7 @@ function renderPlanCard(plan, index, currency = 'USD') {
       '<a class="plan-link" href="' + escapeHtml(plan.locationLink) + '" target="_blank" rel="noreferrer">Open Place Link</a>' +
       '<p class="plan-desc">' + escapeHtml(plan.description || '') + '</p>' +
       renderTimeline(plan) +
-      '<div class="plan-cost">' + escapeHtml(plan.cost > 0 ? fmtBudget(plan.cost, currency) : 'Included') + '</div>' +
+      '<div class="plan-cost">' + escapeHtml(formatCostLabel(plan.cost, currency, plan.isFreeEntry)) + '</div>' +
     '</div>' +
   '</article>';
 }
@@ -350,9 +397,10 @@ function renderDay(day, currency = 'USD') {
     '<section class="day-page">' +
       '<div class="day-head">' +
         '<div>' +
-          '<div class="day-kicker">Day ' + escapeHtml(day.day || '') + (chunks.length > 1 ? ' · Part ' + escapeHtml(chunkIndex + 1) : '') + '</div>' +
+          '<div class="day-kicker">Day ' + escapeHtml(day.day || '') + (chunks.length > 1 ? ' - Part ' + escapeHtml(chunkIndex + 1) : '') + '</div>' +
           '<h2 class="day-title">' + escapeHtml(day.title || day.theme || 'Planned Day') + '</h2>' +
           '<div class="day-date">' + escapeHtml(day.date || '') + '</div>' +
+          '<div class="day-budget-line">Day Budget: <strong>' + escapeHtml(fmtBudget(day?.budget?.total || 0, currency)) + '</strong><span>Stay ' + escapeHtml(fmtBudget(day?.budget?.stay || 0, currency)) + ' | Food ' + escapeHtml(fmtBudget(day?.budget?.food || 0, currency)) + ' | Transport ' + escapeHtml(fmtBudget(day?.budget?.transport || 0, currency)) + ' | Activities ' + escapeHtml(fmtBudget(day?.budget?.activities || 0, currency)) + '</span></div>' +
         '</div>' +
       '</div>' +
       (chunkIndex === 0 ? renderDayAtGlance(day) : '') +
@@ -364,14 +412,15 @@ function renderDay(day, currency = 'USD') {
 }
 
 function buildHtml(trip, printable) {
-  const totalBudget = trip.costBreakdown?.total || 0;
-  const currency = trip.currency || 'USD';
-  const daysCount = printable.printableDays.length || trip.days || 1;
+  const totalBudget = printable.totalBudget || trip.costBreakdown?.total || 0;
+  const currency = trip.currency || trip.costBreakdown?.currency || printable.budgetParts?.currency || 'USD';
+  const daysCount = printable.totalDays || printable.printableDays.length || trip.days || 1;
+  const avgPerDay = daysCount > 0 ? Math.round(totalBudget / daysCount) : totalBudget;
 
   return '<!doctype html><html><head><meta charset="utf-8" />' +
   '<title>Rihla AI PDF</title>' +
   '<style>' +
-  '@page{size:A4;margin:12mm;}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:#060b14;color:#fff;}*{box-sizing:border-box}a{text-decoration:none}.doc{display:flex;flex-direction:column;gap:18px;align-items:center;padding:0}.cover,.day-page{width:186mm;min-height:273mm;page-break-after:always;border:1px solid rgba(212,175,55,.18);border-radius:22px;overflow:hidden;background:linear-gradient(180deg,#09111d,#060b14)}.cover:last-child,.day-page:last-child{page-break-after:auto}.cover-hero{height:76mm;position:relative;background:#101826}.cover-hero img{width:100%;height:100%;object-fit:cover}.cover-hero .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,11,20,.1),rgba(6,11,20,.82))}.cover-body{padding:14mm}.brand{font-size:10px;letter-spacing:.5em;color:#d4af37;font-weight:800;text-transform:uppercase}.dest{font-size:34px;line-height:1;margin:10px 0 8px;font-weight:900}.meta{color:#94a3b8;font-size:11px;display:flex;gap:10px;flex-wrap:wrap}.budget{margin-top:14px}.budget .label{font-size:10px;letter-spacing:.25em;color:#94a3b8;text-transform:uppercase}.budget .value{font-size:26px;color:#d4af37;font-weight:900;margin-top:6px}.prayer-box{margin-top:16px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:#0f1623;padding:12px}.prayer-title{font-size:11px;letter-spacing:.3em;color:#10b981;text-transform:uppercase;font-weight:800;margin-bottom:10px}.prayer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.prayer-pill{border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px;background:rgba(255,255,255,.02)}.prayer-pill span{display:block;color:#94a3b8;font-size:11px}.prayer-pill strong{display:block;color:#fff;font-size:14px;margin-top:5px}.hijri{margin-top:10px;color:#94a3b8;font-size:11px}.day-head{padding:10mm 10mm 6mm;border-bottom:1px solid rgba(255,255,255,.06)}.day-kicker{font-size:11px;letter-spacing:.3em;color:#d4af37;text-transform:uppercase;font-weight:800}.day-title{font-size:24px;line-height:1.15;margin:8px 0 6px;font-weight:900}.day-date{color:#94a3b8;font-size:12px}.glance-wrap{padding:8mm 8mm 0}.section-kicker{font-size:11px;letter-spacing:.3em;color:#d4af37;text-transform:uppercase;font-weight:800;margin-bottom:8px}.glance-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.glance-pill{border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px;background:#0f1623}.glance-time{font-size:10px;color:#d4af37;font-weight:800}.glance-place{margin-top:4px;font-size:10px;color:#e5edf6;line-height:1.35}.plans-grid{padding:8mm;display:grid;grid-template-columns:1fr 1fr;gap:6mm}.plan-card{border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;background:#0f1623;break-inside:avoid}.plan-image-wrap{position:relative;height:52mm;background:#101826}.plan-image{width:100%;height:100%;object-fit:cover}.plan-image.placeholder{background:linear-gradient(135deg,#122033,#0b1422)}.plan-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.68))}.plan-meta-top,.plan-meta-bottom{position:absolute;left:10px;right:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}.plan-meta-top{top:10px}.plan-meta-bottom{bottom:10px;align-items:flex-end}.plan-count,.plan-badge,.plan-time{background:rgba(6,11,20,.88);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800}.plan-meta-bottom h3{margin:0;font-size:17px;line-height:1.08;max-width:72%;font-weight:900;text-shadow:0 2px 10px rgba(0,0,0,.45)}.plan-body{padding:10px 12px 12px}.plan-link{display:inline-block;margin-bottom:8px;color:#38bdf8;font-size:10px;font-weight:800}.plan-desc{margin:0 0 10px;color:#dbe4ee;font-size:10px;line-height:1.45}.timeline-block{border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:8px;background:rgba(255,255,255,.02);margin-bottom:10px}.timeline-title{font-size:9px;letter-spacing:.22em;color:#d4af37;text-transform:uppercase;font-weight:800;margin-bottom:6px}.timeline-row{display:grid;grid-template-columns:58px 1fr;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}.timeline-row:last-child{border-bottom:none}.timeline-time{color:#10b981;font-size:10px;font-weight:800}.timeline-text{color:#eef4fb;font-size:10px;line-height:1.35}.plan-cost{color:#d4af37;font-weight:900;font-size:11px}.footer-note{padding:0 12mm 12mm;color:#64748b;font-size:10px}.empty{padding:12mm;color:#94a3b8}.prayer-empty{color:#94a3b8;font-size:12px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.doc{align-items:stretch}.cover,.day-page{width:auto;min-height:auto}}' +
+  '@page{size:A4;margin:12mm;}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:#060b14;color:#fff;}*{box-sizing:border-box}a{text-decoration:none}.doc{display:flex;flex-direction:column;gap:18px;align-items:center;padding:0}.cover,.day-page{width:186mm;min-height:273mm;page-break-after:always;border:1px solid rgba(212,175,55,.18);border-radius:22px;overflow:hidden;background:linear-gradient(180deg,#09111d,#060b14)}.cover:last-child,.day-page:last-child{page-break-after:auto}.cover-hero{height:76mm;position:relative;background:#101826}.cover-hero img{width:100%;height:100%;object-fit:cover}.cover-hero .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,11,20,.1),rgba(6,11,20,.82))}.cover-body{padding:14mm}.brand{font-size:10px;letter-spacing:.5em;color:#d4af37;font-weight:800;text-transform:uppercase}.dest{font-size:34px;line-height:1;margin:10px 0 8px;font-weight:900}.meta{color:#94a3b8;font-size:11px;display:flex;gap:10px;flex-wrap:wrap}.budget{margin-top:14px}.budget .label{font-size:10px;letter-spacing:.25em;color:#94a3b8;text-transform:uppercase}.budget .value{font-size:26px;color:#d4af37;font-weight:900;margin-top:6px}.budget-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.budget-stat{border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;background:#0f1623}.budget-stat span{display:block;color:#94a3b8;font-size:10px;letter-spacing:.18em;text-transform:uppercase}.budget-stat strong{display:block;color:#fff;font-size:14px;margin-top:5px}.prayer-box{margin-top:16px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:#0f1623;padding:12px}.prayer-title{font-size:11px;letter-spacing:.3em;color:#10b981;text-transform:uppercase;font-weight:800;margin-bottom:10px}.prayer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.prayer-pill{border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px;background:rgba(255,255,255,.02)}.prayer-pill span{display:block;color:#94a3b8;font-size:11px}.prayer-pill strong{display:block;color:#fff;font-size:14px;margin-top:5px}.hijri{margin-top:10px;color:#94a3b8;font-size:11px}.day-head{padding:10mm 10mm 6mm;border-bottom:1px solid rgba(255,255,255,.06)}.day-kicker{font-size:11px;letter-spacing:.3em;color:#d4af37;text-transform:uppercase;font-weight:800}.day-title{font-size:24px;line-height:1.15;margin:8px 0 6px;font-weight:900}.day-date{color:#94a3b8;font-size:12px}.day-budget-line{margin-top:8px;font-size:10px;color:#dbe4ee}.day-budget-line strong{color:#d4af37}.day-budget-line span{display:block;color:#94a3b8;margin-top:4px}.glance-wrap{padding:8mm 8mm 0}.section-kicker{font-size:11px;letter-spacing:.3em;color:#d4af37;text-transform:uppercase;font-weight:800;margin-bottom:8px}.glance-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.glance-pill{border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px;background:#0f1623}.glance-time{font-size:10px;color:#d4af37;font-weight:800}.glance-place{margin-top:4px;font-size:10px;color:#e5edf6;line-height:1.35}.plans-grid{padding:8mm;display:grid;grid-template-columns:1fr 1fr;gap:6mm}.plan-card{border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;background:#0f1623;break-inside:avoid}.plan-image-wrap{position:relative;height:52mm;background:#101826}.plan-image{width:100%;height:100%;object-fit:cover}.plan-image.placeholder{background:linear-gradient(135deg,#122033,#0b1422)}.plan-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.68))}.plan-meta-top,.plan-meta-bottom{position:absolute;left:10px;right:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}.plan-meta-top{top:10px}.plan-meta-bottom{bottom:10px;align-items:flex-end}.plan-count,.plan-badge,.plan-time{background:rgba(6,11,20,.88);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800}.plan-meta-bottom h3{margin:0;font-size:17px;line-height:1.08;max-width:72%;font-weight:900;text-shadow:0 2px 10px rgba(0,0,0,.45)}.plan-body{padding:10px 12px 12px}.plan-link{display:inline-block;margin-bottom:8px;color:#38bdf8;font-size:10px;font-weight:800}.plan-desc{margin:0 0 10px;color:#dbe4ee;font-size:10px;line-height:1.45}.timeline-block{border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:8px;background:rgba(255,255,255,.02);margin-bottom:10px}.timeline-title{font-size:9px;letter-spacing:.22em;color:#d4af37;text-transform:uppercase;font-weight:800;margin-bottom:6px}.timeline-row{display:grid;grid-template-columns:58px 1fr;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}.timeline-row:last-child{border-bottom:none}.timeline-time{color:#10b981;font-size:10px;font-weight:800}.timeline-text{color:#eef4fb;font-size:10px;line-height:1.35}.plan-cost{color:#d4af37;font-weight:900;font-size:11px}.footer-note{padding:0 12mm 12mm;color:#64748b;font-size:10px}.empty{padding:12mm;color:#94a3b8}.prayer-empty{color:#94a3b8;font-size:12px}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.doc{align-items:stretch}.cover,.day-page{width:auto;min-height:auto}}' +
   '</style></head><body><div class="doc">' +
     '<section class="cover">' +
       '<div class="cover-hero">' +
@@ -390,6 +439,11 @@ function buildHtml(trip, printable) {
         '<div class="budget">' +
           '<div class="label">Total Budget</div>' +
           '<div class="value">' + escapeHtml(fmtBudget(totalBudget, currency)) + '</div>' +
+        '</div>' +
+        '<div class="budget-stats">' +
+          '<div class="budget-stat"><span>Per Day</span><strong>' + escapeHtml(fmtBudget(avgPerDay, currency)) + '</strong></div>' +
+          '<div class="budget-stat"><span>Stay + Food</span><strong>' + escapeHtml(fmtBudget((printable.budgetParts?.stay || 0) + (printable.budgetParts?.food || 0), currency)) + '</strong></div>' +
+          '<div class="budget-stat"><span>Transport + Activities</span><strong>' + escapeHtml(fmtBudget((printable.budgetParts?.transport || 0) + (printable.budgetParts?.activities || 0), currency)) + '</strong></div>' +
         '</div>' +
         '<div class="prayer-box">' +
           '<div class="prayer-title">Islamic Prayer Times</div>' +
@@ -435,7 +489,7 @@ async function openPdfWindow(trip, prayerTimesArg, hijriDateArg, options = {}) {
   });
 
   await waitForImages();
-  await new Promise((resolve) => setTimeout(resolve, 400));
+  await new Promise((resolve) => setTimeout(resolve, 450));
   win.focus();
   if (autoPrint) win.print();
   return win;
@@ -453,7 +507,7 @@ async function waitForDocumentAssets(doc) {
   if (doc.fonts?.ready) {
     try { await doc.fonts.ready; } catch {}
   }
-  await new Promise((resolve) => setTimeout(resolve, 400));
+  await new Promise((resolve) => setTimeout(resolve, 450));
 }
 
 async function downloadPdfFile(trip, prayerTimesArg, hijriDateArg) {
